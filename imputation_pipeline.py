@@ -1,24 +1,38 @@
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import Imputer
-
+# import sys
+# sys.path.append("../dsbox-cleaning/")
+from dsbox.datapreprocessing.profiler import profile_data
 import missing_value_pred as mvp
 import helper_func as hf
 
+def dataPrep(data_name, label_name, drop_col_name):
+    """
+    data preparation:
+    1. read the data into pandas dataframe
+    2. drop empty and specified columns
+    """
+    profiler = profile_data(data_name)
+    for col_name in profiler:
+        if (profiler[col_name]["missing"]["num_nonblank"] == 0):
+            drop_col_name.append(col_name)
 
-def test(data_path, label_path, drop_col):
-    """
-    now, only for classification problem (because I convert the label to integer)
-    Parameter:
-    drop_col: the column name list that should be dropped before processing (because is a ID, or empty column, etc.)
-    """
-    # 1. read data and drop
-    data = pd.read_csv(data_path)   
-    label = pd.read_csv(label_path)  
-    for each in drop_col:
+    print "droped columns: {}".format(drop_col_name)
+
+    # read data and drop
+    data = pd.read_csv(data_name)   
+    label = pd.read_csv(label_name)  
+    for each in drop_col_name:
         data = data.drop(each, axis=1)
 
-    # 2. convert categorical to indicator
+    return data, label
+
+def mainTest(data, label):
+    """
+    now, only for classification problem (because I convert the label to integer)
+    """
+    
+    # 1. convert categorical to indicator
     label_col_name = label.keys()[1]    # assume the second column is the label targets
     
     for col_name in data:
@@ -30,10 +44,9 @@ def test(data_path, label_path, drop_col):
         cate_map = mvp.cate2int(data[label_col_name].unique())
         data[label_col_name] = data[label_col_name].replace(cate_map)
 
-
-    # 3. start evaluation
+    # 2. start evaluation
     print "=========> Baseline:"
-    #baseline(data, label_col_name)
+    baseline(data, label_col_name)
     print "=========> Greedy searched imputation:"
     imputationGreedy(data, label_col_name)
 
@@ -41,7 +54,6 @@ def test(data_path, label_path, drop_col):
 def baseline(data, label_col_name):
     """
     running baseline
-
     """
     data_dropCol = data.dropna(axis=1, how="any") #drop the col with nan
 
