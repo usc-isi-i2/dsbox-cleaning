@@ -1,5 +1,6 @@
 import missing_value_pred as mvp
 import pandas as pd
+from dsbox.datapreprocessing.profiler import profile_data
 
 def cate2ind(df, key):
     """
@@ -40,3 +41,22 @@ def miss2ind(df, key):
     df = df.drop(key, axis=1)
 
     return df
+
+def dataPrep(data_name, label_name, drop_col_name):
+    """
+    data preparation:
+    1. read the data into pandas dataframe
+    2. drop empty and specified columns
+    """
+    profiler = profile_data(data_name)
+    for col_name in profiler:
+        if (profiler[col_name]["missing"]["num_nonblank"] == 0):
+            drop_col_name.append(col_name)
+
+    print "droped columns: {}".format(drop_col_name)
+    # read data and drop
+    data = pd.read_csv(data_name)   
+    label = pd.read_csv(label_name)  
+    for each in drop_col_name:
+        data = data.drop(each, axis=1)
+    return data, label
