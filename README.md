@@ -6,8 +6,16 @@ This component is for missing value imputation. It will give the evaluation resu
 ### Dependencies
 [check here](environment.yml)
 
+if you have conda, simply do the following:
+
+```sh
+conda-env create .
+source activate mvi
+python test_example.py
+```
+
 ### Usage:
-see test_example.py
+see [test_example.py](test_example.py): 
 
 ```python
 from sklearn import svm
