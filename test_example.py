@@ -13,8 +13,8 @@ data_path = "../dsbox-data/o_38/data/"
 data_name = data_path + "trainData.csv"
 label_name = data_path + "trainTargets.csv" # make sure your label target is in the second column of this file
 
-data, label = helper_func.dataPrep(data_name, label_name, drop_col_name)
 drop_col_name = ["d3mIndex"] #input the column name that is useless in the dataset, eg. id-like column, name column, etc.
+data, label = helper_func.dataPrep(data_name, label_name, drop_col_name)
 
 # STEP 2: define your machine learning model and scorer
 clf = svm.SVC(kernel='linear')

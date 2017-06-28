@@ -64,10 +64,10 @@ class Imputation(object):
         # 2. start evaluation
         print "=========> Baseline:"
         self.__baseline(data, label_col_name)
-        # print "=========> Greedy searched imputation:"
-        # self.__imputationGreedy(data, label_col_name)
-        print "=========> other imputation method:"
-        self.__otherImpute(data, label_col_name)
+        print "=========> Greedy searched imputation:"
+        self.__imputationGreedy(data, label_col_name)
+        # print "=========> other imputation method:"
+        # self.__otherImpute(data, label_col_name)
 
         return self.best_imputation
 
@@ -204,8 +204,11 @@ class Imputation(object):
         """ 
         from sklearn.model_selection import train_test_split
 
-        X_train, X_test, y_train, y_test = train_test_split(data_clean, label, test_size=0.4, random_state=0, stratify=label)
-        # X_train, X_test, y_train, y_test = train_test_split(data_clean, label, test_size=0.4, random_state=0)
+        try:
+            X_train, X_test, y_train, y_test = train_test_split(data_clean, label, test_size=0.4, random_state=0, stratify=label)
+        except:
+            print "cannot stratified sample, try random sample: "
+            X_train, X_test, y_train, y_test = train_test_split(data_clean, label, test_size=0.4, random_state=0)
         # remove the nan rows
 
         mask_train = np.isnan(X_train).any(axis=1)  # nan rows index
