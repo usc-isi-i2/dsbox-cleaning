@@ -8,6 +8,7 @@ def cate2ind(df, key):
     data: pandas dataframe
     key: the key of the specified column to convert
     """
+    df = df.copy()  # not modify the input
     column = df[key]
     cate_map = mvp.isCategorical(column)
     print key
@@ -34,6 +35,7 @@ def miss2ind(df, key):
     convert a column from given dataframe to missing/not missing (1/0), drop the original one
 
     """
+    df = df.copy()  # not modify the input
     column = df[key]
     new_col = pd.isnull(column)
     new_name = key + "/" + "missing"

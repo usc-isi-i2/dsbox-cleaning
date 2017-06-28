@@ -9,6 +9,8 @@ def isCategorical(column):
     if is true, will fill in the cate map that: category -> int; if not, return None
     if the cell value is nan(missing value), ignore it, leave to the imputation later
     """
+    if (column.dtype == int or column.dtype == float):
+        return None
     #column = column.dropna()
     total_len = len(column)
     cate = dict()
@@ -59,7 +61,7 @@ def popular_value(array):
 
     return popular
 
-def myImputer(data, value="zero"):
+def myImputer(data, value="zero", verbose=0):
     """
     INPUT:
     data: numpy array, 1*D (one column)
@@ -84,27 +86,28 @@ def myImputer(data, value="zero"):
 
     data_imputed[index] = inputed_value
 
-    #print "imputed missing value: {}".format(inputed_value)
+    if verbose: print "imputed missing value: {}".format(inputed_value)
     return data_imputed
 
 
-def imputeData(data, permutations, missing_col_id, imputation_strategies):
+def imputeData(data, missing_col_id, imputation_strategies, verbose):
     """
     impute the data using permutations array.
     """
     data_clean = np.copy(data)
 
-    for i in range(len(permutations)):
-        strategy = permutations[i]
+    for i in range(len(imputation_strategies)):
+        strategy = imputation_strategies[i]
         col_id = missing_col_id[i]
 
-        data_clean[:,col_id] = myImputer(data[:,col_id], imputation_strategies[strategy])
+        data_clean[:,col_id] = myImputer(data[:,col_id], strategy)
 
     return data_clean
 
 
 #========================two learning & prediction method==============
-def pred(data_clean, label):
+
+def pred(data_clean, label, eva_model):
     """
     INPUT
     data_clean: the clean dataset, missing values imputed already
@@ -116,6 +119,7 @@ def pred(data_clean, label):
     from sklearn.metrics import f1_score
     from sklearn.linear_model import LogisticRegressionCV
     from sklearn.linear_model import LinearRegression
+    from sklearn import tree
 
     X_train, X_test, y_train, y_test = train_test_split(data_clean, label, test_size=0.4, random_state=0, stratify=label)
     # remove the nan rows
@@ -130,29 +134,37 @@ def pred(data_clean, label):
     # classifers:
     clf_linear = svm.SVC(kernel='linear').fit(X_train, y_train)
     clf_lg = LogisticRegressionCV(scoring="f1_macro").fit(X_train, y_train)
+    clf_tree = tree.DecisionTreeClassifier().fit(X_train, y_train)
 
     max_score = 0
-    print "for linear SVM: "
-    print f1_score(y_test, clf_linear.predict(X_test), average=None)
-    score = f1_score(y_test, clf_linear.predict(X_test), average="macro")    #weighted average over all the classes
-    max_score = max(score, max_score)
-    print  score
 
-    print "for LogisticRegressionCV: "
-    print f1_score(y_test, clf_lg.predict(X_test), average=None)
-    score = f1_score(y_test, clf_lg.predict(X_test), average="macro")   #weighted average over all the classes
-    max_score = max(score, max_score)
-    print score 
+    if (eva_model=="linearSVM"):
+        def scorer (y_true, y_pred):
+            return f1_score(y_true, y_pred, average="macro")
 
-    from sklearn import tree
-    clf_tree = tree.DecisionTreeClassifier().fit(X_train, y_train)
-    print "for decision tree: "
-    print f1_score(y_test, clf_tree.predict(X_test), average=None)
-    score = f1_score(y_test, clf_tree.predict(X_test), average="macro")   #weighted average over all the classes
-    max_score = max(score, max_score)
-    print score 
+        print scorer(y_test, clf_linear.predict(X_test))
+        # print "for linear SVM: "
+        # print f1_score(y_test, clf_linear.predict(X_test), average=None)
+        # score = f1_score(y_test, clf_linear.predict(X_test), average="macro")    #weighted average over all the classes
+        # max_score = max(score, max_score)
+        # print  score
 
-    print "===========>> max weighted score is: {}".format(max_score)
+
+    if (eva_model=="logisticRegreesion"):
+        print "for LogisticRegressionCV: "
+        print f1_score(y_test, clf_lg.predict(X_test), average=None)
+        score = f1_score(y_test, clf_lg.predict(X_test), average="macro")   #weighted average over all the classes
+        max_score = max(score, max_score)
+        print score 
+    
+    if (eva_model=="decisionTree"):
+        print "for decision tree: "
+        print f1_score(y_test, clf_tree.predict(X_test), average=None)
+        score = f1_score(y_test, clf_tree.predict(X_test), average="macro")   #weighted average over all the classes
+        max_score = max(score, max_score)
+        print score 
+
+    print "===========>> max score is: {}".format(max_score)
     if (num_removed_test > 0):
         print "BUT !!!!!!!!there are {} data (total test size: {})that cannot be predicted!!!!!!\n".format(num_removed_test, y_test.shape[0])
     return max_score

@@ -12,6 +12,10 @@ This component is for missing value imputation. It will give the evaluation resu
 ### Usage:
 see test_example.py
 
+### TODO:
+1. finish verbose func
+2. add metrics parameter
+3. 
 
 
 ## Evaluation
