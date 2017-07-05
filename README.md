@@ -1,4 +1,4 @@
-# Introduction
+## Missing value imputer
 This component is for missing value imputation. It will give the evaluation result of different imputation method. Now the functionality is limited to:
 
 * one label problem and label target is the second column in label file
@@ -15,7 +15,7 @@ python test_example.py
 ```
 
 ### Usage:
-see [test_example.py](test_example.py): 
+see [test_example.py](test_example.py):
 
 ```python
 from sklearn import svm
@@ -47,3 +47,30 @@ print best_imputation
 
 ### TODO:
 1. finish verbose func
+
+
+## One-hot encoder
+The encoder takes csv file or pandas DataFrame as input, then one-hot encode columns which are considered categorical. (currently:
+take a column as category if:
+* its dtype is not float and
+* 95% of its data fall in 10 values.
+
+Note, currently: 
+* For nonnumeric columns which don't fall into categories, they are converted into integer codes (0,1,2...), just as a temporary expedient.
+* Input dataset (csv or DataFrame) should not include target / label column.
+
+### Usage:
+```python
+from dsbox.datapreprocessing.cleaner import encoder
+# csv file as input: 
+result = encoder.encode('yourDataset.csv')
+
+# DataFrame as input:
+data = pd.read_csv('yourDataset.csv')
+result = encoder.encode(data)
+```
+
+### TODO:
+1. Deal with ID-like columns: identify (also let user decide?) and delete ? 
+2. Find better way to distinguish categorical columns.
+3. More functionality and more flexible implementation for user to config prefered setting.
