@@ -46,49 +46,49 @@ def encode(data_path):
 
         # empty column (all missing/NaN)
         if col.count() == 0:
-            print '...Delete *'+column_name+"* column: empty column."
+            print '...Delete *'+str(column_name)+"* column: empty column."
             del_col.append(col.name)
 
         # dtype = integer
         elif col.dtype.kind in np.typecodes['AllInteger']+'u':
             if isCategorical(col):
-                print "...Delete *"+column_name+"* column: integer category." 
+                print "...Delete *"+str(column_name)+"* column: integer category." 
                 del_col.append(col.name)
-                print "...Insert columns to onehot encode *"+column_name+"*."
-                new_col.insert(0, onehot_encode(col, exist_nan))
+                print "...Insert columns to onehot encode *"+str(column_name)+"*."
+                new_col.append(onehot_encode(col, exist_nan))
 
         # dtype = float from csv file 
         # (check if it's int column with missing value)
         elif col.dtype.kind == 'f':
             if not isDF:
                 col = data_raw[column_name].copy()
-                pf = profile_data(pd.DataFrame(col))[col]['numeric_stats']
+                pf = profile_data(pd.DataFrame(col))[column_name]['numeric_stats']
                 if ('integer' in pf and 'decimal' not in pf):
                     if isCategorical(col):
-                        print '...Delete *'+column_name+'* column: integer category.'
+                        print '...Delete *'+str(column_name)+'* column: integer category.'
                         del_col.append(col.name)
-                        print "...Insert columns to onehot encode *"+column_name+"*."
-                        new_col.insert(0, onehot_encode(col,exist_nan))
+                        print "...Insert columns to onehot encode *"+str(column_name)+"*."
+                        new_col.append(onehot_encode(col,exist_nan))
         
         # dtype = category
         elif col.dtype.name == 'category':
             print '...Delete *'+column_name+'* column: category dtype.'
             del_col.append(col.name)
-            print "...Insert columns to onehot encode *"+column_name+"*."
-            new_col.insert(0, onehot_encode(col,exist_nan))
+            print "...Insert columns to onehot encode *"+str(column_name)+"*."
+            new_col.append(onehot_encode(col,exist_nan))
 
         # for other dtypes
         else:
             #col = col.astype(str)
             if isCategorical(col):
-                print '...Delete *'+column_name+'* column: object/other category.'
+                print '...Delete *'+str(column_name)+'* column: object/other category.'
                 del_col.append(col.name)
-                print "...Insert columns to onehot encode *"+column_name+"*."
-                new_col.insert(0, onehot_encode(col,exist_nan))
+                print "...Insert columns to onehot encode *"+str(column_name)+"*."
+                new_col.append(onehot_encode(col,exist_nan))
             else:
-                print '...Convert *'+column_name+'* column from text to integer codes.'
+                print '...Convert *'+str(column_name)+'* column from text to integer codes.'
                 del_col.append(col.name)
-                new_col.insert(0, text2int(col))
+                new_col.append(text2int(col))
 
     # drop empty, category-like and those converted to int codes
     rest = data.drop(del_col, axis=1)
