@@ -16,11 +16,18 @@ def text2int(col):
     return pd.DataFrame(col.astype('category').cat.codes,columns=[col.name])
 
 
-def onehot_encode(col, exist_nan):
+def onehot_encode(col, exist_nan, limited=True):
     """
-    
+    convert specified column into multiple columns with 0/1 indicators
+    if limited=True, only convert top t values into columns and the rest as one column
+    t: most frequent t values that sum up to 95% of data
     """
-    return pd.get_dummies(col,prefix=col.name, dummy_na=exist_nan)
+    if limited:
+        cdf = (col.value_counts() / float(col.count())).cumsum()
+        _col = col.replace(cdf[cdf>.95].index, 'others')
+        return pd.get_dummies(_col, prefix=col.name, dummy_na=exist_nan)
+    else:    
+        return pd.get_dummies(col,prefix=col.name, dummy_na=exist_nan)
 
 def encode(data_path):
     """
