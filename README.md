@@ -68,6 +68,10 @@ result = encoder.encode('yourDataset.csv')
 # DataFrame as input:
 data = pd.read_csv('yourDataset.csv')
 result = encoder.encode(data)
+
+# if label is given in the dataset
+result = encoder.encode(data, label='name_of_label_column')
+
 ```
 
 ### TODO:
