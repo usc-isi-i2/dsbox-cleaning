@@ -16,15 +16,38 @@ def text2int(col):
     return pd.DataFrame(col.astype('category').cat.codes,columns=[col.name])
 
 
-def onehot_encode(col, exist_nan):
+def onehot_encode(col, exist_nan, limited=True):
     """
-    
+    convert specified column into multiple columns with 0/1 indicators
+    if limited=True, and there are more than 10 distinct values,
+    only convert top t values into columns and the rest as one column
+    t: most frequent t values that sum up to 95% of data
     """
-    return pd.get_dummies(col,prefix=col.name, dummy_na=exist_nan)
+    if col.nunique() == 1:
+        if exist_nan:
+            new_col = col.isnull().astype(int)
+            new_col.name = col.name+"_nan"
+            return pd.DataFrame(new_col)
+        else:
+            new_col = col.astype('category').cat.codes
+            return pd.DataFrame(new_col, columns=[col.name])
+    elif col.nunique() == 2 and not exist_nan:
+        return pd.DataFrame(col.astype('category').cat.codes,columns=[col.name])
 
-def encode(data_path):
-    """
+    elif limited and col.nunique() > 10:
+        #cdf = (col.value_counts() / float(col.count())).cumsum()
+        #_col = col.replace(cdf[cdf>.95].index, 'others')
+        top10 = col.value_counts().head(10).index
+        _col = col.apply(lambda x: x if x in top10 else 'others')
+        return pd.get_dummies(_col, prefix=col.name, dummy_na=exist_nan)
+    else:    
+        return pd.get_dummies(col,prefix=col.name, dummy_na=exist_nan)
 
+
+def encode(data_path,label=None):
+    """
+    take pandas dataframe or raw csv file as input.
+    return a dataframe with one-hot encoded indicator columns.
     """
     del_col = []
     new_col = []
@@ -38,6 +61,12 @@ def encode(data_path):
     ## data frame as input ##
     else:
         data = data_path
+    
+    # if label is in the dataset, specify label=label_name
+    # process seperately
+    if label:
+        label_col = data[label]
+        data = data.drop(label,axis=1)
 
     for column_name in data:
         col = data[column_name].copy()
@@ -90,10 +119,18 @@ def encode(data_path):
                 del_col.append(col.name)
                 new_col.append(text2int(col))
 
+    # for label column
+    if label:
+        if label_col.dtype.kind not in 'biufcmM':
+            nc = pd.Series(label_col.astype('category').cat.codes,name=label_col.name)
+            new_col.append(nc)
+        else:
+            new_col.append(label_col)
+
     # drop empty, category-like and those converted to int codes
     rest = data.drop(del_col, axis=1)
 
     # insert columns from onehot encoding and text2int codes
-    result = pd.concat(new_col+[rest], axis=1)  
+    result = pd.concat([rest]+new_col, axis=1)  
 
     return result

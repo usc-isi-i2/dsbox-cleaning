@@ -54,10 +54,14 @@ The encoder takes csv file or pandas DataFrame as input, then one-hot encode col
 take a column as category if:
 * its dtype is not float and
 * 95% of its data fall in 10 values.
+* For the rest values (not top 10) with low frequency, put into one column "_others"
 
 Note, currently: 
 * For nonnumeric columns which don't fall into categories, they are converted into integer codes (0,1,2...), just as a temporary expedient.
-* Input dataset (csv or DataFrame) should not include target / label column.
+* For column which has single unique value with some cells missing, the encoder only
+  convert the original column into an indicator column "_nan" to tell if missing.
+* For column which has two unique values and no cells missing, the encoder only convert
+  the original column into binary (0/1) values.
 
 ### Usage:
 ```python
@@ -68,6 +72,10 @@ result = encoder.encode('yourDataset.csv')
 # DataFrame as input:
 data = pd.read_csv('yourDataset.csv')
 result = encoder.encode(data)
+
+# if label is given in the dataset
+result = encoder.encode(data, label='name_of_label_column')
+
 ```
 
 ### TODO:
