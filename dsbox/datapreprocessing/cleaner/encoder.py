@@ -23,7 +23,18 @@ def onehot_encode(col, exist_nan, limited=True):
     only convert top t values into columns and the rest as one column
     t: most frequent t values that sum up to 95% of data
     """
-    if limited and col.nunique() > 10:
+    if col.nunique() == 1:
+        if exist_nan:
+            new_col = col.isnull().astype(int)
+            new_col.name = col.name+"_nan"
+            return pd.DataFrame(new_col)
+        else:
+            new_col = col.astype('category').cat.codes
+            return pd.DataFrame(new_col, columns=[col.name])
+    elif col.nunique() == 2 and not exist_nan:
+        return pd.DataFrame(col.astype('category').cat.codes,columns=[col.name])
+
+    elif limited and col.nunique() > 10:
         #cdf = (col.value_counts() / float(col.count())).cumsum()
         #_col = col.replace(cdf[cdf>.95].index, 'others')
         top10 = col.value_counts().head(10).index
