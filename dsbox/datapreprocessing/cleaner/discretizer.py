@@ -60,6 +60,8 @@ def _discretize_by_gmm(col, num_bins, random_state):
 
 
 def discretize(col, num_bins=10, by='width', labels = None, random_state=0):
+    if col.dropna().sum() == 0:
+        raise ValueError('Empty column!')
     if by == 'width':
         return _discretize_by_width(col, num_bins, labels)
     
