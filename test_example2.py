@@ -7,7 +7,7 @@ from sklearn import metrics
 from sklearn.metrics import f1_score, make_scorer,mean_squared_error
 from sklearn import tree
 
-from dsbox.datapreprocessing.cleaner import Imputation, helper_func, encoder
+from dsbox.datapreprocessing.cleaner import Imputation, encoder
 
 # STEP 1: get data
 data_path = "../dsbox-data/r_26/original/data/"

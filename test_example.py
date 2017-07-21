@@ -7,7 +7,7 @@ from sklearn import metrics
 from sklearn.metrics import f1_score, make_scorer
 from sklearn import tree
 
-from dsbox.datapreprocessing.cleaner import Imputation, helper_func, encoder
+from dsbox.datapreprocessing.cleaner import Imputation, encoder
 
 # STEP 1: get data
 data_path = "../dsbox-data/o_4550/original/data/"
@@ -27,13 +27,11 @@ scorer = make_scorer(f1_score, average="macro") # score will be * -1, if greater
 # STEP 3: go to use the Imputer !
 imputer = Imputation(model=clf, scorer=scorer)
 # method: greedy search
-imputer.fit(data, label, strategy="greedy")
-data_clean = imputer.transform(data)
-print imputer.best_imputation
+# imputer.fit(data, label, strategy="greedy")
+# data_clean = imputer.transform(data)
+# print imputer.best_imputation
 
 # method: regression
-# imputer.fit(data, label, strategy="iteratively_regre")  # in current version, not really learned from this step. only evaluation
-# data_clean = imputer.transform(data)
-
+data_clean = imputer.complete(data,spec_strategy="iteratively_regre")
 
 data_clean.to_csv("data_clean.csv", index=False)

@@ -2,30 +2,30 @@ import numpy as np
 import pandas as pd
 
 import missing_value_pred as mvp
-import helper_func as hf
 
 
 class Imputation(object):
-    """search for best Imputation combination for a given dataset 
+    """
+    Integrated imputation methods moduel.
 
     Parameters:
     ----------
-    strategies: list of string
-        The Imputation strategies that are considered to be searched.
-
-    verbose: Integer
-        Control the verbosity
-
     model: a function
         The machine learning model that will be used to evaluate the imputation strategies
 
     scorer: a function
         The metrics that will be used
 
+    greater_is_better: boolean
+        Indicate whether higher or lower the score is better. Default is True. Usually, for regression problem
+        this should be set to False.
+
+    verbose: Integer
+        Control the verbosity
+
     Attributes:
     ----------
-    best_imputation: list of string
-        After 'fit' method, the best imputation combination will be given.
+    best_imputation: trained imputation method (parameters)
     """
 
     def __init__(self, model, scorer, greater_is_better=True, verbose=0):
@@ -52,7 +52,8 @@ class Imputation(object):
 
     def fit(self, data, label, strategy="greedy"):
         """
-        imputation combination evaluations
+        train imputation parameters. Now support:
+        -> greedySearch
 
         Parameters:
         ----------
@@ -65,33 +66,20 @@ class Imputation(object):
 
         self.best_imputation = None # store the info of trained imputation method
         if (strategy=="greedy"):
-
             print "=========> Greedy searched imputation:"
             self.best_imputation = self.__imputationGreedySearch(data, label_col_name)
-
-        elif (strategy=="iteratively_regre"):
-            print "=========> iteratively regress method:"
-            self.__iterativeRegress(data, label_col_name)
-        
-        elif (strategy=="other"):
-            print "=========> other method:"
-            self.__otherImpute(data, label_col_name)
         
         else:
             raise ValueError("no such strategy: {}".format(strategy))
 
         self.strategy = strategy
 
-    def transform(self, data, spec_strategy=None):
+    def transform(self, data):
         """
         precond: run fit() before
         to complete the data, based on the learned parameters
         """
         data = data.copy()
-
-        if (spec_strategy != None):
-            self.strategy = spec_strategy
-
         # record keys:
         keys = data.keys()
 
@@ -100,15 +88,29 @@ class Imputation(object):
             print "=========> impute using result from greedy search:"
             data_clean = self.__simpleImpute(data, self.best_imputation)
 
-        elif (self.strategy=="iteratively_regre"):
+        return pd.DataFrame(data=data_clean, columns=keys)
+
+
+    def complete(self, data, spec_strategy):
+        """
+        impute data only using specified strategy. No need to train (self.fit()).
+        """
+        data = data.copy()
+        # record keys:
+        keys = data.keys()
+
+        if (spec_strategy=="iteratively_regre"):
             print "=========> iteratively regress method:"
             data_clean, placeholder = self.__iterativeRegress(data)
-        
-        elif (self.strategy=="other"):
+            
+        elif(spec_strategy=="other"):
             print "=========> other method:"
-            data_clean = self.__otherImpute(data, label_col_name)
+            data_clean = self.__iterativeRegress(data)
+        else:
+            raise ValueError("no such strategy: {}".format(strategy))
 
         return pd.DataFrame(data=data_clean, columns=keys)
+
     #====================== fit phase functinos ======================
     def __iterativeRegress(self, data, label_col_name=""):
         '''
@@ -153,9 +155,6 @@ class Imputation(object):
         data[:,missing_col_id] = imputed_data_lastIter
 
         return data, model_list
-
-    
-
 
     def __baseline(self, data, label_col_name):
         """
@@ -227,27 +226,6 @@ class Imputation(object):
 
     #====================== transform phase functinos ======================
 
-    # def __regressImpute(self, data, model_list, verbose=False):
-    #     """
-    #     impute the data using the regression model in model_list
-    #     Parameters:
-    #     ----------
-    #     data: pandas dataframe
-    #     model_list: list of models
-    #     """
-    #     # TO be done
-
-    #     # 1. convert to np array and get missing value column id
-    #     missing_col_id = []
-    #     data, label = self.__df2np(data, "", missing_col_id) # no need for label
-    #     if (len(missing_col_id) != len(model_list)):
-    #         raise ValueError("Expected {0} number of permutations, "
-    #                          " got '{1}' ".format(len(missing_col_id),
-    #                                                     len(model_list)))
-
-        
-
-
     def __simpleImpute(self, data, strategies, verbose=False):
         """
         impute the data using given strategies
@@ -288,10 +266,11 @@ class Imputation(object):
 
         self.__evaluation(data_clean, label)
 
+        return data_clean
+
 
     
     #====================== helper functions ======================
-
 
     def __df2np(self, data, label_col_name, missing_col_id=[]):
         """
@@ -311,7 +290,6 @@ class Imputation(object):
 
         print "missing column name: {}".format(missing_col_name)
 
-
         # 2. convert the dataframe to np array
         label = None
         col_names = data.keys()
@@ -320,14 +298,16 @@ class Imputation(object):
             data = data.drop(label_col_name,axis=1)
         data = data.values  #convert to np array
 
-
         return data, label
 
     
 
     def __evaluation(self, data_clean, label):
         """
-        INPUT
+        using defined model and scorer to evaluation the cleaned dataset
+
+        Parameters:
+        ----------
         data_clean: the clean dataset, missing values imputed already
         label: the label for data_clean
         """ 

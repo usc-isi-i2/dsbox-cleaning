@@ -1,47 +1,5 @@
 import pandas as pd
 import numpy as np
-from fancyimpute import BiScaler, KNN, NuclearNormMinimization, SoftImpute
-
-def isCategorical(column):
-    """
-    INPUT
-    column: pandas.dataframe series
-    prematrue method: to see if 95% value is in 10 category
-    if is true, will fill in the cate map that: category -> int; if not, return None
-    if the cell value is nan(missing value), ignore it, leave to the imputation later
-    """
-    if (column.dtype == int or column.dtype == float):
-        return None
-    #column = column.dropna()
-    total_len = len(column)
-    cate = dict()
-    for cell in column:
-        if (len(cate) > 10):
-            return None
-        if (cell in cate):
-            cate[cell] += 1
-        else:
-            cate[cell] = 1
-
-    sorted_value = sorted(cate.values(), reverse = True)
-    top10_ratio = sum(sorted_value[0:10])/float(total_len)
-    if (top10_ratio >= 0.95):
-        return cate2int(cate.keys())
-    else:
-        return None
-
-def cate2int(cate):
-    """
-    return a map (dict) that maps category code to integer: 1,2,3, ... (save 0 for the new value!)
-    INPUT
-    cate: is a category list
-    """
-    category_map = {}
-    ind = 1
-    for i in cate:
-        category_map[i] = ind
-        ind += 1
-    return category_map
 
 def popular_value(array):
     """

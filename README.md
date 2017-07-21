@@ -1,7 +1,13 @@
 ## Missing value imputer
-This component is for missing value imputation. It will give the evaluation result of different imputation method. Now the functionality is limited to:
+This component is for missing value imputation. This module is designed to support:
 
-* one label problem and label target is the second column in label file
+1. multiple ways to impute data, including our self-defined methods.
+2. missing pattern related analysis
+3. fit (or train) a method on the data, then apply to other data
+
+Now the functionality is limited to:
+
+* one label problem
 
 ### Dependencies
 [check here](environment.yml)
@@ -27,7 +33,7 @@ from sklearn import metrics
 from sklearn.metrics import f1_score, make_scorer
 from sklearn import tree
 
-from dsbox.datapreprocessing.cleaner import Imputation, helper_func, encoder
+from dsbox.datapreprocessing.cleaner import Imputation, encoder
 
 # STEP 1: get data
 data_path = "../dsbox-data/o_4550/original/data/"
@@ -47,16 +53,15 @@ scorer = make_scorer(f1_score, average="macro") # score will be * -1, if greater
 # STEP 3: go to use the Imputer !
 imputer = Imputation(model=clf, scorer=scorer)
 # method: greedy search
-imputer.fit(data, label, strategy="greedy")
-data_clean = imputer.transform(data)
-print imputer.best_imputation
+# imputer.fit(data, label, strategy="greedy")
+# data_clean = imputer.transform(data)
+# print imputer.best_imputation
 
 # method: regression
-# imputer.fit(data, label, strategy="iteratively_regre")  # in current version, not really learned from this step. only evaluation
-# data_clean = imputer.transform(data)
-
+data_clean = imputer.complete(data,spec_strategy="iteratively_regre")
 
 data_clean.to_csv("data_clean.csv", index=False)
+
 ```
 
 
