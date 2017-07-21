@@ -44,11 +44,16 @@ def miss2ind(df, key):
 
     return df
 
-def dataPrep(data_name, label_name, drop_col_name):
+def dataPrep(data_name, label_name, drop_col_name, label_col_name):
     """
     data preparation:
     1. read the data into pandas dataframe
     2. drop empty and specified columns
+
+    Return:
+    two DataFrames: 
+        data: already drop the specified columns
+        label: 
     """
     profiler = profile_data(data_name)
     for col_name in profiler:
@@ -61,4 +66,5 @@ def dataPrep(data_name, label_name, drop_col_name):
     label = pd.read_csv(label_name)  
     for each in drop_col_name:
         data = data.drop(each, axis=1)
+    label = label[label_col_name]
     return data, label
