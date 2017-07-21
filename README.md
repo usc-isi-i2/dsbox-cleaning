@@ -82,3 +82,32 @@ result = encoder.encode(data, label='name_of_label_column')
 1. Deal with ID-like columns: identify (also let user decide?) and delete ? 
 2. Find better way to distinguish categorical columns.
 3. More functionality and more flexible implementation for user to config prefered setting.
+
+
+## Discretizer
+Take a column (pandas Series) as input, output a column with discretized values. For the discretize() function:
+* **by**: "width": discretize by equal width; "frequency": discretize by equal frequency; "kmeans": discretize by kmeans clustering; "gmm": discretize by Gaussian mixure models clustering. default by="width".
+* **num_bins**: number of bins. default num_bins=10.
+* **labels**: list of values for the discretized bins, currently only for binning methods where orders of values are kept (by width and by frequency). default labels= [0,1,2...].
+
+
+Note, currently: 
+* Missing cells remain missing in the output column.
+
+### Usage:
+```python
+from dsbox.datapreprocessing.cleaner import discretizer
+
+data = pd.read_csv('yourDataset.csv')
+col = data["column_name"]
+# 10 bins, discretize by equal width
+result = discretizer.discretize(col)
+# 5 bins, discretize by gmm
+result = discretizer.discretize(col,num_bins=5,by='gmm')
+# or you can replace original column in the dataset with discretized values
+data["column_name"] = result
+
+```
+
+### TODO:
+- See if a better k, number of bins to choose can be found automatically. e.g. num_bins='auto'.
