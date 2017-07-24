@@ -37,6 +37,4 @@ print imputer.best_imputation
 # imputer.fit(data, label, strategy="iteratively_regre")  # in current version, not really learned from this step. only evaluation
 # data_clean = imputer.transform(data)
 
-
-
 data_clean.to_csv("data_clean.csv", index=False)

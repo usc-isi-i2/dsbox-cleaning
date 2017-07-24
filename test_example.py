@@ -32,6 +32,7 @@ imputer = Imputation(model=clf, scorer=scorer)
 # print imputer.best_imputation
 
 # method: regression
-data_clean = imputer.complete(data,spec_strategy="iteratively_regre")
+imputer.fit(data, strategy="iteratively_regre")
+data_clean = imputer.transform(data)
 
 data_clean.to_csv("data_clean.csv", index=False)

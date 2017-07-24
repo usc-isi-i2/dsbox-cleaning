@@ -33,9 +33,11 @@ class Imputation(object):
         self.verbose = verbose
         self.model = model
         self.scorer = scorer
+        self.is_fitted = False
 
 
-    def analysis(self, data, label):
+    # for now, make it internally
+    def __analysis(self, data, label):
         """
         TODO
         provide some analysis for the missing pattern:
@@ -50,68 +52,99 @@ class Imputation(object):
         self.__baseline(data, label_col_name)
 
 
-    def fit(self, data, label, strategy="greedy"):
+    def fit(self, data, label=pd.Series(), strategy="greedy"):
         """
         train imputation parameters. Now support:
         -> greedySearch
 
+        for the method that not trainable, do nothing:
+        -> interatively regression
+        -> other
+
         Parameters:
         ----------
         data: pandas dataframe
-        label: pandas series
+        label: pandas series, used for the trainable methods
         """
         data = data.copy()
-        label_col_name = "target_label" #   name for label, assume no duplicate exists in data
-        data[label_col_name] = label
+        if (not label.empty):
+            label_col_name = "target_label" #   name for label, assume no duplicate exists in data
+            data[label_col_name] = label
 
         self.best_imputation = None # store the info of trained imputation method
+
+        # start fitting
         if (strategy=="greedy"):
+            if (label.empty):
+                raise ValueError("label is nessary for greedy search")
+
             print "=========> Greedy searched imputation:"
             self.best_imputation = self.__imputationGreedySearch(data, label_col_name)
+
+        elif (strategy=="iteratively_regre"):
+            print "=========> iteratively regress method:"
+            # no operation here because this method not needs to be trained
+
+        elif(strategy=="other"):
+            print "=========> other method:"
+            # no operation here because this method not needs to be trained
         
         else:
             raise ValueError("no such strategy: {}".format(strategy))
 
         self.strategy = strategy
+        self.is_fitted = True
 
-    def transform(self, data):
+    def transform(self, data, label=pd.Series()):
         """
         precond: run fit() before
-        to complete the data, based on the learned parameters
+
+        to complete the data, based on the learned parameters, support:
+        -> greedy search
+
+        also support the untrainable methods:
+        -> iteratively regression
+        -> other
+
+        Parameters:
+        ----------
+        data: pandas dataframe
+        label: pandas series, used for the evaluation of imputation
+        
+        TODO:
+        ----------
+        1. add evaluation part for __simpleImpute()
+
         """
         data = data.copy()
         # record keys:
         keys = data.keys()
+        if (not self.is_fitted):
+            # todo: specify a NotFittedError, like in sklearn
+            raise ValueError("imputer is not fitted yet")
+
+        label_col_name = ""
+        if (not label.empty):
+            label_col_name = "target_label" #   name for label, assume no duplicate exists in data
+            data[label_col_name] = label
 
         # start complete data
         if (self.strategy=="greedy"):
             print "=========> impute using result from greedy search:"
             data_clean = self.__simpleImpute(data, self.best_imputation)
 
-        return pd.DataFrame(data=data_clean, columns=keys)
-
-
-    def complete(self, data, spec_strategy):
-        """
-        impute data only using specified strategy. No need to train (self.fit()).
-        """
-        data = data.copy()
-        # record keys:
-        keys = data.keys()
-
-        if (spec_strategy=="iteratively_regre"):
+        elif (self.strategy=="iteratively_regre"):
             print "=========> iteratively regress method:"
-            data_clean, placeholder = self.__iterativeRegress(data)
-            
-        elif(spec_strategy=="other"):
+            data_clean, placeholder = self.__iterativeRegress(data, label_col_name)
+
+        elif(self.strategy=="other"):
             print "=========> other method:"
-            data_clean = self.__iterativeRegress(data)
-        else:
-            raise ValueError("no such strategy: {}".format(strategy))
+            data_clean = self.__otherImpute(data)
 
         return pd.DataFrame(data=data_clean, columns=keys)
 
-    #====================== fit phase functinos ======================
+
+    #============================================ fit phase functinos ============================================
     def __iterativeRegress(self, data, label_col_name=""):
         '''
         init with simple imputation, then apply regression to impute iteratively
@@ -224,7 +257,7 @@ class Imputation(object):
         best_imputation = [self.imputation_strategies[i] for i in best_combo]
         return best_imputation
 
-    #====================== transform phase functinos ======================
+    #============================================ transform phase functions ============================================
 
     def __simpleImpute(self, data, strategies, verbose=False):
         """
@@ -248,9 +281,14 @@ class Imputation(object):
 
         return data_clean
 
-    def __otherImpute(self, data, label_col_name):
+    def __otherImpute(self, data, label_col_name=""):
         from fancyimpute import BiScaler, KNN, NuclearNormMinimization, SoftImpute, MICE
         from sklearn.preprocessing import scale
+
+        if (label_col_name==None or len(label_col_name)==0):
+            is_eval = False
+        else:
+            is_eval = True
 
         missing_col_id = []
         data, label = self.__df2np(data, label_col_name, missing_col_id)
@@ -264,7 +302,7 @@ class Imputation(object):
         data_clean = KNN(k=5).complete(data)
         #data_clean = MICE().complete(data)
 
-        self.__evaluation(data_clean, label)
+        if (is_eval): self.__evaluation(data_clean, label)
 
         return data_clean
 
