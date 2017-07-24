@@ -27,14 +27,14 @@ clf = LinearRegression()
 scorer = make_scorer(mean_squared_error, greater_is_better=False) # score will be * -1, if greater_is_better is set to False
 
 # STEP 3: go to use the Imputer !
-imputer = Imputation(model=clf, scorer=scorer)
 # method: greedy search
-imputer.fit(data, label, strategy="greedy")
+imputer = Imputation(model=clf, scorer=scorer, strategy="greedy")
+imputer.fit(data, label)
 data_clean = imputer.transform(data)
-print imputer.best_imputation
+# print imputer.best_imputation
 
 # method: regression
-# imputer.fit(data, label, strategy="iteratively_regre")  # in current version, not really learned from this step. only evaluation
+# imputer.fit(data, label)  # in current version, not really learned from this step. only evaluation
 # data_clean = imputer.transform(data)
 
 data_clean.to_csv("data_clean.csv", index=False)

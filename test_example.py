@@ -25,14 +25,14 @@ clf = LogisticRegression()
 scorer = make_scorer(f1_score, average="macro") # score will be * -1, if greater_is_better is set to False
 
 # STEP 3: go to use the Imputer !
-imputer = Imputation(model=clf, scorer=scorer)
+imputer = Imputation(model=clf, scorer=scorer, strategy="iteratively_regre")
 # method: greedy search
 # imputer.fit(data, label, strategy="greedy")
 # data_clean = imputer.transform(data)
 # print imputer.best_imputation
 
 # method: regression
-imputer.fit(data, strategy="iteratively_regre")
+imputer.fit(data)
 data_clean = imputer.transform(data)
 
 data_clean.to_csv("data_clean.csv", index=False)

@@ -15,6 +15,12 @@ class Imputation(object):
 
     scorer: a function
         The metrics that will be used
+        
+    strategy: string
+        the strategy the imputer will use, now support:
+            "greedy": greedy search for the best (combination) of simple impute method
+            "iteratively_regre": iteratively regress on the missing value
+            "other: other
 
     greater_is_better: boolean
         Indicate whether higher or lower the score is better. Default is True. Usually, for regression problem
@@ -28,9 +34,10 @@ class Imputation(object):
     best_imputation: trained imputation method (parameters)
     """
 
-    def __init__(self, model, scorer, greater_is_better=True, verbose=0):
+    def __init__(self, model, scorer, strategy="greedy", greater_is_better=True, verbose=0):
         self.imputation_strategies = ["mean", "max", "min", "zero"] 
         self.verbose = verbose
+        self.strategy = strategy
         self.model = model
         self.scorer = scorer
         self.is_fitted = False
@@ -52,7 +59,7 @@ class Imputation(object):
         self.__baseline(data, label_col_name)
 
 
-    def fit(self, data, label=pd.Series(), strategy="greedy"):
+    def fit(self, data, label=pd.Series()):
         """
         train imputation parameters. Now support:
         -> greedySearch
@@ -74,25 +81,24 @@ class Imputation(object):
         self.best_imputation = None # store the info of trained imputation method
 
         # start fitting
-        if (strategy=="greedy"):
+        if (self.strategy=="greedy"):
             if (label.empty):
                 raise ValueError("label is nessary for greedy search")
 
             print "=========> Greedy searched imputation:"
             self.best_imputation = self.__imputationGreedySearch(data, label_col_name)
 
-        elif (strategy=="iteratively_regre"):
+        elif (self.strategy=="iteratively_regre"):
             print "=========> iteratively regress method:"
             # no operation here because this method not needs to be trained
 
-        elif(strategy=="other"):
+        elif(self.strategy=="other"):
             print "=========> other method:"
             # no operation here because this method not needs to be trained
         
         else:
-            raise ValueError("no such strategy: {}".format(strategy))
+            raise ValueError("no such strategy: {}".format(self.strategy))
 
-        self.strategy = strategy
         self.is_fitted = True
 
     def transform(self, data, label=pd.Series()):
