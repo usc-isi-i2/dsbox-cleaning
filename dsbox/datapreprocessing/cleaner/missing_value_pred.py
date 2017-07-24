@@ -1,47 +1,6 @@
 import pandas as pd
 import numpy as np
 
-def isCategorical(column):
-    """
-    INPUT
-    column: pandas.dataframe series
-    prematrue method: to see if 95% value is in 10 category
-    if is true, will fill in the cate map that: category -> int; if not, return None
-    if the cell value is nan(missing value), ignore it, leave to the imputation later
-    """
-    if (column.dtype == int or column.dtype == float):
-        return None
-    #column = column.dropna()
-    total_len = len(column)
-    cate = dict()
-    for cell in column:
-        if (len(cate) > 10):
-            return None
-        if (cell in cate):
-            cate[cell] += 1
-        else:
-            cate[cell] = 1
-
-    sorted_value = sorted(cate.values(), reverse = True)
-    top10_ratio = sum(sorted_value[0:10])/float(total_len)
-    if (top10_ratio >= 0.95):
-        return cate2int(cate.keys())
-    else:
-        return None
-
-def cate2int(cate):
-    """
-    return a map (dict) that maps category code to integer: 1,2,3, ... (save 0 for the new value!)
-    INPUT
-    cate: is a category list
-    """
-    category_map = {}
-    ind = 1
-    for i in cate:
-        category_map[i] = ind
-        ind += 1
-    return category_map
-
 def popular_value(array):
     """
     array: 1D array
@@ -64,7 +23,7 @@ def popular_value(array):
 def myImputer(data, value="zero", verbose=0):
     """
     INPUT:
-    data: numpy array, 1*D (one column)
+    data: numpy array, matrix
     value:    string: "mean", "min", "max", "zero", "gaussian"
     """
     index = np.isnan(data)
@@ -83,6 +42,12 @@ def myImputer(data, value="zero", verbose=0):
         inputed_value = 0   # 0 is the value that never happens in our categorical map
     elif (value == "popular"):
         inputed_value = popular_value(data_drop)
+    # special type of imputed, just return after imputation
+    elif (value == "knn"):
+        data_clean = KNN(k=5).complete(data)
+        return data_clean
+    else:
+        raise ValueError("no such impute strategy: {}".format(value))
 
     data_imputed[index] = inputed_value
 
@@ -93,6 +58,9 @@ def myImputer(data, value="zero", verbose=0):
 def imputeData(data, missing_col_id, imputation_strategies, verbose):
     """
     impute the data using permutations array.
+    INPUT:
+    data: numpy array, matrix
+    value:    string: "mean", "min", "max", "zero", "gaussian"
     """
     data_clean = np.copy(data)
 
@@ -102,104 +70,37 @@ def imputeData(data, missing_col_id, imputation_strategies, verbose):
 
         data_clean[:,col_id] = myImputer(data[:,col_id], strategy)
 
+
     return data_clean
 
+def bayeImpute(data, target_col):
+    '''
+    currently, naive bayes.
+    return the imputated data, and model coefficient
+    '''
 
-#========================two learning & prediction method==============
+    from sklearn.linear_model import BayesianRidge, LinearRegression
+    from sklearn.ensemble import RandomForestRegressor
+    model = BayesianRidge()
+    # model = LinearRegression()
+    # model = RandomForestRegressor()
 
-def pred(data_clean, label, eva_model):
-    """
-    INPUT
-    data_clean: the clean dataset, missing values imputed already
-    label: the label for data_clean
-    """
-    from sklearn.model_selection import train_test_split
-    from sklearn import svm
-    from sklearn import metrics
-    from sklearn.metrics import f1_score
-    from sklearn.linear_model import LogisticRegressionCV
-    from sklearn.linear_model import LinearRegression
-    from sklearn import tree
+    original_data = np.copy(data)
 
-    X_train, X_test, y_train, y_test = train_test_split(data_clean, label, test_size=0.4, random_state=0, stratify=label)
-    # remove the nan rows
-    mask_train = np.isnan(X_train).any(axis=1)  # nan rows index
-    mask_test = np.isnan(X_test).any(axis=1)
-    num_removed_test = sum(mask_test)
-    X_train = X_train[~mask_train]
-    y_train = y_train[~mask_train]
-    X_test = X_test[~mask_test]
-    y_test = y_test[~mask_test]
+    target = data[:, target_col]
+    data = np.delete(data, obj=target_col, axis=1)  #remove the missing-value column
+    mv_mask = np.isnan(target)
+    print "number of imputated cells: {}".format(sum(np.isnan(original_data[:,target_col])))
 
-    # classifers:
-    clf_linear = svm.SVC(kernel='linear').fit(X_train, y_train)
-    clf_lg = LogisticRegressionCV(scoring="f1_macro").fit(X_train, y_train)
-    clf_tree = tree.DecisionTreeClassifier().fit(X_train, y_train)
+    x_test = data[mv_mask]
+    x_train = data[~mv_mask]
+    y_train = target[~mv_mask]
 
-    max_score = 0
+    model.fit(x_train, y_train)
+    result = model.predict(x_test)
+    original_data[mv_mask, target_col] = result #put the imputation result back to original data, following the index
 
-    if (eva_model=="linearSVM"):
-        def scorer (y_true, y_pred):
-            return f1_score(y_true, y_pred, average="macro")
+    # print "coefficient: {}".format(model.coef_)
+    return original_data, model
 
-        print scorer(y_test, clf_linear.predict(X_test))
-        # print "for linear SVM: "
-        # print f1_score(y_test, clf_linear.predict(X_test), average=None)
-        # score = f1_score(y_test, clf_linear.predict(X_test), average="macro")    #weighted average over all the classes
-        # max_score = max(score, max_score)
-        # print  score
-
-
-    if (eva_model=="logisticRegreesion"):
-        print "for LogisticRegressionCV: "
-        print f1_score(y_test, clf_lg.predict(X_test), average=None)
-        score = f1_score(y_test, clf_lg.predict(X_test), average="macro")   #weighted average over all the classes
-        max_score = max(score, max_score)
-        print score 
-    
-    if (eva_model=="decisionTree"):
-        print "for decision tree: "
-        print f1_score(y_test, clf_tree.predict(X_test), average=None)
-        score = f1_score(y_test, clf_tree.predict(X_test), average="macro")   #weighted average over all the classes
-        max_score = max(score, max_score)
-        print score 
-
-    print "===========>> max score is: {}".format(max_score)
-    if (num_removed_test > 0):
-        print "BUT !!!!!!!!there are {} data (total test size: {})that cannot be predicted!!!!!!\n".format(num_removed_test, y_test.shape[0])
-    return max_score
-
-def pred_cv(data_clean, label, eva_metrics):
-    """
-    prediction with cross validation.
-    INPUT
-    data_clean: the clean dataset, missing values imputed already
-    label: the label for data_clean
-    """
-    from sklearn import svm
-    from sklearn import metrics
-    from sklearn.linear_model import LogisticRegressionCV
-    from sklearn.linear_model import LinearRegression
-    from sklearn import tree
-    from sklearn.model_selection import cross_val_score
-    from sklearn.ensemble import RandomForestClassifier
-
-    clf_linear = svm.SVC(kernel='linear')
-    clf_lg = LogisticRegressionCV(scoring=eva_metrics)
-    clf_tree = tree.DecisionTreeClassifier()
-    max_score = 0
-
-    score = cross_val_score(clf_linear, data_clean, label, scoring=eva_metrics).mean()
-    print "for SVM linear, score is {}".format(score)
-    max_score = max(max_score, score)
-
-    score = cross_val_score(clf_lg, data_clean, label, scoring=eva_metrics).mean()
-    print "for LogisticRegression, score is {}".format(score)
-    max_score = max(max_score, score)
-
-    score = cross_val_score(clf_tree, data_clean, label, scoring=eva_metrics).mean()
-    print "for DecisionTree, score is {}".format(score)
-    max_score = max(max_score, score)
-
-    print "===========>> max weighted score is: {}".format(max_score)
-    return max_score
+        
