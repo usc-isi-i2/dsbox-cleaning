@@ -115,7 +115,7 @@ class Imputation(object):
         Parameters:
         ----------
         data: pandas dataframe
-        label: pandas series, used for the evaluation of imputation
+        label: pandas series, used for the evaluation of imputation; if not provided, no evaluation
         
         TODO:
         ----------
@@ -147,13 +147,18 @@ class Imputation(object):
             print "=========> other method:"
             data_clean = self.__otherImpute(data)
 
-        return pd.DataFrame(data=data_clean, columns=keys)
-
+        # return pd.DataFrame(data=data_clean, columns=keys)
+        return placeholder
 
     #============================================ fit phase functinos ============================================
     def __iterativeRegress(self, data, label_col_name=""):
         '''
         init with simple imputation, then apply regression to impute iteratively
+
+        Parameters:
+        ----------
+        data: pandas dataframe
+        label_col_name: string, used for the evaluation of imputation; if not provided, no evaluation
         '''
         if (label_col_name==None or len(label_col_name)==0):
             is_eval = False
@@ -163,10 +168,11 @@ class Imputation(object):
         missing_col_id = []
         data, label = self.__df2np(data, label_col_name, missing_col_id)
         next_data = data
+
         missing_col_data = data[:, missing_col_id]
         imputed_data = np.zeros([data.shape[0], len(missing_col_id)])
         imputed_data_lastIter = missing_col_data
-        # coeff_matrix = np.zeros([len(missing_col_id), data.shape[1]-1]) #coefficient vector for each missing value column
+        # coeff_matrix = np.zeros([len(missing_col_id), data.shape[1]-1]) # coefficient vector for each missing value column
         model_list = [None]*len(missing_col_id)     # store the regression model
         epoch = 30
         counter = 0
@@ -194,6 +200,7 @@ class Imputation(object):
         data[:,missing_col_id] = imputed_data_lastIter
 
         return data, model_list
+
 
     def __baseline(self, data, label_col_name):
         """
