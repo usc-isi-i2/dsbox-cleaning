@@ -16,7 +16,7 @@ if you have conda, simply do the following:
 
 ```sh
 conda-env create .
-source activate mvi
+source activate mv
 python test_example.py
 ```
 
