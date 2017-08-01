@@ -147,8 +147,8 @@ class Imputation(object):
             print "=========> other method:"
             data_clean = self.__otherImpute(data)
 
-        # return pd.DataFrame(data=data_clean, columns=keys)
-        return placeholder
+        return pd.DataFrame(data=data_clean, columns=keys)
+        # return placeholder
 
     #============================================ fit phase functinos ============================================
     def __iterativeRegress(self, data, label_col_name=""):
