@@ -7,32 +7,32 @@ def _discretize_by_width(col, num_bins, labels):
     maxvalue = col.max()
     minvalue = col.min()
     width = float((maxvalue-minvalue))/num_bins
-    bins = [minvalue + x*width for x in range(num_bins)]+[maxvalue]        
+    bins = [minvalue + x*width for x in range(num_bins)]+[maxvalue]
     if labels:
         if len(labels)!=num_bins:
             raise ValueError('Length of assigned labels not consistent with num_bins!')
         else:
             group_names = labels
     else:
-        group_names = range(num_bins)        
-    return pd.cut(col, bins,labels=group_names, include_lowest=True) 
- 
-    
+        group_names = range(num_bins)
+    return pd.cut(col, bins,labels=group_names, include_lowest=True)
+
+
 def _discretize_by_frequency(col, num_bins, labels):
     percent = 1.0/num_bins
     bins = sorted(list(set(col.quantile([x*percent for x in range(num_bins+1)]))))
     if len(bins)-1 < num_bins:
         num_bins = len(bins)-1
-        print '...Only %d bins (unbalanced) generated due to overlapping percentile boundaries.'%num_bins   
+        print('...Only %d bins (unbalanced) generated due to overlapping percentile boundaries.'%num_bins)
     if labels:
         if len(labels)!=num_bins:
             raise ValueError('Length of assigned labels not consistent with num_bins!')
         else:
             group_names = labels
     else:
-        group_names = range(num_bins)        
+        group_names = range(num_bins)
     return pd.cut(col, bins,labels=group_names, include_lowest=True)
-    
+
 
 def _discretize_by_kmeans(col, num_bins, random_state):
     nan_idx = col[col.isnull()].index
@@ -44,7 +44,7 @@ def _discretize_by_kmeans(col, num_bins, random_state):
         for idx in nan_idx:
             group = np.insert(group,idx,np.nan)
     return pd.Series(group)
-    
+
 
 def _discretize_by_gmm(col, num_bins, random_state):
     nan_idx = col[col.isnull()].index
@@ -64,22 +64,19 @@ def discretize(col, num_bins=10, by='width', labels = None, random_state=0):
         raise ValueError('Empty column!')
     if by == 'width':
         return _discretize_by_width(col, num_bins, labels)
-    
+
     elif by == 'frequency':
         return _discretize_by_frequency(col, num_bins, labels)
-    
+
     elif by == 'kmeans':
         if labels:
-            print '...Applying kmeans clustering, so user-defined labels are ignored.'        
+            print('...Applying kmeans clustering, so user-defined labels are ignored.')
         return _discretize_by_kmeans(col, num_bins, random_state)
-    
+
     elif by == 'gmm':
         if labels:
-            print '...Applying gmm clustering, so user-defined labels are ignored.'
+            print('...Applying gmm clustering, so user-defined labels are ignored.')
         return _discretize_by_gmm(col, num_bins, random_state)
-        
+
     else:
         raise ValueError('...Invalid by (binning method) parameter %s'%by)
-    
-   
-   

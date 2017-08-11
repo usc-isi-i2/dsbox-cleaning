@@ -3,7 +3,7 @@ import pandas as pd
 from dsbox.datapreprocessing.profiler import profile_data
 
 def isCategorical(col):
-    """ 
+    """
     hardcoded rule for identifying (integer) categorical column
     """
     return col.value_counts().head(10).sum() / float(col.count()) > .95
@@ -40,7 +40,7 @@ def onehot_encode(col, exist_nan, limited=True):
         top10 = col.value_counts().head(10).index
         _col = col.apply(lambda x: x if x in top10 else 'others')
         return pd.get_dummies(_col, prefix=col.name, dummy_na=exist_nan)
-    else:    
+    else:
         return pd.get_dummies(col,prefix=col.name, dummy_na=exist_nan)
 
 
@@ -61,7 +61,7 @@ def encode(data_path,label=None):
     ## data frame as input ##
     else:
         data = data_path
-    
+
     # if label is in the dataset, specify label=label_name
     # process seperately
     if label:
@@ -70,23 +70,23 @@ def encode(data_path,label=None):
 
     for column_name in data:
         col = data[column_name].copy()
-        
+
         exist_nan = (col.isnull().sum() > 0)
 
         # empty column (all missing/NaN)
         if col.count() == 0:
-            print '...Delete *'+str(column_name)+"* column: empty column."
+            print('...Delete *'+str(column_name)+"* column: empty column.")
             del_col.append(col.name)
 
         # dtype = integer
         elif col.dtype.kind in np.typecodes['AllInteger']+'u':
             if isCategorical(col):
-                print "...Delete *"+str(column_name)+"* column: integer category." 
+                print("...Delete *"+str(column_name)+"* column: integer category.")
                 del_col.append(col.name)
-                print "...Insert columns to onehot encode *"+str(column_name)+"*."
+                print("...Insert columns to onehot encode *"+str(column_name)+"*.")
                 new_col.append(onehot_encode(col, exist_nan))
 
-        # dtype = float from csv file 
+        # dtype = float from csv file
         # (check if it's int column with missing value)
         elif col.dtype.kind == 'f':
             if not isDF:
@@ -94,28 +94,28 @@ def encode(data_path,label=None):
                 pf = profile_data(pd.DataFrame(col))[column_name]['numeric_stats']
                 if ('integer' in pf and 'decimal' not in pf):
                     if isCategorical(col):
-                        print '...Delete *'+str(column_name)+'* column: integer category.'
+                        print('...Delete *'+str(column_name)+'* column: integer category.')
                         del_col.append(col.name)
-                        print "...Insert columns to onehot encode *"+str(column_name)+"*."
+                        print("...Insert columns to onehot encode *"+str(column_name)+"*.")
                         new_col.append(onehot_encode(col,exist_nan))
-        
+
         # dtype = category
         elif col.dtype.name == 'category':
-            print '...Delete *'+column_name+'* column: category dtype.'
+            print('...Delete *'+column_name+'* column: category dtype.')
             del_col.append(col.name)
-            print "...Insert columns to onehot encode *"+str(column_name)+"*."
+            print("...Insert columns to onehot encode *"+str(column_name)+"*.")
             new_col.append(onehot_encode(col,exist_nan))
 
         # for other dtypes
         else:
             #col = col.astype(str)
             if isCategorical(col):
-                print '...Delete *'+str(column_name)+'* column: object/other category.'
+                print('...Delete *'+str(column_name)+'* column: object/other category.')
                 del_col.append(col.name)
-                print "...Insert columns to onehot encode *"+str(column_name)+"*."
+                print("...Insert columns to onehot encode *"+str(column_name)+"*.")
                 new_col.append(onehot_encode(col,exist_nan))
             else:
-                print '...Convert *'+str(column_name)+'* column from text to integer codes.'
+                print('...Convert *'+str(column_name)+'* column from text to integer codes.')
                 del_col.append(col.name)
                 new_col.append(text2int(col))
 
@@ -131,6 +131,6 @@ def encode(data_path,label=None):
     rest = data.drop(del_col, axis=1)
 
     # insert columns from onehot encoding and text2int codes
-    result = pd.concat([rest]+new_col, axis=1)  
+    result = pd.concat([rest]+new_col, axis=1)
 
     return result

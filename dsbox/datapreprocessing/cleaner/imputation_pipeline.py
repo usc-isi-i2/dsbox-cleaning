@@ -55,7 +55,7 @@ class Imputation(object):
         data[label_col_name] = label
 
          # start evaluation
-        print "=========> Baseline:"
+        print("=========> Baseline:")
         self.__baseline(data, label_col_name)
 
 
@@ -85,15 +85,15 @@ class Imputation(object):
             if (label.empty):
                 raise ValueError("label is nessary for greedy search")
 
-            print "=========> Greedy searched imputation:"
+            print("=========> Greedy searched imputation:")
             self.best_imputation = self.__imputationGreedySearch(data, label_col_name)
 
         elif (self.strategy=="iteratively_regre"):
-            print "=========> iteratively regress method:"
+            print("=========> iteratively regress method:")
             # no operation here because this method not needs to be trained
 
         elif(self.strategy=="other"):
-            print "=========> other method:"
+            print("=========> other method:")
             # no operation here because this method not needs to be trained
 
         else:
@@ -137,15 +137,15 @@ class Imputation(object):
 
         # start complete data
         if (self.strategy=="greedy"):
-            print "=========> impute using result from greedy search:"
+            print("=========> impute using result from greedy search:")
             data_clean = self.__simpleImpute(data, self.best_imputation)
 
         elif (self.strategy=="iteratively_regre"):
-            print "=========> iteratively regress method:"
+            print("=========> iteratively regress method:")
             data_clean, placeholder = self.__iterativeRegress(data, label_col_name)
 
         elif(self.strategy=="other"):
-            print "=========> other method:"
+            print("=========> other method:")
             data_clean = self.__otherImpute(data)
 
         return pd.DataFrame(data=data_clean, columns=keys)
@@ -191,7 +191,7 @@ class Imputation(object):
 
             if (counter > 0):
                 distance = np.square(imputed_data - imputed_data_lastIter).sum()
-                print "changed distance: {}".format(distance)
+                print("changed distance: {}".format(distance))
             imputed_data_lastIter = np.copy(imputed_data)
             counter += 1
 
@@ -211,12 +211,12 @@ class Imputation(object):
         data_dropCol = data_dropCol.drop(label_col_name,axis=1).values
 
         #========================STEP 2: pred==============
-        print "==============result for baseline: drop rows============"
+        print("==============result for baseline: drop rows============")
         self.__evaluation(data, label)
-        print "==============result for baseline: drop columns============"
+        print("==============result for baseline: drop columns============")
 
         self.__evaluation(data_dropCol, label_dropCol)
-        print "========================================================"
+        print("========================================================")
 
     def __imputationGreedySearch(self, data, label_col_name):
         """
@@ -247,7 +247,7 @@ class Imputation(object):
                     imputation_list = [self.imputation_strategies[x] for x in permutations]
 
                     data_clean = mvp.imputeData(data, missing_col_id, imputation_list, self.verbose)
-                    print "for the missing value imputation combination: {} ".format(permutations)
+                    print("for the missing value imputation combination: {} ".format(permutations))
                     score = self.__evaluation(data_clean, label)
                     if (score > max_score):
                         max_score = score
@@ -259,10 +259,10 @@ class Imputation(object):
 
             iteration -= 1
 
-        print "max score is {}, min score is {}\n".format(max_score, min_score)
-        print "and the best score is given by the imputation combination: "
+        print("max score is {}, min score is {}\n".format(max_score, min_score))
+        print("and the best score is given by the imputation combination: ")
         for i in range(len(best_combo)):
-            print self.imputation_strategies[best_combo[i]] + " for the column {}".format(col_names[missing_col_id[i]])
+            print(self.imputation_strategies[best_combo[i]] + " for the column {}".format(col_names[missing_col_id[i]]))
 
         best_imputation = [self.imputation_strategies[i] for i in best_combo]
         return best_imputation
@@ -336,7 +336,7 @@ class Imputation(object):
                 missing_col_name.append(col_name)
             counter += 1
 
-        print "missing column name: {}".format(missing_col_name)
+        print("missing column name: {}".format(missing_col_name))
 
         # 2. convert the dataframe to np array
         label = None
@@ -363,7 +363,7 @@ class Imputation(object):
         try:
             X_train, X_test, y_train, y_test = train_test_split(data_clean, label, test_size=0.4, random_state=0, stratify=label)
         except:
-            print "cannot stratified sample, try random sample: "
+            print("cannot stratified sample, try random sample: ")
             X_train, X_test, y_train, y_test = train_test_split(data_clean, label, test_size=0.4, random_state=42)
 
         # remove the nan rows
@@ -378,9 +378,9 @@ class Imputation(object):
 
         model = self.model.fit(X_train, y_train)
         score = self.scorer(model, X_test, y_test)  # refer to sklearn scorer: score will be * -1 with the real score value
-        print "score is: {}".format(score)
+        print("score is: {}".format(score))
 
-        print "===========>> max score is: {}".format(score)
+        print("===========>> max score is: {}".format(score))
         if (num_removed_test > 0):
-            print "BUT !!!!!!!!there are {} data (total test size: {})that cannot be predicted!!!!!!\n".format(num_removed_test, mask_test.shape[0])
+            print("BUT !!!!!!!!there are {} data (total test size: {})that cannot be predicted!!!!!!\n".format(num_removed_test, mask_test.shape[0]))
         return score

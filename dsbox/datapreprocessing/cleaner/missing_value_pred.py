@@ -51,7 +51,7 @@ def myImputer(data, value="zero", verbose=0):
 
     data_imputed[index] = inputed_value
 
-    if verbose: print "imputed missing value: {}".format(inputed_value)
+    if verbose: print("imputed missing value: {}".format(inputed_value))
     return data_imputed
 
 
@@ -90,7 +90,7 @@ def bayeImpute(data, target_col):
     target = data[:, target_col]
     data = np.delete(data, obj=target_col, axis=1)  #remove the missing-value column
     mv_mask = np.isnan(target)
-    print "number of imputated cells: {}".format(sum(np.isnan(original_data[:,target_col])))
+    print("number of imputated cells: {}".format(sum(np.isnan(original_data[:,target_col]))))
 
     x_test = data[mv_mask]
     x_train = data[~mv_mask]
@@ -100,7 +100,5 @@ def bayeImpute(data, target_col):
     result = model.predict(x_test)
     original_data[mv_mask, target_col] = result #put the imputation result back to original data, following the index
 
-    # print "coefficient: {}".format(model.coef_)
+    # print("coefficient: {}".format(model.coef_))
     return original_data, model
-
-        
