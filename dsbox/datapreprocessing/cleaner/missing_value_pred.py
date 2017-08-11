@@ -44,6 +44,7 @@ def myImputer(data, value="zero", verbose=0):
         inputed_value = popular_value(data_drop)
     # special type of imputed, just return after imputation
     elif (value == "knn"):
+        from fancyimpute import KNN
         data_clean = KNN(k=5).complete(data)
         return data_clean
     else:
