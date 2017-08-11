@@ -15,7 +15,7 @@ class Imputation(object):
 
     scorer: a function
         The metrics that will be used
-        
+
     strategy: string
         the strategy the imputer will use, now support:
             "greedy": greedy search for the best (combination) of simple impute method
@@ -35,7 +35,7 @@ class Imputation(object):
     """
 
     def __init__(self, model, scorer, strategy="greedy", greater_is_better=True, verbose=0):
-        self.imputation_strategies = ["mean", "max", "min", "zero"] 
+        self.imputation_strategies = ["mean", "max", "min", "zero"]
         self.verbose = verbose
         self.strategy = strategy
         self.model = model
@@ -50,7 +50,7 @@ class Imputation(object):
         provide some analysis for the missing pattern:
         is missing/not related to other column ?
         """
-        data = data.copy()  
+        data = data.copy()
         label_col_name = "target_label" #   name for label, assume no duplicate exists in data
         data[label_col_name] = label
 
@@ -95,11 +95,12 @@ class Imputation(object):
         elif(self.strategy=="other"):
             print "=========> other method:"
             # no operation here because this method not needs to be trained
-        
+
         else:
             raise ValueError("no such strategy: {}".format(self.strategy))
 
         self.is_fitted = True
+        return self
 
     def transform(self, data, label=pd.Series()):
         """
@@ -116,7 +117,7 @@ class Imputation(object):
         ----------
         data: pandas dataframe
         label: pandas series, used for the evaluation of imputation
-        
+
         TODO:
         ----------
         1. add evaluation part for __simpleImpute()
@@ -149,6 +150,9 @@ class Imputation(object):
 
         return pd.DataFrame(data=data_clean, columns=keys)
 
+    def fit_transform(self, X, y=pd.Series()):
+        return self.fit(X,y).transform(X)
+
 
     #============================================ fit phase functinos ============================================
     def __iterativeRegress(self, data, label_col_name=""):
@@ -159,7 +163,7 @@ class Imputation(object):
             is_eval = False
         else:
             is_eval = True
-        
+
         missing_col_id = []
         data, label = self.__df2np(data, label_col_name, missing_col_id)
         next_data = data
@@ -182,7 +186,7 @@ class Imputation(object):
                 next_data[:,target_col] = data_clean[:,target_col]    # update bayesian imputed column
                 imputed_data[:,i] = data_clean[:,target_col]    # add the imputed data
 
-                if (is_eval): 
+                if (is_eval):
                     self.__evaluation(data_clean, label)
 
             if (counter > 0):
@@ -217,19 +221,19 @@ class Imputation(object):
     def __imputationGreedySearch(self, data, label_col_name):
         """
         running greedy search for imputation combinations
-        """        
-        
+        """
+
         col_names = data.keys()
         # 1. convert to np array and get missing value column id
         missing_col_id = []
         data, label = self.__df2np(data, label_col_name, missing_col_id)
-        
+
         # init for the permutation
         permutations = [0] * len(missing_col_id)   # length equal with the missing_col_id; value represents the id for imputation_strategies
         pos = len(permutations) - 1
         min_score = float("inf")
         max_score = -float("inf")
-        max_strategy_id = 0  
+        max_strategy_id = 0
         best_combo = [0] * len(missing_col_id)  #init for best combo
 
         # greedy search for the best permutation
@@ -313,16 +317,16 @@ class Imputation(object):
         return data_clean
 
 
-    
+
     #====================== helper functions ======================
 
     def __df2np(self, data, label_col_name, missing_col_id=[]):
         """
-        helper function: convert dataframe to np array; 
+        helper function: convert dataframe to np array;
             in the meanwhile, provide the id for missing column
         """
-        counter = 0    
-        
+        counter = 0
+
         # 1. get the id for missing value column
         missing_col_name = []
         for col_name in data:
@@ -344,7 +348,7 @@ class Imputation(object):
 
         return data, label
 
-    
+
 
     def __evaluation(self, data_clean, label):
         """
@@ -354,16 +358,16 @@ class Imputation(object):
         ----------
         data_clean: the clean dataset, missing values imputed already
         label: the label for data_clean
-        """ 
+        """
         from sklearn.model_selection import train_test_split
         try:
             X_train, X_test, y_train, y_test = train_test_split(data_clean, label, test_size=0.4, random_state=0, stratify=label)
         except:
             print "cannot stratified sample, try random sample: "
             X_train, X_test, y_train, y_test = train_test_split(data_clean, label, test_size=0.4, random_state=42)
-        
+
         # remove the nan rows
-        
+
         mask_train = np.isnan(X_train).any(axis=1)  # nan rows index
         mask_test = np.isnan(X_test).any(axis=1)
         num_removed_test = sum(mask_test)
