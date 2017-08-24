@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-
 import missing_value_pred as mvp
 
 
@@ -14,7 +13,7 @@ class Imputation(object):
         The machine learning model that will be used to evaluate the imputation strategies
 
     scorer: a function
-        The metrics that will be used
+        The metrics that will be used. 
         
     strategy: string
         the strategy the imputer will use, now support:
@@ -32,6 +31,7 @@ class Imputation(object):
     Attributes:
     ----------
     best_imputation: trained imputation method (parameters)
+
     """
 
     def __init__(self, model, scorer, strategy="greedy", greater_is_better=True, verbose=0):
@@ -149,6 +149,7 @@ class Imputation(object):
 
         return pd.DataFrame(data=data_clean, columns=keys)
         # return placeholder
+
 
     #============================================ fit phase functinos ============================================
     def __iterativeRegress(self, data, label_col_name=""):
@@ -286,9 +287,11 @@ class Imputation(object):
         missing_col_id = []
         data, label = self.__df2np(data, "", missing_col_id) # no need for label
         if (len(missing_col_id) != len(strategies)):
-            raise ValueError("Expected {0} number of permutations, "
-                             " got '{1}' ".format(len(missing_col_id),
-                                                        len(strategies)))
+            print "Warnning:Expected {0} number of permutations, got '{1}' ".format(len(missing_col_id),len(strategies))
+            print "will use all 'mean' strategy for the undeclared column"
+            strategies = ["mean"] * len(missing_col_id)
+
+
         # 2. impute data
         data_clean = mvp.imputeData(data, missing_col_id, strategies, verbose)
 
@@ -311,9 +314,9 @@ class Imputation(object):
         # data_mean = scale(data_mean)
         # data_mean[mask] = np.nan
 
-        # data_clean = KNN(k=5, normalizer=BiScaler).complete(data)
-        data_clean = KNN(k=5).complete(data)
-        #data_clean = MICE().complete(data)
+        data_clean = KNN(k=5, normalizer=BiScaler()).complete(data)
+        # data_clean = KNN(k=5).complete(data)
+        # data_clean = MICE().complete(data)
 
         if (is_eval): self.__evaluation(data_clean, label)
 

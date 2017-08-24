@@ -70,7 +70,6 @@ def imputeData(data, missing_col_id, imputation_strategies, verbose):
 
         data_clean[:,col_id] = myImputer(data[:,col_id], strategy)
 
-
     return data_clean
 
 def bayeImpute(data, target_col):
@@ -101,6 +100,4 @@ def bayeImpute(data, target_col):
     original_data[mv_mask, target_col] = result #put the imputation result back to original data, following the index
 
     # print "coefficient: {}".format(model.coef_)
-    return original_data, model
-
-        
+    return original_data, model      

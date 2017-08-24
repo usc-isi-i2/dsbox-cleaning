@@ -81,5 +81,3 @@ def discretize(col, num_bins=10, by='width', labels = None, random_state=0):
     else:
         raise ValueError('...Invalid by (binning method) parameter %s'%by)
     
-   
-   
