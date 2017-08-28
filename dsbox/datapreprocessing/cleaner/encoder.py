@@ -2,9 +2,9 @@ import numpy as np
 import pandas as pd
 from dsbox.datapreprocessing.profiler import profile_data
 
-def isCategorical(col):
+def isCat_95in10(col):
     """
-    hardcoded rule for identifying (integer) categorical column
+    hardcoded rule for identifying (integer/string) categorical column
     """
     return col.value_counts().head(10).sum() / float(col.count()) > .95
 
@@ -16,6 +16,7 @@ def text2int(col):
     return pd.DataFrame(col.astype('category').cat.codes,columns=[col.name])
 
 
+## not used - would remove later
 def onehot_encode(col, exist_nan, limited=True):
     """
     convert specified column into multiple columns with 0/1 indicators
@@ -44,6 +45,7 @@ def onehot_encode(col, exist_nan, limited=True):
         return pd.get_dummies(col,prefix=col.name, dummy_na=exist_nan)
 
 
+## not used - would remove later
 def encode(data_path,label=None):
     """
     take pandas dataframe or raw csv file as input.
@@ -134,3 +136,177 @@ def encode(data_path,label=None):
     result = pd.concat([rest]+new_col, axis=1)
 
     return result
+
+
+def column_features(col,n_limit):
+    """
+    """
+    exist_nan = (col.isnull().sum() > 0)
+
+    if col.nunique() == 1:
+        return col.name, list(col.unique())
+    
+    elif n_limit and col.nunique() > n_limit:
+        topn = col.value_counts().head(n_limit).index
+        if exist_nan:
+            return col.name, list(topn)+['other_', 'nan']
+        else:
+            return col.name, list(topn)+['other_']
+
+    else:
+        if exist_nan:
+            return col.name, list(col.unique())+['nan']
+        else:
+            return col.name, list(col.unique())
+
+
+def process(col, categorical_features, n_limit):
+    """
+    """
+    if categorical_features == '95in10':
+        
+        # if empty column (all missing/NaN)
+        if col.count() == 0:
+            print 'Warning:',col.name,'is an empty column.'
+            print 'The encoder will just keep it.'
+            return
+            
+        # dtype = integer
+        elif col.dtype.kind in np.typecodes['AllInteger']+'u':
+            if isCat_95in10(col):
+                #print(col.name,': integer category column')
+                return column_features(col, n_limit)
+        
+        elif col.dtype.name == 'category':
+            #print(col.name, ': category column')
+            return column_features(col, n_limit)
+
+        else:
+            if isCat_95in10(col):
+                #print(col.name, ':object/other category column')
+                return column_features(col, n_limit)
+
+        return 
+
+class Encoder(object):
+    """
+    """
+    def __repr__(self):
+        return "%s(%r)" % (self.__class__, self.__dict__)
+
+    def __init__(self, categorical_features='95in10', n_limit=10, text2int=False):
+        self.label = None
+        self.categorical_features = categorical_features
+        self.text2int = text2int
+        self.table = None
+        self.n_limit = n_limit
+        self.columns = None
+
+    def fit(self, data, label=None):
+        """
+        """
+        ## csv as input, otherwise data frame as input ##
+        if not isinstance(data, pd.DataFrame):
+            data = pd.read_csv(data)
+        
+        data_copy = data.copy()
+        
+        if label:
+            self.label = label
+            data_copy = data_copy.drop(label,axis=1)
+        
+        self.columns = set(data_copy.columns)
+
+        if self.categorical_features == '95in10':
+            idict = {}
+            for column_name in data_copy:
+                col = data_copy[column_name]
+                p = process(col, self.categorical_features, self.n_limit)
+                if p:
+                    idict[p[0]] = p[1]
+            self.table = idict
+        return self
+
+    def transform(self, data, label=None):
+        """
+        """
+        ## csv as input, otherwise data frame as input ##
+        if not isinstance(data, pd.DataFrame):
+            data = pd.read_csv(data)
+        
+        data_copy = data.copy()
+
+        if label:
+            data_copy.drop(label,axis=1,inplace=True)
+        
+        if set(data_copy.columns) != self.columns:
+            raise ValueError('Columns(features) fed at transform() differ from fitted data.')
+        
+        data_enc = data_copy[self.table.keys()]
+        data_else = data_copy.drop(self.table.keys(),axis=1)
+
+        res = []
+        for column_name in data_enc:
+            col = data_enc[column_name]
+            exist_nan = (col.isnull().sum() > 0)
+            uniq_check = (len(self.table[col.name])==1)
+            if uniq_check:
+            #    exist_nan = False
+                check_value = self.table[col.name][0]
+            #else:
+            #   exist_nan = exist_nan or 'nan' in self.table[col.name]
+            
+            if exist_nan and 'nan' not in self.table[col.name]:
+               # print('Warning: There is no NaN value in', col.name, 'column in fitted
+               #         data. However, there are NaN in the transformed data. You should
+               #         rerun fit() specifying "has_nan" for the column(s). Currently the
+               #         transformed result may be different for different parts(e.g.
+               #         testData, trainData). Try exam() to pre-decide if nan column is
+               #         needed, or you can simply feed the other part(testData) to fit()')
+                
+                msg = ('Warning: There is no NaN value in '+col.name+
+                ' column in fitted data. However, there is NaN in the transformed '+ 
+                'data. If you want to encode/align both this and fitted data, '+ 
+                'please run(re-run) transform(fitted data) to have fitted data '+ 
+                'in format with NaN column.')
+                self.table[col.name].append('nan')
+            
+            exist_nan = exist_nan or 'nan' in self.table[col.name]
+
+            chg_v = lambda x: 'other_' if (x and x not in self.table[col.name]) else x
+            col = col.apply(chg_v)
+            encoded = pd.get_dummies(col, dummy_na=exist_nan, prefix=col.name)
+
+            if col.name+'_other_' in encoded.columns and 'other_' not in self.table[col.name]:
+                msg = ('Warning: There is no other_ value in '+col.name+
+                ' column in fitted data. However, there is other_ in the '+ 
+                'transformed data, If you want to encode/align both this '+ 
+                'and fitted data, please run(re-run) transforn(fitted data) '+
+                'to have fitted data in format with other_ column.')
+                print msg
+                self.table[col.name].append('other_')
+            
+            missed = (["%s_%s"%(col.name,str(i)) for i in self.table[col.name] if 
+                    "%s_%s"%(col.name,str(i)) not in list(encoded.columns)])
+            for m in missed:
+                encoded[m] = 0
+            
+            if uniq_check:
+                old = col.name+"_"+check_value
+                new = col.name+"_nan"
+                encoded.rename(columns={old:new}, inplace=True)
+                encoded[new] = encoded[new].apply(lambda x: abs(1-x))
+
+            res.append(encoded)
+
+        res.append(data_else)
+        result = pd.concat(res, axis=1)
+        return result
+
+
+            
+
+
+
+
+
