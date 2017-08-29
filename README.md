@@ -74,38 +74,50 @@ data_clean.to_csv("data_clean.csv", index=False)
 4. other ([fancyimpute](https://github.com/hammerlab/fancyimpute))
 
 ## One-hot encoder
-The encoder takes csv file or pandas DataFrame as input, then one-hot encode columns which are considered categorical. (currently:
-take a column as category if:
+The encoder takes csv file or pandas DataFrame as input, then one-hot encode columns which are considered categorical.(specifying rules or selected columns) 
+
+```
+class Encoder(categorical_features='95in10', n_limit=10, text2int=False)
+```
+
+For categorical_features = '95in10', it takes a column as category if:
 * its dtype is not float and
 * 95% of its data fall in 10 values.
-* For the rest values (not top 10) with low frequency, put into one column "_others"
+* For the rest values (not top 10) with low frequency, put into one column "others_"
 
 Note, currently: 
-* For nonnumeric columns which don't fall into categories, they are converted into integer codes (0,1,2...), just as a temporary expedient.
-* For column which has single unique value with some cells missing, the encoder only
+* For column which has single unique value with some cells missing (in fitted  data), the encoder only
   convert the original column into an indicator column "_nan" to tell if missing.
-* For column which has two unique values and no cells missing, the encoder only convert
-  the original column into binary (0/1) values.
+* ~~For column which has two unique values and no cells missing, the encoder only convert
+  the original column into binary (0/1) values.~~
 
 ### Usage:
 ```python
-from dsbox.datapreprocessing.cleaner import encoder
-# csv file as input: 
-result = encoder.encode('yourDataset.csv')
+from dsbox.datapreprocessing.cleaner import Encoder
 
-# DataFrame as input:
-data = pd.read_csv('yourDataset.csv')
-result = encoder.encode(data)
+# EXAMPLE 1
+enc = Encoder()
+data = 'yourDataset.csv'
+enc.fit(data)
+result = enc.transform(data)
 
-# if label is given in the dataset
-result = encoder.encode(data, label='name_of_label_column')
+# EXAMPLE 2
+# demand that Encoder convert non-categorical text to integers
+enc = Encoder(text2int=True)
+trainData = pd.read_csv('trainData.csv')
+testData = pd.read_csv('testData.csv')
 
+# if label is in the data set
+enc.fit(trainData,label='yourLabel')
+
+result_train = enc.transform(trainData, label='yourLabel')
+result_test = enc.transform(testData, label='yourLabel')
 ```
 
 ### TODO:
-1. Deal with ID-like columns: identify (also let user decide?) and delete ? 
-2. Find better way to distinguish categorical columns.
-3. More functionality and more flexible implementation for user to config prefered setting.
+1. Find better way to distinguish categorical columns - by statistics?
+2. More functionality and more flexible implementation for user to config prefered setting.
+3. Deal with ID-like columns: identify (also let user decide?) and delete ? 
 
 
 ## Discretizer
@@ -135,3 +147,6 @@ data["column_name"] = result
 
 ### TODO:
 - See if a better k, number of bins to choose can be found automatically. e.g. num_bins='auto'.
+
+
+```

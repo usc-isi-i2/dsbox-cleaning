@@ -192,7 +192,7 @@ class Encoder(object):
     """
     """
     def __repr__(self):
-        return "%s(%r)" % (self.__class__, self.__dict__)
+        return "%s(%r)" % ('Encoder', self.__dict__)
 
     def __init__(self, categorical_features='95in10', n_limit=10, text2int=False):
         self.label = None
@@ -213,7 +213,7 @@ class Encoder(object):
         
         if label:
             self.label = label
-            data_copy = data_copy.drop(label,axis=1)
+            data_copy.drop(label,axis=1,inplace=True)
         
         self.columns = set(data_copy.columns)
 
@@ -235,15 +235,19 @@ class Encoder(object):
             data = pd.read_csv(data)
         
         data_copy = data.copy()
+        data_enc = data_copy[self.table.keys()]
+        data_else = data_copy.drop(self.table.keys(),axis=1)
 
         if label:
-            data_copy.drop(label,axis=1,inplace=True)
-        
-        if set(data_copy.columns) != self.columns:
+            set_columns = set(data_copy.drop(label,axis=1).columns)
+        else:
+            set_columns = set(data_copy.columns)
+
+        if set_columns != self.columns:
             raise ValueError('Columns(features) fed at transform() differ from fitted data.')
         
         data_enc = data_copy[self.table.keys()]
-        data_else = data_copy.drop(self.table.keys(),axis=1)
+        data_else = data.drop(self.table.keys(),axis=1)
 
         res = []
         for column_name in data_enc:
@@ -251,10 +255,7 @@ class Encoder(object):
             exist_nan = (col.isnull().sum() > 0)
             uniq_check = (len(self.table[col.name])==1)
             if uniq_check:
-            #    exist_nan = False
                 check_value = self.table[col.name][0]
-            #else:
-            #   exist_nan = exist_nan or 'nan' in self.table[col.name]
             
             if exist_nan and 'nan' not in self.table[col.name]:
                # print('Warning: There is no NaN value in', col.name, 'column in fitted
@@ -298,7 +299,12 @@ class Encoder(object):
                 encoded[new] = encoded[new].apply(lambda x: abs(1-x))
 
             res.append(encoded)
-
+        
+        if self.text2int:
+            for column_name in data_else:
+                if data_else[column_name].dtype.kind not in np.typecodes['AllInteger']+'uf':
+                    data_else[column_name] = text2int(col)
+        
         res.append(data_else)
         result = pd.concat(res, axis=1)
         return result
