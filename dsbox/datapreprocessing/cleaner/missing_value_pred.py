@@ -96,6 +96,13 @@ def bayeImpute(data, target_col):
     x_test = data[mv_mask]
     x_train = data[~mv_mask]
     y_train = target[~mv_mask]
+    # check if valid to regression: wether only one value exist in target. 
+    # If happen, use default "mean" method (which is all same)
+    is_other_value = False in (y_train == y_train[0])
+    if (not is_other_value):
+        model = "mean"
+        original_data[mv_mask, target_col] = y_train[0] * len(mv_mask)
+        return original_data, model 
 
     model.fit(x_train, y_train)
     result = model.predict(x_test)

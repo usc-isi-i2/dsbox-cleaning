@@ -32,6 +32,8 @@ class Imputation(object):
     Attributes:
     ----------
     best_imputation: trained imputation method (parameters)
+        for iteratively_regre method: could be sklearn regression model, or "mean" (which means the regression failed)
+    
     """
 
     def __init__(self, model, scorer, strategy="greedy", greater_is_better=True, verbose=0):
