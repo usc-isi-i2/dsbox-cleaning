@@ -31,6 +31,7 @@ class Imputation(object):
     Attributes:
     ----------
     best_imputation: trained imputation method (parameters)
+        for iteratively_regre method: could be sklearn regression model, or "mean" (which means the regression failed)
 
     """
 
@@ -314,9 +315,9 @@ class Imputation(object):
         # data_mean = scale(data_mean)
         # data_mean[mask] = np.nan
 
-        data_clean = KNN(k=5, normalizer=BiScaler()).complete(data)
+        # data_clean = KNN(k=5, normalizer=BiScaler()).complete(data)
         # data_clean = KNN(k=5).complete(data)
-        # data_clean = MICE().complete(data)
+        data_clean = MICE().complete(data)
 
         if (is_eval): self.__evaluation(data_clean, label)
 
