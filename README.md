@@ -80,16 +80,14 @@ The encoder takes csv file or pandas DataFrame as input, then one-hot encode col
 class Encoder(categorical_features='95in10', n_limit=10, text2int=False)
 ```
 
-For categorical_features = '95in10', it takes a column as category if:
+For **categorical_features = '95in10'**, it takes a column as category if:
 * its dtype is not float and
 * 95% of its data fall in 10 values.
-* For the rest values (not top 10) with low frequency, put into one column "others_"
+* For the rest values (not top 10) with low frequency, put into one column _[colname]\_other\__
 
-Note, currently: 
-* For column which has single unique value with some cells missing (in fitted  data), the encoder only
-  convert the original column into an indicator column "_nan" to tell if missing.
-* ~~For column which has two unique values and no cells missing, the encoder only convert
-  the original column into binary (0/1) values.~~
+Note: 
+* For one-hot encoded columns, in the output there would always be a _[colname]\_other__ column for values not appear in fitted data and values with fewer occurrence (when there are more than **n_limit** distinct values).
+
 
 ### Usage:
 ```python
@@ -103,7 +101,8 @@ result = enc.transform(data)
 
 # EXAMPLE 2
 # demand that Encoder convert non-categorical text to integers
-enc = Encoder(text2int=True)
+# set no limit to maximum number of distinct values to one-hot encode
+enc = Encoder(text2int=True,n_limit=None)
 trainData = pd.read_csv('trainData.csv')
 testData = pd.read_csv('testData.csv')
 
