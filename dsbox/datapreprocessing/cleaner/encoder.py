@@ -51,7 +51,7 @@ class Encoder(object):
         topn = col.dropna().unique()
         if n_limit:
             if col.nunique() > n_limit:
-	        topn = col.value_counts().head(n_limit).index
+                topn = col.value_counts().head(n_limit).index
         return col.name, list(topn)+['other_']
     
                 
@@ -60,25 +60,25 @@ class Encoder(object):
         if categorical_features == '95in10':		
 	    
             # if empty column (all missing/NaN)
-	    if col.count() == 0:
-		print('Warning:',col.name,'is an empty column.')
-		print('The encoder will discard it.')
-		self.empty.append(col.name)
+            if col.count() == 0:
+                print('Warning:',col.name,'is an empty column.')
+                print('The encoder will discard it.')
+                self.empty.append(col.name)
                 return
 				
 	    # if dtype = integer
-	    elif col.dtype.kind in np.typecodes['AllInteger']+'u':
-		if isCat_95in10(col):
-		    return self.__column_features(col, n_limit)
+            elif col.dtype.kind in np.typecodes['AllInteger']+'u':
+                if isCat_95in10(col):
+                    return self.__column_features(col, n_limit)
 	    
             # if dtype = category	
-	    elif col.dtype.name == 'category':
-		return self.__column_features(col, n_limit)
+            elif col.dtype.name == 'category':
+                return self.__column_features(col, n_limit)
             
             # for the rest other than float
-	    elif col.dtype.name not in np.typecodes['AllFloat']:
-		if isCat_95in10(col):
-		    return self.__column_features(col, n_limit)
+            elif col.dtype.name not in np.typecodes['AllFloat']:
+                if isCat_95in10(col):
+                    return self.__column_features(col, n_limit)
 	    
             return 
             
@@ -126,7 +126,7 @@ class Encoder(object):
             data = pd.read_csv(data)
         
         data_copy = data.copy()
-        data_enc = data_copy[self.table.keys()]
+        data_enc = data_copy[list(self.table.keys())]
         data_else = data_copy.drop(self.table.keys(),axis=1)
 
         #if label is not None:
@@ -137,7 +137,7 @@ class Encoder(object):
         if set_columns != self.columns:
             raise ValueError('Columns(features) fed at transform() differ from fitted data.')
         
-        data_enc = data_copy[self.table.keys()]
+        data_enc = data_copy[list(self.table.keys())]
         data_else = data_copy.drop(self.table.keys(),axis=1)
 
         res = []
