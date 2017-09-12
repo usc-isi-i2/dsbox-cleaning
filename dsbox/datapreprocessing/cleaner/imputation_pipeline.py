@@ -232,6 +232,7 @@ class Imputation(object):
         missing_col_id = []
         data, label = self.__df2np(data, label_col_name, missing_col_id)
 
+
         # init for the permutation
         permutations = [0] * len(missing_col_id)   # length equal with the missing_col_id; value represents the id for imputation_strategies
         pos = len(permutations) - 1
@@ -263,34 +264,48 @@ class Imputation(object):
 
             iteration -= 1
 
+        
         if (self.verbose>0): 
             print("max score is {}, min score is {}\n".format(max_score, min_score))
             print("and the best score is given by the imputation combination: ")
-            for i in range(len(best_combo)):
+
+        best_imputation = {}    # key: col_name; value: imputation strategy
+        for i in range(len(best_combo)):
+            best_imputation[col_names[missing_col_id[i]]] = self.imputation_strategies[best_combo[i]]
+            if (self.verbose>0): 
                 print(self.imputation_strategies[best_combo[i]] + " for the column {}".format(col_names[missing_col_id[i]]))
 
-        best_imputation = [self.imputation_strategies[i] for i in best_combo]
+        
         return best_imputation
 
     #============================================ transform phase functions ============================================
 
-    def __simpleImpute(self, data, strategies, verbose=False):
+    def __simpleImpute(self, data, strategies_dict, verbose=False):
         """
         impute the data using given strategies
         Parameters:
         ----------
         data: pandas dataframe
-        strategies: list of string
+        strategies_dict: dict. maps: col_name -> imputation_method
             imputation strategies combination
         """
 
+        col_names = data.keys()
         # 1. convert to np array and get missing value column id
         missing_col_id = []
         data, label = self.__df2np(data, "", missing_col_id) # no need for label
-        if (len(missing_col_id) != len(strategies)):
-            raise ValueError("Expected {0} number of permutations, "
-                             " got '{1}' ".format(len(missing_col_id),
-                                                        len(strategies)))
+
+        strategies = [] # list of strategies, exactly match with missing_col_id
+        # extra missing-value columns occurs, using default "mean"; 
+        # some missing-value columns not occurs, ignore them
+        for i in range(len(missing_col_id)):
+            name = col_names[missing_col_id[i]]
+            if (name not in strategies_dict.keys()):
+                strategies.append("mean")
+            else:
+                strategies.append(strategies_dict[name])
+
+        print(strategies)            
         # 2. impute data
         data_clean = mvp.imputeData(data, missing_col_id, strategies, verbose)
 
