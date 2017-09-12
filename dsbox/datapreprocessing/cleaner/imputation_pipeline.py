@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-
 import missing_value_pred as mvp
 
 
@@ -75,6 +74,7 @@ class Imputation(object):
         data: pandas dataframe
         label: pandas series, used for the trainable methods
         """
+
         data = data.copy()
         if (not label.empty):
             label_col_name = "target_label" #   name for label, assume no duplicate exists in data
@@ -125,6 +125,8 @@ class Imputation(object):
         1. add evaluation part for __simpleImpute()
 
         """
+        
+
         data = data.copy()
         # record keys:
         keys = data.keys()
@@ -133,7 +135,7 @@ class Imputation(object):
             raise ValueError("imputer is not fitted yet")
 
         label_col_name = ""
-        if (not label.empty):
+        if (not label.empty and self.strategy=="iteratively_regre"):    # evaluation only for iteratively_regre
             label_col_name = "target_label" #   name for label, assume no duplicate exists in data
             data[label_col_name] = label
 
@@ -249,7 +251,7 @@ class Imputation(object):
                     imputation_list = [self.imputation_strategies[x] for x in permutations]
 
                     data_clean = mvp.imputeData(data, missing_col_id, imputation_list, self.verbose)
-                    print("for the missing value imputation combination: {} ".format(permutations))
+                    if (self.verbose>0): print("for the missing value imputation combination: {} ".format(permutations))
                     score = self.__evaluation(data_clean, label)
                     if (score > max_score):
                         max_score = score
@@ -261,10 +263,11 @@ class Imputation(object):
 
             iteration -= 1
 
-        print("max score is {}, min score is {}\n".format(max_score, min_score))
-        print("and the best score is given by the imputation combination: ")
-        for i in range(len(best_combo)):
-            print(self.imputation_strategies[best_combo[i]] + " for the column {}".format(col_names[missing_col_id[i]]))
+        if (self.verbose>0): 
+            print("max score is {}, min score is {}\n".format(max_score, min_score))
+            print("and the best score is given by the imputation combination: ")
+            for i in range(len(best_combo)):
+                print(self.imputation_strategies[best_combo[i]] + " for the column {}".format(col_names[missing_col_id[i]]))
 
         best_imputation = [self.imputation_strategies[i] for i in best_combo]
         return best_imputation
@@ -338,7 +341,7 @@ class Imputation(object):
                 missing_col_name.append(col_name)
             counter += 1
 
-        print("missing column name: {}".format(missing_col_name))
+        if (self.verbose>0): print("missing column name: {}".format(missing_col_name))
 
         # 2. convert the dataframe to np array
         label = None
@@ -365,7 +368,7 @@ class Imputation(object):
         try:
             X_train, X_test, y_train, y_test = train_test_split(data_clean, label, test_size=0.4, random_state=0, stratify=label)
         except:
-            print("cannot stratified sample, try random sample: ")
+            if (self.verbose>0): print("cannot stratified sample, try random sample: ")
             X_train, X_test, y_train, y_test = train_test_split(data_clean, label, test_size=0.4, random_state=42)
 
         # remove the nan rows
@@ -380,9 +383,9 @@ class Imputation(object):
 
         model = self.model.fit(X_train, y_train)
         score = self.scorer(model, X_test, y_test)  # refer to sklearn scorer: score will be * -1 with the real score value
-        print("score is: {}".format(score))
+        if (self.verbose>0): print("score is: {}".format(score))
 
-        print("===========>> max score is: {}".format(score))
+        if (self.verbose>0): print("===========>> max score is: {}".format(score))
         if (num_removed_test > 0):
             print("BUT !!!!!!!!there are {} data (total test size: {})that cannot be predicted!!!!!!\n".format(num_removed_test, mask_test.shape[0]))
         return score

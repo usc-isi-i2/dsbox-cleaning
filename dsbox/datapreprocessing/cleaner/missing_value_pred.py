@@ -26,7 +26,8 @@ def myImputer(data, value="zero", verbose=0):
     data: numpy array, matrix
     value:    string: "mean", "min", "max", "zero", "gaussian"
     """
-    index = np.isnan(data)
+    index = pd.isnull(data)
+    
     data_imputed = np.copy(data)
     data_drop = data[np.logical_not(index)]   #drop nan from data
     inputed_value = 0
