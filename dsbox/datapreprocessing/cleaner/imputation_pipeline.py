@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-import missing_value_pred as mvp
+from . import missing_value_pred as mvp
 
 
 class Imputation(object):
