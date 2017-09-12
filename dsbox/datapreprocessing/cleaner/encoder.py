@@ -35,7 +35,7 @@ class Encoder(object):
         return "%s(%r)" % ('Encoder', self.__dict__)
         
 
-    def __init__(self, categorical_features='95in10', n_limit=10, text2int=False):
+    def __init__(self, categorical_features='95in10', n_limit=10, text2int=True):
         
         self.label = None
         self.categorical_features = categorical_features
@@ -61,8 +61,8 @@ class Encoder(object):
 	    
             # if empty column (all missing/NaN)
 	    if col.count() == 0:
-		print 'Warning:',col.name,'is an empty column.'
-		print 'The encoder will discard it.'
+		print('Warning:',col.name,'is an empty column.')
+		print('The encoder will discard it.')
 		self.empty.append(col.name)
                 return
 				
@@ -96,9 +96,9 @@ class Encoder(object):
         
         data_copy = data.copy()
         
-        if label:
-            self.label = label
-            data_copy.drop(label,axis=1,inplace=True)
+        #if label is not None:
+        #    self.label = label.columns[0]
+        #    data_copy.drop(label.columns[0],axis=1,inplace=True)
         
         self.columns = set(data_copy.columns)
 
@@ -129,10 +129,10 @@ class Encoder(object):
         data_enc = data_copy[self.table.keys()]
         data_else = data_copy.drop(self.table.keys(),axis=1)
 
-        if label:
-            set_columns = set(data_copy.drop(label,axis=1).columns)
-        else:
-            set_columns = set(data_copy.columns)
+        #if label is not None:
+        #    set_columns = set(data_copy.drop(label,axis=1).columns)
+        #else:
+        set_columns = set(data_copy.columns)
 
         if set_columns != self.columns:
             raise ValueError('Columns(features) fed at transform() differ from fitted data.')
@@ -145,7 +145,7 @@ class Encoder(object):
             col = data_enc[column_name]
             chg_v = lambda x: 'other_' if (x and x not in self.table[col.name]) else x
             col = col.apply(chg_v)
-            encoded = pd.get_dummies(col, dummy_na=False, prefix=col.name)
+            encoded = pd.get_dummies(col, dummy_na=True, prefix=col.name)
 
             missed = (["%s_%s"%(col.name,str(i)) for i in self.table[col.name] if 
                     "%s_%s"%(col.name,str(i)) not in list(encoded.columns)])
@@ -165,4 +165,6 @@ class Encoder(object):
         result = pd.concat(res, axis=1)
         return result
 
-
+    def fit_transform(self, data, label=None):
+        self.fit(data, label)
+        return self.transform(data, label)
