@@ -77,7 +77,7 @@ data_clean.to_csv("data_clean.csv", index=False)
 The encoder takes csv file or pandas DataFrame as input, then one-hot encode columns which are considered categorical.(specifying rules or selected columns) 
 
 ```
-class Encoder(categorical_features='95in10', n_limit=10, text2int=False)
+class Encoder(categorical_features='95in10', n_limit=10, text2int=True)
 ```
 
 For **categorical_features = '95in10'**, it takes a column as category if:
@@ -100,17 +100,15 @@ enc.fit(data)
 result = enc.transform(data)
 
 # EXAMPLE 2
-# demand that Encoder convert non-categorical text to integers
+# demand that Encoder don't convert non-categorical text to integers
 # set no limit to maximum number of distinct values to one-hot encode
-enc = Encoder(text2int=True,n_limit=None)
+enc = Encoder(text2int=False,n_limit=None)
 trainData = pd.read_csv('trainData.csv')
 testData = pd.read_csv('testData.csv')
 
-# if label is in the data set
-enc.fit(trainData,label='yourLabel')
-
-result_train = enc.transform(trainData, label='yourLabel')
-result_test = enc.transform(testData, label='yourLabel')
+enc.fit(trainData)
+result_train = enc.transform(trainData)
+result_test = enc.transform(testData)
 ```
 
 ### TODO:
@@ -148,4 +146,3 @@ data["column_name"] = result
 - See if a better k, number of bins to choose can be found automatically. e.g. num_bins='auto'.
 
 
-```
