@@ -6,16 +6,19 @@ from sklearn.linear_model import LinearRegression
 from sklearn import metrics
 from sklearn.metrics import f1_score, make_scorer,mean_squared_error
 from sklearn import tree
+import pandas as pd
 
-from dsbox.datapreprocessing.cleaner import Imputation, encoder
+from dsbox.datapreprocessing.cleaner import Imputation, Encoder, text2int
 
 # STEP 1: get data
 data_path = "../dsbox-data/r_26/original/data/"
 data_name = data_path + "trainData_joint.csv"
 label_name = data_path + "trainTargets.csv" # make sure your label target is in the second column of this file
 
-data = encoder.encode(data_name)
-label = encoder.encode(label_name,label="log_radon")["log_radon"]
+enc = Encoder(text2int=True)
+enc.fit(data_name)
+data = enc.transform(data_name)
+label = text2int(pd.read_csv(label_name)["log_randon"])
 
 data.drop("radonFile_index",axis=1)    # drop because id, useless
 data.drop("state",axis=1)    # drop because all same, useless

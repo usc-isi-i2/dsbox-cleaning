@@ -6,18 +6,20 @@ from sklearn.linear_model import LogisticRegression
 from sklearn import metrics
 from sklearn.metrics import f1_score, make_scorer
 from sklearn import tree
+import pandas as pd
 
-from dsbox.datapreprocessing.cleaner import Imputation, encoder
+from dsbox.datapreprocessing.cleaner import Imputation, Encoder, text2int
 
 # STEP 1: get data
-data_path = "../dsbox-data/o_4550/original/data/"
+data_path = "../../dsbox-data/o_38/original/data/"
 data_name = data_path + "trainData.csv"
 label_name = data_path + "trainTargets.csv" # make sure your label target is in the second column of this file
 
-data = encoder.encode(data_name)
-label = encoder.encode(label_name,label="class")["class"]
+enc = Encoder(text2int=True)
+enc.fit(data_name)
+data = enc.transform(data_name)
+label = text2int(pd.read_csv(label_name)["Class"])
 
-data.drop("MouseID",axis=1)    # drop because id-like, useless
 data.drop("d3mIndex",axis=1)    # drop because id, useless
 
 # STEP 2: define your machine learning model and scorer
@@ -25,14 +27,16 @@ clf = LogisticRegression()
 scorer = make_scorer(f1_score, average="macro") # score will be * -1, if greater_is_better is set to False
 
 # STEP 3: go to use the Imputer !
-imputer = Imputation(model=clf, scorer=scorer, strategy="iteratively_regre")
+imputer = Imputation(model=clf, scorer=scorer, strategy="greedy")
 # method: greedy search
-# imputer.fit(data, label, strategy="greedy")
-# data_clean = imputer.transform(data)
+data_test = data.drop("age",axis=1)
+imputer.fit(data_test, label)
+
+data_clean = imputer.transform(data)
 # print imputer.best_imputation
 
 # method: regression
-imputer.fit(data)
-data_clean = imputer.transform(data)
+# imputer.fit(data)
+# data_clean = imputer.transform(data)
 
-data_clean.to_csv("data_clean.csv", index=False)
+# data_clean.to_csv("data_clean.csv", index=False)

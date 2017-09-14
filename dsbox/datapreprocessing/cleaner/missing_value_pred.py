@@ -77,7 +77,7 @@ def imputeData(data, missing_col_id, imputation_strategies, verbose):
 
 def bayeImpute(data, target_col):
     '''
-    currently, naive bayes.
+    currently, BayesianRidge.
     return the imputated data, and model coefficient
     '''
 
