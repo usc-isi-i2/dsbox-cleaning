@@ -6,28 +6,22 @@ from . import missing_value_pred as mvp
 class Imputation(object):
     """
     Integrated imputation methods moduel.
-
     Parameters:
     ----------
     model: a function
         The machine learning model that will be used to evaluate the imputation strategies
-
     scorer: a function
         The metrics that will be used
-
     strategy: string
         the strategy the imputer will use, now support:
             "greedy": greedy search for the best (combination) of simple impute method
             "iteratively_regre": iteratively regress on the missing value
             "other: other
-
     greater_is_better: boolean
         Indicate whether higher or lower the score is better. Default is True. Usually, for regression problem
         this should be set to False.
-
     verbose: Integer
         Control the verbosity
-
     Attributes:
     ----------
     best_imputation: dict. key: column name; value: trained imputation method (parameters)
@@ -64,11 +58,9 @@ class Imputation(object):
         """
         train imputation parameters. Now support:
         -> greedySearch
-
         for the method that not trainable, do nothing:
         -> interatively regression
         -> other
-
         Parameters:
         ----------
         data: pandas dataframe
@@ -107,23 +99,18 @@ class Imputation(object):
     def transform(self, data, label=pd.Series()):
         """
         precond: run fit() before
-
         to complete the data, based on the learned parameters, support:
         -> greedy search
-
         also support the untrainable methods:
         -> iteratively regression
         -> other
-
         Parameters:
         ----------
         data: pandas dataframe
         label: pandas series, used for the evaluation of imputation
-
         TODO:
         ----------
         1. add evaluation part for __simpleImpute()
-
         """
 
         data = data.copy()
@@ -431,7 +418,6 @@ class Imputation(object):
     def __evaluation(self, data_clean, label):
         """
         using defined model and scorer to evaluation the cleaned dataset
-
         Parameters:
         ----------
         data_clean: the clean dataset, missing values imputed already

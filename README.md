@@ -66,6 +66,7 @@ data_clean.to_csv("data_clean.csv", index=False)
 
 ### TODO:
 1. finish verbose func
+2. [BUG]may happen the situation: the missing columns in train\_data are not matched with the missing columns in test\_data. 
 
 ### methods
 1. baseline: drop columns or drop rows
