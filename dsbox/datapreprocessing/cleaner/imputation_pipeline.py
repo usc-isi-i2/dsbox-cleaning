@@ -30,7 +30,7 @@ class Imputation(object):
 
     Attributes:
     ----------
-    best_imputation: trained imputation method (parameters)
+    best_imputation: dict. key: column name; value: trained imputation method (parameters)
         for iteratively_regre method: could be sklearn regression model, or "mean" (which means the regression failed)
     
     """
@@ -92,7 +92,7 @@ class Imputation(object):
 
         elif (self.strategy=="iteratively_regre"):
             print("=========> iteratively regress method:")
-            # no operation here because this method not needs to be trained
+            data_clean, self.best_imputation = self.__iterativeRegress(data, label_col_name)
 
         elif(self.strategy=="other"):
             print("=========> other method:")
@@ -125,7 +125,6 @@ class Imputation(object):
         1. add evaluation part for __simpleImpute()
 
         """
-        
 
         data = data.copy()
         # record keys:
@@ -134,10 +133,11 @@ class Imputation(object):
             # todo: specify a NotFittedError, like in sklearn
             raise ValueError("imputer is not fitted yet")
 
-        label_col_name = ""
-        if (not label.empty and self.strategy=="iteratively_regre"):    # evaluation only for iteratively_regre
-            label_col_name = "target_label" #   name for label, assume no duplicate exists in data
-            data[label_col_name] = label
+        # switch off the evaluation for iteratively_regre
+        # label_col_name = ""
+        # if (not label.empty and self.strategy=="iteratively_regre"):    # evaluation only for iteratively_regre
+        #     label_col_name = "target_label" #   name for label, assume no duplicate exists in data
+        #     data[label_col_name] = label
 
         # start complete data
         if (self.strategy=="greedy"):
@@ -146,7 +146,8 @@ class Imputation(object):
 
         elif (self.strategy=="iteratively_regre"):
             print("=========> iteratively regress method:")
-            data_clean, placeholder = self.__iterativeRegress(data, label_col_name)
+            data_clean = self.__regressImpute(data, self.best_imputation)
+            
 
         elif(self.strategy=="other"):
             print("=========> other method:")
@@ -163,14 +164,17 @@ class Imputation(object):
         '''
         init with simple imputation, then apply regression to impute iteratively
         '''
-        if (label_col_name==None or len(label_col_name)==0):
-            is_eval = False
-        else:
-            is_eval = True
+        # for now, cancel the evaluation part for iterativeRegress
+        is_eval = False
+        # if (label_col_name==None or len(label_col_name)==0):
+        #     is_eval = False
+        # else:
+        #     is_eval = True
 
+        keys = data.keys()
         missing_col_id = []
         data, label = self.__df2np(data, label_col_name, missing_col_id)
-        next_data = data
+        
         missing_col_data = data[:, missing_col_id]
         imputed_data = np.zeros([data.shape[0], len(missing_col_id)])
         imputed_data_lastIter = missing_col_data
@@ -178,30 +182,36 @@ class Imputation(object):
         model_list = [None]*len(missing_col_id)     # store the regression model
         epoch = 30
         counter = 0
-        init_imputation = ["mean"] * len(missing_col_id)   # mean init
+        # mean init all missing-value columns
+        init_imputation = ["mean"] * len(missing_col_id)   
+        next_data = mvp.imputeData(data, missing_col_id, init_imputation, self.verbose)
 
         while (counter < epoch):
             for i in range(len(missing_col_id)):
-                target_col = missing_col_id[i]
-                data_imputed = mvp.imputeData(next_data, missing_col_id, init_imputation, self.verbose)
-                data_imputed[:, target_col] = missing_col_data[:,i] #revover the column that to be imputed
+                target_col = missing_col_id[i] 
+                next_data[:, target_col] = missing_col_data[:,i] #recover the column that to be imputed
 
-                data_clean, model_list[i] = mvp.bayeImpute(data_imputed, target_col)
+                data_clean, model_list[i] = mvp.bayeImpute(next_data, target_col, self.verbose)
                 next_data[:,target_col] = data_clean[:,target_col]    # update bayesian imputed column
                 imputed_data[:,i] = data_clean[:,target_col]    # add the imputed data
 
                 if (is_eval):
                     self.__evaluation(data_clean, label)
 
-            if (counter > 0):
-                distance = np.square(imputed_data - imputed_data_lastIter).sum()
-                print("changed distance: {}".format(distance))
+            # if (counter > 0):
+            #     distance = np.square(imputed_data - imputed_data_lastIter).sum()
+            #     if self.verbose: print("changed distance: {}".format(distance))
             imputed_data_lastIter = np.copy(imputed_data)
             counter += 1
 
         data[:,missing_col_id] = imputed_data_lastIter
 
-        return data, model_list
+        # convert model_list to dict
+        model_dict = {}
+        for i in range(len(model_list)):
+            model_dict[keys[missing_col_id[i]]] = model_list[i]
+
+        return data, model_dict
 
     def __baseline(self, data, label_col_name):
         """
@@ -231,7 +241,6 @@ class Imputation(object):
         # 1. convert to np array and get missing value column id
         missing_col_id = []
         data, label = self.__df2np(data, label_col_name, missing_col_id)
-
 
         # init for the permutation
         permutations = [0] * len(missing_col_id)   # length equal with the missing_col_id; value represents the id for imputation_strategies
@@ -310,6 +319,55 @@ class Imputation(object):
         data_clean = mvp.imputeData(data, missing_col_id, strategies, verbose)
 
         return data_clean
+
+    def __regressImpute(self, data, model_dict):
+        """
+        """
+        col_names = data.keys()
+        # 1. convert to np array and get missing value column id
+        missing_col_id = []
+        data, label = self.__df2np(data, "", missing_col_id) # no need for label
+
+
+        model_list = [] # the model list
+        new_missing_col_id = [] # the columns that have correspoding model
+        # mask = np.ones((data.shape[1]), dtype=bool)   # false means: this column cannot be bring into impute
+        # offset = 0  # offset from missing_col_id to new_missing_col_id
+
+        for i in range(len(missing_col_id)):
+            name = col_names[missing_col_id[i]]
+            # if there is a column that not appears in trained model, impute it as "mean"
+            if (name not in model_dict.keys()):
+                data = mvp.imputeData(data, [missing_col_id[i]], ["mean"])
+                # mask[missing_col_id[i]] = False
+                print ("fill" + name + "with mean")
+                # offset += 1
+            else:
+                model_list.append(model_dict[name])
+                new_missing_col_id.append(missing_col_id[i])
+
+        # now, impute the left missing columns using the model from model_list (ignore the extra columns)
+        to_impute_data = data #just change a name..
+        missing_col_data = to_impute_data[:, new_missing_col_id]
+        epoch = 30
+        counter = 0
+        # mean init all missing-value columns
+        init_imputation = ["mean"] * len(new_missing_col_id)   
+        next_data = mvp.imputeData(to_impute_data, new_missing_col_id, init_imputation, self.verbose)
+
+        while (counter < epoch):
+            for i in range(len(new_missing_col_id)):
+                target_col = new_missing_col_id[i] 
+                next_data[:, target_col] = missing_col_data[:,i] #recover the column that to be imputed
+
+                next_data = mvp.transform(next_data, target_col, model_list[i])
+
+            counter += 1
+
+        # put back to data
+        # data[:, mask] = next_data
+        return next_data
+
 
     def __otherImpute(self, data, label_col_name=""):
         from fancyimpute import BiScaler, KNN, NuclearNormMinimization, SoftImpute, MICE

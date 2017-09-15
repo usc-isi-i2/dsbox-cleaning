@@ -33,3 +33,18 @@ the input data in this module is expected as numpy array format and already with
 
 ## pipeline design
 dataPrep -> mainTest -> baseline, imputationGreedy
+
+
+## iterative regession
+say input data has `n` dimentions, `m` in that has missing value. 
+
+```
+1. init all missing values with `mean` of the column
+2. loop until the imputed values converge:
+	for each_col in m:
+		 remove the imputed values in each_col, then using all other
+		 features to impute it (a regression model trained and fit
+		 here)
+```
+
+in reality, the loop is set to `30`, an empirical number.
