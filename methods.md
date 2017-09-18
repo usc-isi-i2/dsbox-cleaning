@@ -1,41 +1,31 @@
-## Evaluation
-### Imputation method
-1. baseline:
-	- 1.1 drop all rows that contains missing value
-	- 1.2. drop all columns that contains missing value
-2. Greedy search for best combination of imputation. supported imputation method:
-	- mean
-	- min
-	- max
-	- zero
-	- new value (for categorical column)
+# Imputer
+## pre-conditions
 
-### machine learning model & metrics
-take both two as user inputs
+1. has missing values
+2. all numerical values  
 
-	
-	
-## Data Handling
-### 1. remove useless columns
-1. remove the id-like column (user specified)
-2. remove the empty column
+take Pandas.DataFrame as data input. Internally using Numpy Array to do the imputations.
 
-### 2. convert categorical to indicator
-### 3. imputation based conversion
-Ideally, the data now should all be numeric values, but contain some missing values. Then the data will be fed into different imputation method and be fixed the missing values. 
+## Imputation method
+### 1. baseline:
 
-The outputed data should contains no missing value (numpy array format) and can be directly solved by machine learning models (except the baseline1.1 method, details come in next)
+- 1.1.  drop all rows that contains missing value
+- 1.2.  drop all columns that contains missing value
+- 1.3.  using `mean` to impute all  
 
-### 4. learning & predicting
-the input data in this module is expected as numpy array format and already with imputeted missing values. If contains missing value, the corresponding rows will be removed and counted as "cannot predict".
+### 2. Greedy search 
 
+from left to right, search for **best** combination of imputation. supported imputation method:
 
+- mean
+- min
+- max
+- zero
 
-## pipeline design
-dataPrep -> mainTest -> baseline, imputationGreedy
+$best$ means the following: `machine learning model` & `metrics`
+give out the best performance.
 
-
-## iterative regession
+### 3. iterative regession
 say input data has `n` dimentions, `m` in that has missing value. 
 
 ```
@@ -48,3 +38,30 @@ say input data has `n` dimentions, `m` in that has missing value.
 ```
 
 in reality, the loop is set to `30`, an empirical number.
+
+### 4. MICE
+now using the [fancyimpute-mice](https://github.com/hammerlab/fancyimpute/blob/master/fancyimpute/mice.py), a relative complex method...
+
+their method is like:
+
+1. outer layer: get multiple imputation results (the number is a hyper parameter), and take the average as final imputated values (there is also a hyperparameter to determine how many result to be averaged, from last one).
+2. for each imputation, they using: 
+	1. init all with `mean` or `median` 
+	2. to impute each column, only chose `n_nearest_columns` of this column (e.g using correlation+randomness to chose) to use
+	3. then impute the missing value, there are two options, by default "col" is used, which is [Posterior Predictive Distribution](https://www.cs.utah.edu/~fletcher/cs6957/lectures/BayesianLinearRegression.pdf); also can be "pmm"
+	
+	then go for loops to run...
+
+
+**diff btween our method**: using `n_nearest_columns `, useful when number of column is huge; using `Posterior Predictive Distribution`.
+
+### 5. knn
+now using the [fancyimpute-knn](https://github.com/hammerlab/fancyimpute/blob/master/fancyimpute), they also trigger [knnimpute](https://github.com/hammerlab/knnimpute)
+
+according to their `readme`: 
+> Nearest neighbor imputations which weights samples using the mean squared difference on features for which two rows both have observed data.
+
+because it will calculate the weights using mean square error, this method requires each feature of inpute data are scaled (mean 0 and variance 1).
+
+
+## Evaluation
