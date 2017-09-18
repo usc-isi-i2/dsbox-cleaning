@@ -37,7 +37,7 @@ imputer = Imputation(model=clf, scorer=scorer, strategy="iteratively_regre", ver
 
 # method: regression
 imputer.fit(data)   # on age column, no missing value
-print imputer.best_imputation.keys()
+print (imputer.best_imputation.keys())
 
 data_clean = imputer.transform(data)    # on age column, has missing value
 

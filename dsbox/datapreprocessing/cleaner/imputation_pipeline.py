@@ -2,8 +2,14 @@ import numpy as np
 import pandas as pd
 from . import missing_value_pred as mvp
 
+from . import base
+from . import supervised_learning
+from typing import *
 
-class Imputation(object):
+Params = NamedTuple('DSBOX imputer params:', [('verbose', int)], ['strategy', str])
+
+
+class Imputation(supervised_learning.SupervisedLearnerPrimitiveBase):
     """
     Integrated imputation methods moduel.
 
@@ -35,32 +41,40 @@ class Imputation(object):
     
     """
 
-    def __init__(self, model, scorer, strategy="greedy", greater_is_better=True, verbose=0):
+    def __init__(self):
+        self.best_imputation = None
         self.imputation_strategies = ["mean", "max", "min", "zero"]
+        self.train_x = None
+        self.train_y = None
+        self.is_fitted = False
+
+
+    def set_params(self, model, scorer, strategy="greedy", verbose=0):
         self.verbose = verbose
         self.strategy = strategy
         self.model = model
         self.scorer = scorer
+
+    def get_params(self):
+
+
+    def set_training_data(self, inputs, outputs):
+        """
+        Sets training data of this primitive.
+
+        Parameters
+        ----------
+        inputs : Sequence[Input]
+            The inputs.
+        outputs : Sequence[Output]
+            The outputs.
+        """
+        self.train_x = inputs
+        self.train_y = outputs
         self.is_fitted = False
 
 
-    # for now, make it internally
-    def __analysis(self, data, label):
-        """
-        TODO
-        provide some analysis for the missing pattern:
-        is missing/not related to other column ?
-        """
-        data = data.copy()
-        label_col_name = "target_label" #   name for label, assume no duplicate exists in data
-        data[label_col_name] = label
-
-         # start evaluation
-        print("=========> Baseline:")
-        self.__baseline(data, label_col_name)
-
-
-    def fit(self, data, label=pd.Series()):
+    def fit(self, timeout, iterations):
         """
         train imputation parameters. Now support:
         -> greedySearch
@@ -74,6 +88,9 @@ class Imputation(object):
         data: pandas dataframe
         label: pandas series, used for the trainable methods
         """
+        # if already fitted on current dataset, do nothing
+        if self.is_fitted:
+            return True
 
         data = data.copy()
         if (not label.empty):
@@ -104,7 +121,7 @@ class Imputation(object):
         self.is_fitted = True
         return self
 
-    def transform(self, data, label=pd.Series()):
+    def produce(self, data, timeout, iterations):
         """
         precond: run fit() before
 
@@ -126,18 +143,14 @@ class Imputation(object):
 
         """
 
+        if (not self.is_fitted):
+            # todo: specify a NotFittedError, like in sklearn
+            raise ValueError("Calling produce before fitting.")
+
         data = data.copy()
         # record keys:
         keys = data.keys()
-        if (not self.is_fitted):
-            # todo: specify a NotFittedError, like in sklearn
-            raise ValueError("imputer is not fitted yet")
-
-        # switch off the evaluation for iteratively_regre
-        # label_col_name = ""
-        # if (not label.empty and self.strategy=="iteratively_regre"):    # evaluation only for iteratively_regre
-        #     label_col_name = "target_label" #   name for label, assume no duplicate exists in data
-        #     data[label_col_name] = label
+        
 
         # start complete data
         if (self.strategy=="greedy"):
@@ -462,3 +475,18 @@ class Imputation(object):
         if (num_removed_test > 0):
             print("BUT !!!!!!!!there are {} data (total test size: {})that cannot be predicted!!!!!!\n".format(num_removed_test, mask_test.shape[0]))
         return score
+
+    # for now, make it internally
+    def __analysis(self, data, label):
+        """
+        TODO
+        provide some analysis for the missing pattern:
+        is missing/not related to other column ?
+        """
+        data = data.copy()
+        label_col_name = "target_label" #   name for label, assume no duplicate exists in data
+        data[label_col_name] = label
+
+         # start evaluation
+        print("=========> Baseline:")
+        self.__baseline(data, label_col_name)
