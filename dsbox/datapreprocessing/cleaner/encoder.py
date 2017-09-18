@@ -1,5 +1,7 @@
 import numpy as np
 import pandas as pd
+from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
+from typing import NamedTuple, Sequence
 
 def isCat_95in10(col):
     """
@@ -15,7 +17,16 @@ def text2int(col):
     return pd.DataFrame(col.astype('category').cat.codes,columns=[col.name])
 
 
-class Encoder(object):
+Input = pd.DataFrame
+Output = pd.DataFrame
+
+Params = NamedTuple('Params', [
+    ('n_limit', int),
+    ('text2int', bool),
+    ])
+
+
+class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
     """
     An one-hot encoder, which
     
@@ -35,16 +46,19 @@ class Encoder(object):
         return "%s(%r)" % ('Encoder', self.__dict__)
         
 
-    def __init__(self, categorical_features='95in10', n_limit=10, text2int=True):
+    def __init__(self, *, categorical_features = '95in10'):
         
-        self.label = None
         self.categorical_features = categorical_features
-        self.text2int = text2int
+        self.label = None
         self.table = None
-        self.n_limit = n_limit
         self.columns = None
         self.empty = []
-        
+
+        self.training_inputs = None
+        self.fitted = False
+        self.n_limit = 10
+        self.text2int = True
+
     
     def __column_features(self, col, n_limit):
         
@@ -81,24 +95,36 @@ class Encoder(object):
                     return self.__column_features(col, n_limit)
 	    
             return 
-            
+    
 
-    def fit(self, data, label=None):
+    def get_params(self):
+        return Params(n_limit=self.n_limit, text2int=self.text2int)
+
+
+    def set_params(self, *, params: Params):
+        self.n_limit = params.n_limit
+        self.text2int = params.text2int
+
+
+    def set_training_data(self, *, inputs: Sequence[Input]):
+        self.training_inputs = inputs
+        self.fitted = False
+
+
+    def fit(self, *, timeout:float = None, iterations: int = None):
         """
         Feed in data set to fit, e.g. trainData. 
         The encoder would record categorical columns identified and 
         the corresponding (with top n occurrence) column values to 
         one-hot encode later in the transform step.
         """
-        ## csv as input, otherwise data frame as input ##
-        if not isinstance(data, pd.DataFrame):
-            data = pd.read_csv(data)
+        if self.fitted:
+            return
         
-        data_copy = data.copy()
+        if self.training_inputs is None:
+            raise ValueError('Missing training(fitting) data.')
         
-        #if label is not None:
-        #    self.label = label.columns[0]
-        #    data_copy.drop(label.columns[0],axis=1,inplace=True)
+        data_copy = self.training_inputs.copy()
         
         self.columns = set(data_copy.columns)
 
@@ -110,9 +136,10 @@ class Encoder(object):
                 if p:
                     idict[p[0]] = p[1]
             self.table = idict
-        return self
+        self.fitted = True
 
-    def transform(self, data, label=None):
+
+    def produce(self, *, inputs: Sequence[Input], timeout:float = None, iterations: int = None):
         """
         Convert and output the input data into encoded format,
         using the trained (fitted) encoder.
@@ -121,21 +148,15 @@ class Encoder(object):
         Missing(NaN) cells in a column one-hot encoded would give 
         out a row of all-ZERO columns for the target column.
         """
-        ## csv as input, otherwise data frame as input ##
-        if not isinstance(data, pd.DataFrame):
-            data = pd.read_csv(data)
         
-        data_copy = data.copy()
+        data_copy = inputs.copy()
         data_enc = data_copy[list(self.table.keys())]
         data_else = data_copy.drop(self.table.keys(),axis=1)
 
-        #if label is not None:
-        #    set_columns = set(data_copy.drop(label,axis=1).columns)
-        #else:
         set_columns = set(data_copy.columns)
 
         if set_columns != self.columns:
-            raise ValueError('Columns(features) fed at transform() differ from fitted data.')
+            raise ValueError('Columns(features) fed at produce() differ from fitted data.')
         
         data_enc = data_copy[list(self.table.keys())]
         data_else = data_copy.drop(self.table.keys(),axis=1)
@@ -165,6 +186,10 @@ class Encoder(object):
         result = pd.concat(res, axis=1)
         return result
 
-    def fit_transform(self, data, label=None):
-        self.fit(data, label)
-        return self.transform(data, label)
+
+if __name__ == '__main__':
+    enc = Encoder()
+    train_x = pd.read_csv("file:///home/rpedsel/Documents/ISI%20II/datasets/o_38/data/trainData.csv")
+    enc.set_training_data(inputs=train_x)
+    enc.fit()
+    print(enc.produce(inputs=train_x))
