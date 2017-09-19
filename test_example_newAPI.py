@@ -35,10 +35,12 @@ scorer = make_scorer(f1_score, average="macro") # score will be * -1, if greater
 # STEP 3: go to use the Imputer !
 imputer = Imputation()
 imputer.set_params(model=clf, scorer=scorer, strategy="iteratively_regre", verbose=1)
-imputer.set_training_data(data,label)
+imputer.set_training_data(inputs=data,outputs=label)
 imputer.fit(timeout = 10)
 print (imputer.get_call_metadata())
-result = imputer.produce(data, timeout=0.5)
+result = imputer.produce(inputs=data, timeout=0.5)
+print (imputer.get_call_metadata())
+
 # method: greedy search
 # data_test = data.drop("age",axis=1)
 # imputer.fit(data_test, label)

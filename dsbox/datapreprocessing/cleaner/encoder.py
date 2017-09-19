@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
+from dsbox.datapreprocessing.cleaner.primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 from typing import NamedTuple, Sequence
 
 def isCat_95in10(col):

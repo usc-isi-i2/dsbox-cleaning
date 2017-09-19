@@ -8,10 +8,16 @@ from typing import *
 import stopit
 import math
 
-Params = NamedTuple("params", [('strategy', str), ('verbose', int)])   
+Input = pd.DataFrame
+Output = pd.DataFrame
+
+Params = NamedTuple("params", [
+    ('strategy', str),
+    ('verbose', int)]
+    ) 
 
 
-class Imputation(SupervisedLearnerPrimitiveBase):
+class Imputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
     """
     Integrated imputation methods moduel.
 
@@ -43,7 +49,7 @@ class Imputation(SupervisedLearnerPrimitiveBase):
     
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.best_imputation = None
         self.imputation_strategies = ["mean", "max", "min", "zero"]
         self.train_x = None
@@ -52,21 +58,21 @@ class Imputation(SupervisedLearnerPrimitiveBase):
         self._has_finished = False
 
 
-    def set_params(self, model, scorer, strategy="greedy", verbose=0):
+    def set_params(self, model, scorer, strategy="greedy", verbose=0) -> None:
         self.verbose = verbose
         self.strategy = strategy
         self.model = model
         self.scorer = scorer
 
-    def get_params(self):
+    def get_params(self) -> Params:
         return Params(strategy=self.strategy, verbose=self.verbose)
 
 
-    def get_call_metadata(self):
+    def get_call_metadata(self) -> CallMetadata:
             return CallMetadata(has_finished=self._has_finished, iterations_done=self._iterations_done)
 
 
-    def set_training_data(self, inputs, outputs):
+    def set_training_data(self, *, inputs: Sequence[Input], outputs: Sequence[Output]) -> None:
         """
         Sets training data of this primitive.
 
@@ -82,7 +88,7 @@ class Imputation(SupervisedLearnerPrimitiveBase):
         self.is_fitted = False
 
 
-    def fit(self, timeout=None, iterations=None):
+    def fit(self, *, timeout: float = None, iterations: int = None) -> None:
         """
         train imputation parameters. Now support:
         -> greedySearch
@@ -138,14 +144,11 @@ class Imputation(SupervisedLearnerPrimitiveBase):
         if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
             self.is_fitted = True
             self._has_finished = True
-        elif to_ctx_mrg.state == to_ctx_mrg.EXECUTING:
+        elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
             return
 
 
-
-        
-
-    def produce(self, data, timeout=None, iterations=None):
+    def produce(self, *, inputs: Sequence[Input], timeout: float = None, iterations: int = None) -> Sequence[Output]:
         """
         precond: run fit() before
 
@@ -177,7 +180,7 @@ class Imputation(SupervisedLearnerPrimitiveBase):
             self._iterations_done = True
             iterations = 30 # only works for iteratively_regre method
 
-        data = data.copy()
+        data = inputs.copy()
         # record keys:
         keys = data.keys()
         
@@ -204,13 +207,10 @@ class Imputation(SupervisedLearnerPrimitiveBase):
             self.is_fitted = True
             self._has_finished = True
             return pd.DataFrame(data=data_clean, columns=keys)
-        elif to_ctx_mrg.state == to_ctx_mrg.EXECUTING:
+        elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
+            self._has_finished = False
             return None
 
-        
-
-    def fit_transform(self, X, y=pd.Series()):
-        return self.fit(X,y).transform(X)
 
 
     #============================================ fit phase functinos ============================================
