@@ -2,14 +2,16 @@ import numpy as np
 import pandas as pd
 from . import missing_value_pred as mvp
 
-from . import base
-from . import supervised_learning
+from dsbox.datapreprocessing.cleaner.primitive_interfaces.supervised_learning import SupervisedLearnerPrimitiveBase
+from dsbox.datapreprocessing.cleaner.primitive_interfaces.base import CallMetadata
 from typing import *
+import stopit
+import math
 
-Params = NamedTuple('DSBOX imputer params:', [('verbose', int)], ['strategy', str])
+Params = NamedTuple("params", [('strategy', str), ('verbose', int)])   
 
 
-class Imputation(supervised_learning.SupervisedLearnerPrimitiveBase):
+class Imputation(SupervisedLearnerPrimitiveBase):
     """
     Integrated imputation methods moduel.
 
@@ -47,6 +49,7 @@ class Imputation(supervised_learning.SupervisedLearnerPrimitiveBase):
         self.train_x = None
         self.train_y = None
         self.is_fitted = False
+        self._has_finished = False
 
 
     def set_params(self, model, scorer, strategy="greedy", verbose=0):
@@ -56,6 +59,11 @@ class Imputation(supervised_learning.SupervisedLearnerPrimitiveBase):
         self.scorer = scorer
 
     def get_params(self):
+        return Params(strategy=self.strategy, verbose=self.verbose)
+
+
+    def get_call_metadata(self):
+            return CallMetadata(has_finished=self._has_finished, iterations_done=self._iterations_done)
 
 
     def set_training_data(self, inputs, outputs):
@@ -74,7 +82,7 @@ class Imputation(supervised_learning.SupervisedLearnerPrimitiveBase):
         self.is_fitted = False
 
 
-    def fit(self, timeout, iterations):
+    def fit(self, timeout=None, iterations=None):
         """
         train imputation parameters. Now support:
         -> greedySearch
@@ -92,36 +100,52 @@ class Imputation(supervised_learning.SupervisedLearnerPrimitiveBase):
         if self.is_fitted:
             return True
 
-        data = data.copy()
-        if (not label.empty):
-            label_col_name = "target_label" #   name for label, assume no duplicate exists in data
-            data[label_col_name] = label
+        if (timeout is None):
+            timeout = math.inf
+        if (iterations is None):
+            self._iterations_done = True
+            iterations = 30 # only works for iteratively_regre method
 
-        self.best_imputation = None # store the info of trained imputation method
+        # setup the timeout
+        with stopit.ThreadingTimeout(timeout) as to_ctx_mrg:
+            assert to_ctx_mrg.state == to_ctx_mrg.EXECUTING
 
-        # start fitting
-        if (self.strategy=="greedy"):
-            if (label.empty):
-                raise ValueError("label is nessary for greedy search")
+            # start fitting...  
+            data = self.train_x.copy()
+            if (self.train_y is not None):
+                label_col_name = "target_label" #   name for label, assume no duplicate exists in data
+                data[label_col_name] = self.train_y
 
-            print("=========> Greedy searched imputation:")
-            self.best_imputation = self.__imputationGreedySearch(data, label_col_name)
+            # start fitting
+            if (self.strategy=="greedy"):
+                if (self.train_y is None):
+                    raise ValueError("label is nessary for greedy search")
 
-        elif (self.strategy=="iteratively_regre"):
-            print("=========> iteratively regress method:")
-            data_clean, self.best_imputation = self.__iterativeRegress(data, label_col_name)
+                print("=========> Greedy searched imputation:")
+                self.best_imputation = self.__imputationGreedySearch(data, label_col_name)
 
-        elif(self.strategy=="other"):
-            print("=========> other method:")
-            # no operation here because this method not needs to be trained
+            elif (self.strategy=="iteratively_regre"):
+                print("=========> iteratively regress method:")
+                data_clean, self.best_imputation = self.__iterativeRegress(data, iterations, label_col_name)
 
-        else:
-            raise ValueError("no such strategy: {}".format(self.strategy))
+            elif(self.strategy=="other"):
+                print("=========> other method:")
+                # no operation here because this method not needs to be trained
 
-        self.is_fitted = True
-        return self
+            else:
+                raise ValueError("no such strategy: {}".format(self.strategy))
 
-    def produce(self, data, timeout, iterations):
+        if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
+            self.is_fitted = True
+            self._has_finished = True
+        elif to_ctx_mrg.state == to_ctx_mrg.EXECUTING:
+            return
+
+
+
+        
+
+    def produce(self, data, timeout=None, iterations=None):
         """
         precond: run fit() before
 
@@ -147,33 +171,50 @@ class Imputation(supervised_learning.SupervisedLearnerPrimitiveBase):
             # todo: specify a NotFittedError, like in sklearn
             raise ValueError("Calling produce before fitting.")
 
+        if (timeout is None):
+            timeout = math.inf
+        if (iterations is None):
+            self._iterations_done = True
+            iterations = 30 # only works for iteratively_regre method
+
         data = data.copy()
         # record keys:
         keys = data.keys()
         
+        # setup the timeout
+        with stopit.ThreadingTimeout(timeout) as to_ctx_mrg:
+            assert to_ctx_mrg.state == to_ctx_mrg.EXECUTING
 
-        # start complete data
-        if (self.strategy=="greedy"):
-            print("=========> impute using result from greedy search:")
-            data_clean = self.__simpleImpute(data, self.best_imputation)
+            # start completing data...
+            if (self.strategy=="greedy"):
+                print("=========> impute using result from greedy search:")
+                data_clean = self.__simpleImpute(data, self.best_imputation)
 
-        elif (self.strategy=="iteratively_regre"):
-            print("=========> iteratively regress method:")
-            data_clean = self.__regressImpute(data, self.best_imputation)
-            
+            elif (self.strategy=="iteratively_regre"):
+                print("=========> iteratively regress method:")
+                data_clean = self.__regressImpute(data, self.best_imputation, iterations)
+                
 
-        elif(self.strategy=="other"):
-            print("=========> other method:")
-            data_clean = self.__otherImpute(data)
+            elif(self.strategy=="other"):
+                print("=========> other method:")
+                data_clean = self.__otherImpute(data)
 
-        return pd.DataFrame(data=data_clean, columns=keys)
+
+        if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
+            self.is_fitted = True
+            self._has_finished = True
+            return pd.DataFrame(data=data_clean, columns=keys)
+        elif to_ctx_mrg.state == to_ctx_mrg.EXECUTING:
+            return None
+
+        
 
     def fit_transform(self, X, y=pd.Series()):
         return self.fit(X,y).transform(X)
 
 
     #============================================ fit phase functinos ============================================
-    def __iterativeRegress(self, data, label_col_name=""):
+    def __iterativeRegress(self, data, iterations, label_col_name=""):
         '''
         init with simple imputation, then apply regression to impute iteratively
         '''
@@ -193,7 +234,7 @@ class Imputation(supervised_learning.SupervisedLearnerPrimitiveBase):
         imputed_data_lastIter = missing_col_data
         # coeff_matrix = np.zeros([len(missing_col_id), data.shape[1]-1]) #coefficient vector for each missing value column
         model_list = [None]*len(missing_col_id)     # store the regression model
-        epoch = 30
+        epoch = iterations
         counter = 0
         # mean init all missing-value columns
         init_imputation = ["mean"] * len(missing_col_id)   
@@ -333,7 +374,7 @@ class Imputation(supervised_learning.SupervisedLearnerPrimitiveBase):
 
         return data_clean
 
-    def __regressImpute(self, data, model_dict):
+    def __regressImpute(self, data, model_dict, iterations):
         """
         """
         col_names = data.keys()
@@ -351,7 +392,7 @@ class Imputation(supervised_learning.SupervisedLearnerPrimitiveBase):
             name = col_names[missing_col_id[i]]
             # if there is a column that not appears in trained model, impute it as "mean"
             if (name not in model_dict.keys()):
-                data = mvp.imputeData(data, [missing_col_id[i]], ["mean"])
+                data = mvp.imputeData(data, [missing_col_id[i]], ["mean"], self.verbose)
                 # mask[missing_col_id[i]] = False
                 print ("fill" + name + "with mean")
                 # offset += 1
@@ -362,7 +403,7 @@ class Imputation(supervised_learning.SupervisedLearnerPrimitiveBase):
         # now, impute the left missing columns using the model from model_list (ignore the extra columns)
         to_impute_data = data #just change a name..
         missing_col_data = to_impute_data[:, new_missing_col_id]
-        epoch = 30
+        epoch = iterations
         counter = 0
         # mean init all missing-value columns
         init_imputation = ["mean"] * len(new_missing_col_id)   
@@ -373,7 +414,7 @@ class Imputation(supervised_learning.SupervisedLearnerPrimitiveBase):
                 target_col = new_missing_col_id[i] 
                 next_data[:, target_col] = missing_col_data[:,i] #recover the column that to be imputed
 
-                next_data = mvp.transform(next_data, target_col, model_list[i])
+                next_data = mvp.transform(next_data, target_col, model_list[i], self.verbose)
 
             counter += 1
 

@@ -12,3 +12,4 @@ dependencies:
   - six>=1.10.0
   - fancyimpute
   - dsbox-datapreprocessing
+  - stopit
