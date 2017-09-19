@@ -83,7 +83,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
 	    # if dtype = integer
             elif col.dtype.kind in np.typecodes['AllInteger']+'u':
                 if isCat_95in10(col):
-                    return self.__column_features(col, n_limit)
+                    return self.__column_features(col.astype(float), n_limit)
 	    
             # if dtype = category	
             elif col.dtype.name == 'category':
@@ -137,7 +137,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
                     idict[p[0]] = p[1]
             self.table = idict
         self.fitted = True
-
+        
 
     def produce(self, *, inputs: Sequence[Input], timeout:float = None, iterations: int = None):
         """
@@ -184,12 +184,16 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
         
         res.append(data_else)
         result = pd.concat(res, axis=1)
+        
         return result
 
 
+# example
 if __name__ == '__main__':
     enc = Encoder()
-    train_x = pd.read_csv("file:///home/rpedsel/Documents/ISI%20II/datasets/o_38/data/trainData.csv")
+    df = pd.DataFrame({'A':[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],'B':[1,2,3,4,5,1,2,3,4,5,1,2,3,4,5]})
+    train_x = df
     enc.set_training_data(inputs=train_x)
+    enc.set_params(params=Params(10, False))
     enc.fit()
     print(enc.produce(inputs=train_x))
