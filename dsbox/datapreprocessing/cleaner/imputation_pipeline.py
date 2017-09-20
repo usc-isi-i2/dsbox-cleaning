@@ -214,58 +214,7 @@ class Imputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
 
 
     #============================================ fit phase functinos ============================================
-    def __iterativeRegress(self, data, iterations, label_col_name=""):
-        '''
-        init with simple imputation, then apply regression to impute iteratively
-        '''
-        # for now, cancel the evaluation part for iterativeRegress
-        is_eval = False
-        # if (label_col_name==None or len(label_col_name)==0):
-        #     is_eval = False
-        # else:
-        #     is_eval = True
-
-        keys = data.keys()
-        missing_col_id = []
-        data, label = self.__df2np(data, label_col_name, missing_col_id)
-        
-        missing_col_data = data[:, missing_col_id]
-        imputed_data = np.zeros([data.shape[0], len(missing_col_id)])
-        imputed_data_lastIter = missing_col_data
-        # coeff_matrix = np.zeros([len(missing_col_id), data.shape[1]-1]) #coefficient vector for each missing value column
-        model_list = [None]*len(missing_col_id)     # store the regression model
-        epoch = iterations
-        counter = 0
-        # mean init all missing-value columns
-        init_imputation = ["mean"] * len(missing_col_id)   
-        next_data = mvp.imputeData(data, missing_col_id, init_imputation, self.verbose)
-
-        while (counter < epoch):
-            for i in range(len(missing_col_id)):
-                target_col = missing_col_id[i] 
-                next_data[:, target_col] = missing_col_data[:,i] #recover the column that to be imputed
-
-                data_clean, model_list[i] = mvp.bayeImpute(next_data, target_col, self.verbose)
-                next_data[:,target_col] = data_clean[:,target_col]    # update bayesian imputed column
-                imputed_data[:,i] = data_clean[:,target_col]    # add the imputed data
-
-                if (is_eval):
-                    self.__evaluation(data_clean, label)
-
-            # if (counter > 0):
-            #     distance = np.square(imputed_data - imputed_data_lastIter).sum()
-            #     if self.verbose: print("changed distance: {}".format(distance))
-            imputed_data_lastIter = np.copy(imputed_data)
-            counter += 1
-
-        data[:,missing_col_id] = imputed_data_lastIter
-
-        # convert model_list to dict
-        model_dict = {}
-        for i in range(len(model_list)):
-            model_dict[keys[missing_col_id[i]]] = model_list[i]
-
-        return data, model_dict
+    
 
     def __baseline(self, data, label_col_name):
         """
@@ -374,53 +323,7 @@ class Imputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
 
         return data_clean
 
-    def __regressImpute(self, data, model_dict, iterations):
-        """
-        """
-        col_names = data.keys()
-        # 1. convert to np array and get missing value column id
-        missing_col_id = []
-        data, label = self.__df2np(data, "", missing_col_id) # no need for label
-
-
-        model_list = [] # the model list
-        new_missing_col_id = [] # the columns that have correspoding model
-        # mask = np.ones((data.shape[1]), dtype=bool)   # false means: this column cannot be bring into impute
-        # offset = 0  # offset from missing_col_id to new_missing_col_id
-
-        for i in range(len(missing_col_id)):
-            name = col_names[missing_col_id[i]]
-            # if there is a column that not appears in trained model, impute it as "mean"
-            if (name not in model_dict.keys()):
-                data = mvp.imputeData(data, [missing_col_id[i]], ["mean"], self.verbose)
-                # mask[missing_col_id[i]] = False
-                print ("fill" + name + "with mean")
-                # offset += 1
-            else:
-                model_list.append(model_dict[name])
-                new_missing_col_id.append(missing_col_id[i])
-
-        # now, impute the left missing columns using the model from model_list (ignore the extra columns)
-        to_impute_data = data #just change a name..
-        missing_col_data = to_impute_data[:, new_missing_col_id]
-        epoch = iterations
-        counter = 0
-        # mean init all missing-value columns
-        init_imputation = ["mean"] * len(new_missing_col_id)   
-        next_data = mvp.imputeData(to_impute_data, new_missing_col_id, init_imputation, self.verbose)
-
-        while (counter < epoch):
-            for i in range(len(new_missing_col_id)):
-                target_col = new_missing_col_id[i] 
-                next_data[:, target_col] = missing_col_data[:,i] #recover the column that to be imputed
-
-                next_data = mvp.transform(next_data, target_col, model_list[i], self.verbose)
-
-            counter += 1
-
-        # put back to data
-        # data[:, mask] = next_data
-        return next_data
+    
 
 
     def __otherImpute(self, data, label_col_name=""):
@@ -452,33 +355,7 @@ class Imputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
 
     #====================== helper functions ======================
 
-    def __df2np(self, data, label_col_name, missing_col_id=[]):
-        """
-        helper function: convert dataframe to np array;
-            in the meanwhile, provide the id for missing column
-        """
-        counter = 0
-
-        # 1. get the id for missing value column
-        missing_col_name = []
-        for col_name in data:
-            num = sum(pd.isnull(data[col_name]))
-            if (num > 0):
-                missing_col_id.append(counter)
-                missing_col_name.append(col_name)
-            counter += 1
-
-        if (self.verbose>0): print("missing column name: {}".format(missing_col_name))
-
-        # 2. convert the dataframe to np array
-        label = None
-        col_names = data.keys()
-        if (len(label_col_name)>0):
-            label = data[label_col_name].values
-            data = data.drop(label_col_name,axis=1)
-        data = data.values  #convert to np array
-
-        return data, label
+    
 
 
 
