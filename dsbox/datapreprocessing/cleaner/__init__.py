@@ -1,7 +1,8 @@
 from .Iterative_regress import Iterative_regress
-from .encoder import Encoder, text2int
+from .greedy import greedy
+from .encoder import Encoder
 
-__all__ = ['Imputation','Encoder', 'text2int', 'Iteratuve_regress']
+__all__ = ['Imputation','Encoder', 'greedy', 'Iteratuve_regress']
 
 from pkgutil import extend_path
 __path__ = extend_path(__path__, __name__)

@@ -176,7 +176,7 @@ class Iterative_regress(UnsupervisedLearnerPrimitiveBase[Input, Output, Params])
 
 
     #============================================ helper functions ============================================
-    def __iterativeRegress(self, data, iterations, label_col_name=""):
+    def __iterativeRegress(self, data, iterations):
         '''
         init with simple imputation, then apply regression to impute iteratively
         '''
@@ -189,7 +189,7 @@ class Iterative_regress(UnsupervisedLearnerPrimitiveBase[Input, Output, Params])
 
         keys = data.keys()
         missing_col_id = []
-        data, label = mvp.df2np(data, label_col_name, missing_col_id, self.verbose)
+        data = mvp.df2np(data, missing_col_id, self.verbose)
         
         missing_col_data = data[:, missing_col_id]
         imputed_data = np.zeros([data.shape[0], len(missing_col_id)])
@@ -235,7 +235,7 @@ class Iterative_regress(UnsupervisedLearnerPrimitiveBase[Input, Output, Params])
         col_names = data.keys()
         # 1. convert to np array and get missing value column id
         missing_col_id = []
-        data, label = mvp.df2np(data, "", missing_col_id, self.verbose) # no need for label
+        data = mvp.df2np(data, missing_col_id, self.verbose)
 
 
         model_list = [] # the model list
