@@ -1,6 +1,7 @@
 from .Iterative_regress import IterativeRegressionImputation
 from .greedy import GreedyImputation
 from .encoder import Encoder
+from .mice import MICE
 
 __all__ = ['Imputation','Encoder', 'GreedyImputation', 'IterativeRegressionImputation']
 

@@ -50,7 +50,6 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
     def __init__(self) -> None:
         self.best_imputation = None
         self.train_x = None
-        self.train_y = None
         self.is_fitted = False
         self._has_finished = False
         self.verbose = 0

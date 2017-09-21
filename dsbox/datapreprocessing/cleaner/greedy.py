@@ -4,7 +4,7 @@ from . import missing_value_pred as mvp
 
 from primitive_interfaces.supervised_learning import SupervisedLearnerPrimitiveBase
 from primitive_interfaces.base import CallMetadata
-from typing import *
+from typing import NamedTuple, Sequence
 import stopit
 import math
 
