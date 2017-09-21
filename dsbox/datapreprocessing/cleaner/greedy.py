@@ -18,34 +18,27 @@ Params = NamedTuple("params", [
 
 class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
     """
-    Integrated imputation methods moduel.
+    Impute the missing value by greedy search of the combinations of standalone simple imputation method.
 
     Parameters:
     ----------
-    model: a function
-        The machine learning model that will be used to evaluate the imputation strategies
-
-    scorer: a function
-        The metrics that will be used
-
-    strategy: string
-        the strategy the imputer will use, now support:
-            "greedy": greedy search for the best (combination) of simple impute method
-            "iteratively_regre": iteratively regress on the missing value
-            "other: other
-
-    greater_is_better: boolean
-        Indicate whether higher or lower the score is better. Default is True. Usually, for regression problem
-        this should be set to False.
-
     verbose: Integer
         Control the verbosity
 
     Attributes:
     ----------
+    imputation_strategies: list of string,
+        each is a standalone simple imputation method
+
     best_imputation: dict. key: column name; value: trained imputation method (parameters)
-        for iteratively_regre method: could be sklearn regression model, or "mean" (which means the regression failed)
-    
+            which is one of the imputation_strategies
+
+    model: a sklearn machine learning class
+        The machine learning model that will be used to evaluate the imputation strategies
+
+    scorer: a sklearn metrics class
+        The metrics that will be used
+
     """
 
     def __init__(self) -> None:

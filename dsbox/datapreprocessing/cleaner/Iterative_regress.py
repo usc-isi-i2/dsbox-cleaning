@@ -18,32 +18,26 @@ Params = NamedTuple("params", [
 
 class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
     """
-    Integrated imputation methods moduel.
+    Impute the missing value by iteratively regress using other attributes. 
+        It will fit and fill the missing value in the training set, and keep the learned models.
+        In the `produce` phase, it will using the learned models to iteratively regress on the 
+        testing data again, and return the imputed testing data.
+
+    A possible improvements:
+        store the training data in `fit` phase. In the `produce` phase, concatente the training data
+        and testing data, then iteratively regress. 
+        This may be performs better. But under the assumption the training data and testing data are 
+            sampled (splited) from the whole dataset. 
+    
     Parameters:
     ----------
-    model: a function
-        The machine learning model that will be used to evaluate the imputation strategies
-
-    scorer: a function
-        The metrics that will be used
-
-    strategy: string
-        the strategy the imputer will use, now support:
-            "greedy": greedy search for the best (combination) of simple impute method
-            "iteratively_regre": iteratively regress on the missing value
-            "other: other
-
-    greater_is_better: boolean
-        Indicate whether higher or lower the score is better. Default is True. Usually, for regression problem
-        this should be set to False.
-
     verbose: Integer
         Control the verbosity
 
     Attributes:
     ----------
     best_imputation: dict. key: column name; value: trained imputation method (parameters)
-        for iteratively_regre method: could be sklearn regression model, or "mean" (which means the regression failed)
+        could be sklearn regression model, or "mean" (which means the regression failed)
     
     """
 

@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from fancyimpute import MICE as mice
+from fancyimpute import SimpleFill
 
 from . import missing_value_pred as mvp
 from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
@@ -17,15 +17,9 @@ Params = NamedTuple("params", [
     ) 
 
 
-class MICE(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
+class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
     """
-    Impute the missing value using k nearest neighbors (weighted average). 
-    This class is a wrapper from fancyimpute-mice
-
-    Parameters:
-    ----------
-    verbose: Integer
-        Control the verbosity
+    Imputate the missing value using the `mean` value of the attribute
     """
 
     def __init__(self) -> None:
@@ -33,7 +27,6 @@ class MICE(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
         self.is_fitted = False
         self._has_finished = False
         self.verbose = 0
-
 
     def set_params(self, verbose=0) -> None:
         self.verbose = verbose
@@ -143,9 +136,8 @@ class MICE(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
             assert to_ctx_mrg.state == to_ctx_mrg.EXECUTING
 
             # start completing data...
-            if (self.verbose>0): print("=========> impute by fancyimpute-mice:")
-            data_clean = self.__mice(data, iterations)
-
+            if (self.verbose>0): print("=========> impute by mean value of the attribute:")
+            data_clean = self.__mean(data)
 
         if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
             self.is_fitted = True
@@ -159,30 +151,12 @@ class MICE(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
             return None
 
 
-
     #============================================ core function ============================================
-    def __mice(self, test_data, iterations):
+    def __mean(self, test_data):
         """
-        wrap fancyimpute-mice
+        wrap fancyimpute-mean
         """
         test_data = mvp.df2np(test_data, [], self.verbose)
-        complete_data = mice(n_imputations=iterations, verbose=self.verbose).complete(test_data)
+        complete_data = SimpleFill(fill_method="mean").complete(test_data)
         return complete_data
-
-
-    # bellowing way is to combine the train_data and test_data, then do the mice imputation
-    # but in usage, the user might input same data during through `set_training_data` and `produce`
-    # therefore, for now let use not use the way
-    # def __mice(self, test_data):
-    #     """
-    #     wrap fancyimpute-mice
-    #     """
-    #     test_data = mvp.df2np(test_data, [], self.verbose)
-    #     break_point = test_data.shape[0]
-    #     train_data = mvp.df2np(self.train_x, [], self.verbose)
-    #     all_data = np.concatenate((test_data,train_data), axis=0)   # include more data to use
-    #     complete_data = mice().complete(all_data)
-
-    #     return complete_data[:break_point, :]
-
 

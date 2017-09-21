@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from fancyimpute import MICE as mice
+from fancyimpute import KNN as knn
 
 from . import missing_value_pred as mvp
 from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
@@ -13,33 +13,39 @@ Input = pd.DataFrame
 Output = pd.DataFrame
 
 Params = NamedTuple("params", [
+    ('k', int),
     ('verbose', int)]
     ) 
 
 
-class MICE(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
+class KNNImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
     """
     Impute the missing value using k nearest neighbors (weighted average). 
-    This class is a wrapper from fancyimpute-mice
+    This class is a wrapper from fancyimpute-knn
 
     Parameters:
     ----------
+    k: the number of nearest neighbors
+
     verbose: Integer
         Control the verbosity
+
     """
 
     def __init__(self) -> None:
         self.train_x = None
         self.is_fitted = False
         self._has_finished = False
+        self.k = 5
         self.verbose = 0
 
 
-    def set_params(self, verbose=0) -> None:
+    def set_params(self, k=5, verbose=0) -> None:
         self.verbose = verbose
+        self.k = k
 
     def get_params(self) -> Params:
-        return Params(verbose=self.verbose)
+        return Params(k=self.k, verbose=self.verbose)
 
 
     def get_call_metadata(self) -> CallMetadata:
@@ -131,8 +137,6 @@ class MICE(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
 
         if (timeout is None):
             timeout = math.inf
-        if (iterations is None):
-            iterations = 100   # default value for mice
 
         data = inputs.copy()
         # record keys:
@@ -143,8 +147,8 @@ class MICE(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
             assert to_ctx_mrg.state == to_ctx_mrg.EXECUTING
 
             # start completing data...
-            if (self.verbose>0): print("=========> impute by fancyimpute-mice:")
-            data_clean = self.__mice(data, iterations)
+            if (self.verbose>0): print("=========> impute by fancyimpute-knn:")
+            data_clean = self.__knn(data)
 
 
         if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
@@ -161,28 +165,11 @@ class MICE(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
 
 
     #============================================ core function ============================================
-    def __mice(self, test_data, iterations):
+    def __knn(self, test_data):
         """
-        wrap fancyimpute-mice
+        wrap fancyimpute-knn
         """
         test_data = mvp.df2np(test_data, [], self.verbose)
-        complete_data = mice(n_imputations=iterations, verbose=self.verbose).complete(test_data)
+        complete_data = knn(k=self.k, verbose=self.verbose).complete(test_data)
         return complete_data
-
-
-    # bellowing way is to combine the train_data and test_data, then do the mice imputation
-    # but in usage, the user might input same data during through `set_training_data` and `produce`
-    # therefore, for now let use not use the way
-    # def __mice(self, test_data):
-    #     """
-    #     wrap fancyimpute-mice
-    #     """
-    #     test_data = mvp.df2np(test_data, [], self.verbose)
-    #     break_point = test_data.shape[0]
-    #     train_data = mvp.df2np(self.train_x, [], self.verbose)
-    #     all_data = np.concatenate((test_data,train_data), axis=0)   # include more data to use
-    #     complete_data = mice().complete(all_data)
-
-    #     return complete_data[:break_point, :]
-
 

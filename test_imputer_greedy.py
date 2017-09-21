@@ -7,11 +7,6 @@ def text2int(col):
     """
     return pd.DataFrame(col.astype('category').cat.codes,columns=[col.name])
 
-from sklearn import svm
-from sklearn.linear_model import LogisticRegression
-from sklearn import metrics
-from sklearn.metrics import f1_score, make_scorer
-from sklearn import tree
 import pandas as pd
 
 from dsbox.datapreprocessing.cleaner import GreedyImputation
