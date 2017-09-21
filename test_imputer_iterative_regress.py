@@ -14,7 +14,7 @@ from sklearn.metrics import f1_score, make_scorer
 from sklearn import tree
 import pandas as pd
 
-from dsbox.datapreprocessing.cleaner import Iterative_regress
+from dsbox.datapreprocessing.cleaner import IterativeRegressionImputation
 
 # STEP 1: get data
 data_path = "../../dsbox-data/o_38/encoded/"
@@ -28,7 +28,7 @@ data.drop("d3mIndex",axis=1)    # drop because id, useless
 
 # STEP 2: go to use the Imputer !
 # check iterative_regress
-imputer = Iterative_regress()
+imputer = IterativeRegressionImputation()
 imputer.set_params(verbose=1)
 imputer.set_training_data(inputs=data)	# unsupervised
 imputer.fit(timeout=10)	# give 10 seconds to fit

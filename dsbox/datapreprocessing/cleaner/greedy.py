@@ -16,7 +16,7 @@ Params = NamedTuple("params", [
     ) 
 
 
-class greedy(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
+class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
     """
     Integrated imputation methods moduel.
 
@@ -55,6 +55,7 @@ class greedy(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
         self.train_y = None
         self.is_fitted = False
         self._has_finished = False
+        self.verbose = 0
 
 
     def set_params(self, verbose=0) -> None:

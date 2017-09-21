@@ -16,7 +16,7 @@ Params = NamedTuple("params", [
     ) 
 
 
-class Iterative_regress(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
+class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
     """
     Integrated imputation methods moduel.
     Parameters:
@@ -53,6 +53,7 @@ class Iterative_regress(UnsupervisedLearnerPrimitiveBase[Input, Output, Params])
         self.train_y = None
         self.is_fitted = False
         self._has_finished = False
+        self.verbose = 0
 
 
     def set_params(self, verbose=0) -> None:
