@@ -2,9 +2,9 @@ import numpy as np
 import pandas as pd
 from . import missing_value_pred as mvp
 
-from dsbox.datapreprocessing.cleaner.primitive_interfaces.supervised_learning import SupervisedLearnerPrimitiveBase
-from dsbox.datapreprocessing.cleaner.primitive_interfaces.base import CallMetadata
-from typing import *
+from primitive_interfaces.supervised_learning import SupervisedLearnerPrimitiveBase
+from primitive_interfaces.base import CallMetadata
+from typing import NamedTuple, Sequence
 import stopit
 import math
 
@@ -12,41 +12,33 @@ Input = pd.DataFrame
 Output = pd.DataFrame
 
 Params = NamedTuple("params", [
-    ('strategy', str),
     ('verbose', int)]
     ) 
 
 
-class Imputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
+class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
     """
-    Integrated imputation methods moduel.
+    Impute the missing value by greedy search of the combinations of standalone simple imputation method.
 
     Parameters:
     ----------
-    model: a function
-        The machine learning model that will be used to evaluate the imputation strategies
-
-    scorer: a function
-        The metrics that will be used
-
-    strategy: string
-        the strategy the imputer will use, now support:
-            "greedy": greedy search for the best (combination) of simple impute method
-            "iteratively_regre": iteratively regress on the missing value
-            "other: other
-
-    greater_is_better: boolean
-        Indicate whether higher or lower the score is better. Default is True. Usually, for regression problem
-        this should be set to False.
-
     verbose: Integer
         Control the verbosity
 
     Attributes:
     ----------
+    imputation_strategies: list of string,
+        each is a standalone simple imputation method
+
     best_imputation: dict. key: column name; value: trained imputation method (parameters)
-        for iteratively_regre method: could be sklearn regression model, or "mean" (which means the regression failed)
-    
+            which is one of the imputation_strategies
+
+    model: a sklearn machine learning class
+        The machine learning model that will be used to evaluate the imputation strategies
+
+    scorer: a sklearn metrics class
+        The metrics that will be used
+
     """
 
     def __init__(self) -> None:
@@ -56,16 +48,14 @@ class Imputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
         self.train_y = None
         self.is_fitted = False
         self._has_finished = False
+        self.verbose = 0
 
 
-    def set_params(self, model, scorer, strategy="greedy", verbose=0) -> None:
+    def set_params(self, verbose=0) -> None:
         self.verbose = verbose
-        self.strategy = strategy
-        self.model = model
-        self.scorer = scorer
 
     def get_params(self) -> Params:
-        return Params(strategy=self.strategy, verbose=self.verbose)
+        return Params(verbose=self.verbose)
 
 
     def get_call_metadata(self) -> CallMetadata:
@@ -88,6 +78,7 @@ class Imputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
         self.is_fitted = False
 
 
+
     def fit(self, *, timeout: float = None, iterations: int = None) -> None:
         """
         train imputation parameters. Now support:
@@ -108,43 +99,31 @@ class Imputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
 
         if (timeout is None):
             timeout = math.inf
-        if (iterations is None):
-            self._iterations_done = True
-            iterations = 30 # only works for iteratively_regre method
 
         # setup the timeout
         with stopit.ThreadingTimeout(timeout) as to_ctx_mrg:
             assert to_ctx_mrg.state == to_ctx_mrg.EXECUTING
-
-            # start fitting...  
+ 
             data = self.train_x.copy()
-            if (self.train_y is not None):
-                label_col_name = "target_label" #   name for label, assume no duplicate exists in data
-                data[label_col_name] = self.train_y
+            label = self.train_y.copy()
 
-            # start fitting
-            if (self.strategy=="greedy"):
-                if (self.train_y is None):
-                    raise ValueError("label is nessary for greedy search")
+            # start fitting...
+            # 1. to figure out what kind of problem it is and assign model and scorer
+            # now only support "classification" or "regresion" problem
+            self.set_model_scorer()
+            # 2. using the model and scorer to do greedy search
+            if (self.verbose > 0): print("=========> Greedy searched imputation:")
+            self.best_imputation = self.__imputationGreedySearch(data, label)
 
-                print("=========> Greedy searched imputation:")
-                self.best_imputation = self.__imputationGreedySearch(data, label_col_name)
-
-            elif (self.strategy=="iteratively_regre"):
-                print("=========> iteratively regress method:")
-                data_clean, self.best_imputation = self.__iterativeRegress(data, iterations, label_col_name)
-
-            elif(self.strategy=="other"):
-                print("=========> other method:")
-                # no operation here because this method not needs to be trained
-
-            else:
-                raise ValueError("no such strategy: {}".format(self.strategy))
 
         if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
             self.is_fitted = True
             self._has_finished = True
+            self._iterations_done = True
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
+            self.is_fitted = False
+            self._has_finished = False
+            self._iterations_done = False
             return
 
 
@@ -176,9 +155,6 @@ class Imputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
 
         if (timeout is None):
             timeout = math.inf
-        if (iterations is None):
-            self._iterations_done = True
-            iterations = 30 # only works for iteratively_regre method
 
         data = inputs.copy()
         # record keys:
@@ -189,53 +165,51 @@ class Imputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
             assert to_ctx_mrg.state == to_ctx_mrg.EXECUTING
 
             # start completing data...
-            if (self.strategy=="greedy"):
-                print("=========> impute using result from greedy search:")
-                data_clean = self.__simpleImpute(data, self.best_imputation)
-
-            elif (self.strategy=="iteratively_regre"):
-                print("=========> iteratively regress method:")
-                data_clean = self.__regressImpute(data, self.best_imputation, iterations)
-                
-
-            elif(self.strategy=="other"):
-                print("=========> other method:")
-                data_clean = self.__otherImpute(data)
+            if (self.verbose>0): print("=========> impute using result from greedy search:")
+            data_clean = self.__simpleImpute(data, self.best_imputation)
 
 
         if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
             self.is_fitted = True
             self._has_finished = True
+            self._iterations_done = True
             return pd.DataFrame(data=data_clean, columns=keys)
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
+            self.is_fitted = False
             self._has_finished = False
+            self._iterations_done = False
             return None
 
 
 
     #============================================ fit phase functinos ============================================
-    
-
-    def __baseline(self, data, label_col_name):
+    def set_model_scorer(self, model=None, scorer=None):
         """
-        running baseline
+        figure out what model and scorer should be used for given dataset (label)
+        also possible to mannually set
         """
-        data_dropCol = data.dropna(axis=1, how="any") #drop the col with nan
+        if (model is not None) and (scorer is not None):
+            self.model = model
+            self.scorer = scorer
+            return
 
-        label = data[label_col_name].values
-        data = data.drop(label_col_name,axis=1).values  #convert to np array
-        label_dropCol = data_dropCol[label_col_name].values
-        data_dropCol = data_dropCol.drop(label_col_name,axis=1).values
+        from sklearn.linear_model import LogisticRegression
+        from sklearn.svm import SVR
+        from sklearn.metrics import f1_score, make_scorer, r2_score
+        
 
-        #========================STEP 2: pred==============
-        print("==============result for baseline: drop rows============")
-        self.__evaluation(data, label)
-        print("==============result for baseline: drop columns============")
+        is_classification = self.__isCat_95in10(self.train_y)
+        if is_classification == True:
+            self.model = LogisticRegression()
+            self.scorer = make_scorer(f1_score, average="macro")
+        else:
+            self.model = SVR()
+            self.scorer = make_scorer(r2_score, greater_is_better=False) # score will be * -1, if greater_is_better is set to False
 
-        self.__evaluation(data_dropCol, label_dropCol)
-        print("========================================================")
+            
 
-    def __imputationGreedySearch(self, data, label_col_name):
+
+    def __imputationGreedySearch(self, data, label):
         """
         running greedy search for imputation combinations
         """
@@ -243,7 +217,8 @@ class Imputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
         col_names = data.keys()
         # 1. convert to np array and get missing value column id
         missing_col_id = []
-        data, label = self.__df2np(data, label_col_name, missing_col_id)
+        data = mvp.df2np(data, missing_col_id, self.verbose)
+        label = label.values
 
         # init for the permutation
         permutations = [0] * len(missing_col_id)   # length equal with the missing_col_id; value represents the id for imputation_strategies
@@ -290,7 +265,14 @@ class Imputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
         
         return best_imputation
 
-    #============================================ transform phase functions ============================================
+    #============================================ helper  functions ============================================
+    def __isCat_95in10(self, label):
+        """
+        copied from dsbox.datapreprocessing.cleaner.encoder:
+        hardcoded rule for identifying (integer/string) categorical column
+        """
+        col = label[label.keys()[0]]    # assume only one label
+        return col.value_counts().head(10).sum() / float(col.count()) > .95
 
     def __simpleImpute(self, data, strategies_dict, verbose=False):
         """
@@ -305,7 +287,7 @@ class Imputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
         col_names = data.keys()
         # 1. convert to np array and get missing value column id
         missing_col_id = []
-        data, label = self.__df2np(data, "", missing_col_id) # no need for label
+        data = mvp.df2np(data, missing_col_id, self.verbose) # no need for label
 
         strategies = [] # list of strategies, exactly match with missing_col_id
         # extra missing-value columns occurs, using default "mean"; 
@@ -322,42 +304,6 @@ class Imputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
         data_clean = mvp.imputeData(data, missing_col_id, strategies, verbose)
 
         return data_clean
-
-    
-
-
-    def __otherImpute(self, data, label_col_name=""):
-        from fancyimpute import BiScaler, KNN, NuclearNormMinimization, SoftImpute, MICE
-        from sklearn.preprocessing import scale
-
-        if (label_col_name==None or len(label_col_name)==0):
-            is_eval = False
-        else:
-            is_eval = True
-
-        missing_col_id = []
-        data, label = self.__df2np(data, label_col_name, missing_col_id)
-        # mask = np.isnan(data)
-        # imputation_list = ["mean"] * len(missing_col_id)
-        # data_mean = mvp.imputeData(data, missing_col_id, imputation_list, self.verbose)
-        # data_mean = scale(data_mean)
-        # data_mean[mask] = np.nan
-
-        # data_clean = KNN(k=5, normalizer=BiScaler).complete(data)
-        data_clean = KNN(k=5).complete(data)
-        #data_clean = MICE().complete(data)
-
-        if (is_eval): self.__evaluation(data_clean, label)
-
-        return data_clean
-
-
-
-    #====================== helper functions ======================
-
-    
-
-
 
     def __evaluation(self, data_clean, label):
         """
@@ -393,18 +339,3 @@ class Imputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
         if (num_removed_test > 0):
             print("BUT !!!!!!!!there are {} data (total test size: {})that cannot be predicted!!!!!!\n".format(num_removed_test, mask_test.shape[0]))
         return score
-
-    # for now, make it internally
-    def __analysis(self, data, label):
-        """
-        TODO
-        provide some analysis for the missing pattern:
-        is missing/not related to other column ?
-        """
-        data = data.copy()
-        label_col_name = "target_label" #   name for label, assume no duplicate exists in data
-        data[label_col_name] = label
-
-         # start evaluation
-        print("=========> Baseline:")
-        self.__baseline(data, label_col_name)

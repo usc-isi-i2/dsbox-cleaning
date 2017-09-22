@@ -136,3 +136,25 @@ def transform(data, target_col, model, verbose=0):
 
     # print("coefficient: {}".format(model.coef_))
     return original_data
+
+def df2np(data, missing_col_id=[], verbose=0):
+    """
+    helper function: convert dataframe to np array;
+        in the meanwhile, provide the id for missing column
+    """
+    counter = 0
+
+    # 1. get the id for missing value column
+    missing_col_name = []
+    for col_name in data:
+        num = sum(pd.isnull(data[col_name]))
+        if (num > 0):
+            missing_col_id.append(counter)
+            missing_col_name.append(col_name)
+        counter += 1
+
+    if (verbose>0): print("missing column name: {}".format(missing_col_name))
+
+    data = data.values  #convert to np array
+
+    return data

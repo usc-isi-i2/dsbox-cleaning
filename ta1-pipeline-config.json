@@ -1,0 +1,6 @@
+{
+  "problem_schema":"/Users/luofanghao/work/USC_lab/isi-II/work/DSBox_project/dsbox-data/o_38/original/problemSchema.json",
+  "dataset_schema":"/Users/luofanghao/work/USC_lab/isi-II/work/DSBox_project/dsbox-data/o_38/original/data/dataSchema.json",
+  "data_root":"/Users/luofanghao/work/USC_lab/isi-II/work/DSBox_project/dsbox-data/o_38/original/data/",
+  "output_file":"./result.csv"
+}

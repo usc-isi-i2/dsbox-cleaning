@@ -27,20 +27,30 @@ see [test_example.py](test_example.py):
 """
 sample program for classification problem
 """
+def text2int(col):
+    """
+    convert column value from text to integer codes (0,1,2...)
+    """
+    return pd.DataFrame(col.astype('category').cat.codes,columns=[col.name])
+
+from sklearn import svm
 from sklearn.linear_model import LogisticRegression
 from sklearn import metrics
 from sklearn.metrics import f1_score, make_scorer
 from sklearn import tree
+import pandas as pd
 
-from dsbox.datapreprocessing.cleaner import Imputation, encoder
+from dsbox.datapreprocessing.cleaner import Imputation
 
 # STEP 1: get data
-data_path = "../dsbox-data/o_38/original/data/"
-data_name = data_path + "trainData.csv"
-label_name = data_path + "trainTargets.csv" # make sure your label target is in the second column of this file
+data_path = "../../dsbox-data/o_38/encoded/"
+data_name = data_path + "trainData_encoded.csv"
+label_name = data_path + "trainTargets_encoded.csv" # make sure your label target is in the second column of this file
 
-data = encoder.encode(data_name)
-label = encoder.encode(label_name,label="Class")["Class"]
+
+
+data = pd.read_csv(data_name)
+label = text2int(pd.read_csv(label_name)["Class"])
 
 data.drop("d3mIndex",axis=1)    # drop because id, useless
 
@@ -49,18 +59,26 @@ clf = LogisticRegression()
 scorer = make_scorer(f1_score, average="macro") # score will be * -1, if greater_is_better is set to False
 
 # STEP 3: go to use the Imputer !
+imputer = Imputation()
+imputer.set_params(model=clf, scorer=scorer, strategy="iteratively_regre", verbose=1)
+imputer.set_training_data(data,label)
+imputer.fit(timeout = 10)
+print (imputer.get_call_metadata())
+result = imputer.produce(data, timeout=0.5)
 # method: greedy search
-# imputer = Imputation(model=clf, scorer=scorer, strategy="greedy")
-# imputer.fit(data, label)
+# data_test = data.drop("age",axis=1)
+# imputer.fit(data_test, label)
+
 # data_clean = imputer.transform(data)
 # print imputer.best_imputation
 
 # method: regression
-imputer = Imputation(model=clf, scorer=scorer, strategy="iteratively_regre")
-imputer.fit(data)
-data_clean = imputer.transform(data, label)
+# imputer.fit(data)   # on age column, no missing value
+# print (imputer.best_imputation.keys())
 
-data_clean.to_csv("data_clean.csv", index=False)
+# data_clean = imputer.transform(data)    # on age column, has missing value
+
+# data_clean.to_csv("data_clean.csv", index=False)
 ```
 
 
@@ -74,10 +92,10 @@ data_clean.to_csv("data_clean.csv", index=False)
 4. other ([fancyimpute](https://github.com/hammerlab/fancyimpute))
 
 ## One-hot encoder
-The encoder takes csv file or pandas DataFrame as input, then one-hot encode columns which are considered categorical.(specifying rules or selected columns) 
+The encoder takes pandas DataFrame as input, then one-hot encode columns which are considered categorical. 
 
 ```
-class Encoder(categorical_features='95in10', n_limit=10, text2int=True)
+class Encoder(categorical_features='95in10')
 ```
 
 For **categorical_features = '95in10'**, it takes a column as category if:
@@ -86,6 +104,8 @@ For **categorical_features = '95in10'**, it takes a column as category if:
 * For the rest values (not top 10) with low frequency, put into one column _[colname]\_other\__
 
 Note: 
+* Maximum number of values encoded: **n_limit**, Whether to convert other text columns to integers: **text2int**.
+* Apply set_params() function to change the two parameters' values. 
 * For one-hot encoded columns, in the output there would always be a _[colname]\_other__ column for values not appear in fitted data and values with fewer occurrence (when there are more than **n_limit** distinct values).
 
 
@@ -93,22 +113,12 @@ Note:
 ```python
 from dsbox.datapreprocessing.cleaner import Encoder
 
-# EXAMPLE 1
 enc = Encoder()
-data = 'yourDataset.csv'
-enc.fit(data)
-result = enc.transform(data)
-
-# EXAMPLE 2
-# demand that Encoder don't convert non-categorical text to integers
-# set no limit to maximum number of distinct values to one-hot encode
-enc = Encoder(text2int=False,n_limit=None)
-trainData = pd.read_csv('trainData.csv')
-testData = pd.read_csv('testData.csv')
-
-enc.fit(trainData)
-result_train = enc.transform(trainData)
-result_test = enc.transform(testData)
+train_x = pd.read_csv(your_dataset)
+enc.set_training_data(inputs=train_x)
+enc.set_params(params=Params(10, False)) # if you want to set n_limit and text2int parameter
+enc.fit()
+result = enc.produce(inputs=train_x)
 ```
 
 ### TODO:
