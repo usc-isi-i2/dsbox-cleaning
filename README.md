@@ -2,26 +2,24 @@
 This component is for missing value imputation. This module is designed to support:
 
 1. multiple ways to impute data, including our self-defined methods.
-2. missing pattern related analysis
-3. fit (or train) a method on the data, then apply to other data
+2. missing pattern related analysis (to be exposed)
 
 Now the functionality is limited to:
 
 * one label problem
 
 ### Dependencies
-[check here](environment.yml)
+[check here](environment_py3.yml)
 
 if you have conda, simply do the following:
 
 ```sh
 conda-env create .
-source activate mv
-python test_example.py
+source activate mv-py3
 ```
 
 ### Usage:
-see [test_example.py](test_example.py):
+see [test_examples](./test_examples):
 
 ```python
 """
@@ -33,63 +31,36 @@ def text2int(col):
     """
     return pd.DataFrame(col.astype('category').cat.codes,columns=[col.name])
 
-from sklearn import svm
-from sklearn.linear_model import LogisticRegression
-from sklearn import metrics
-from sklearn.metrics import f1_score, make_scorer
-from sklearn import tree
 import pandas as pd
 
-from dsbox.datapreprocessing.cleaner import Imputation
+from dsbox.datapreprocessing.cleaner import GreedyImputation
 
 # STEP 1: get data
 data_path = "../../dsbox-data/o_38/encoded/"
 data_name = data_path + "trainData_encoded.csv"
 label_name = data_path + "trainTargets_encoded.csv" # make sure your label target is in the second column of this file
 
-
-
 data = pd.read_csv(data_name)
 label = text2int(pd.read_csv(label_name)["Class"])
 
 data.drop("d3mIndex",axis=1)    # drop because id, useless
 
-# STEP 2: define your machine learning model and scorer
-clf = LogisticRegression()
-scorer = make_scorer(f1_score, average="macro") # score will be * -1, if greater_is_better is set to False
+# STEP 2: go to use the Imputer !
+# check GreedyImputation
+imputer = GreedyImputation()
+imputer.set_params(verbose=1)
+imputer.set_training_data(inputs=data, outputs=label)	# unsupervised
+imputer.fit(timeout=10)	# give 10 seconds to fit
+print (imputer.get_call_metadata())	# to see wether fit worked
+result = imputer.produce(inputs=data, timeout=0.01)
+print (imputer.get_call_metadata())	# to see wether produce worked
 
-# STEP 3: go to use the Imputer !
-imputer = Imputation()
-imputer.set_params(model=clf, scorer=scorer, strategy="iteratively_regre", verbose=1)
-imputer.set_training_data(data,label)
-imputer.fit(timeout = 10)
-print (imputer.get_call_metadata())
-result = imputer.produce(data, timeout=0.5)
-# method: greedy search
-# data_test = data.drop("age",axis=1)
-# imputer.fit(data_test, label)
-
-# data_clean = imputer.transform(data)
-# print imputer.best_imputation
-
-# method: regression
-# imputer.fit(data)   # on age column, no missing value
-# print (imputer.best_imputation.keys())
-
-# data_clean = imputer.transform(data)    # on age column, has missing value
-
-# data_clean.to_csv("data_clean.csv", index=False)
 ```
 
 
-### TODO:
-1. finish verbose func
 
 ### methods
-1. baseline: drop columns or drop rows
-2. (for multiple missing-valu columns) greedy search
-3. iteratively regression
-4. other ([fancyimpute](https://github.com/hammerlab/fancyimpute))
+see [methods](methods.md) for details.
 
 ## One-hot encoder
 The encoder takes pandas DataFrame as input, then one-hot encode columns which are considered categorical. 
