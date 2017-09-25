@@ -11,9 +11,9 @@ import math
 Input = pd.DataFrame
 Output = pd.DataFrame
 
-Params = NamedTuple("params", [
-    ('verbose', int)]
-    ) 
+Params = NamedTuple("Params", [
+    ('greedy_strategy', dict)]
+    )
 
 
 class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
@@ -41,7 +41,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
 
     """
 
-    def __init__(self) -> None:
+    def __init__(self, verbose=0) -> None:
         self.best_imputation = None
         self.imputation_strategies = ["mean", "max", "min", "zero"]
         self.train_x = None
@@ -51,11 +51,16 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
         self.verbose = 0
 
 
-    def set_params(self, verbose=0) -> None:
-        self.verbose = verbose
+    def set_params(self, *, params: Params) -> None:
+        self.is_fitted = len(params.greedy_strategy) > 0
+        self._has_finished = self.is_fitted
+        self.best_imputation = params.greedy_strategy
 
     def get_params(self) -> Params:
-        return Params(verbose=self.verbose)
+        if self.is_fitted:
+            return Params(greedy_strategy=self.best_imputation)
+        else:
+            return Params(greedy_strategy=dict())
 
 
     def get_call_metadata(self) -> CallMetadata:
@@ -103,7 +108,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
         # setup the timeout
         with stopit.ThreadingTimeout(timeout) as to_ctx_mrg:
             assert to_ctx_mrg.state == to_ctx_mrg.EXECUTING
- 
+
             data = self.train_x.copy()
             label = self.train_y.copy()
 
@@ -159,7 +164,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
         data = inputs.copy()
         # record keys:
         keys = data.keys()
-        
+
         # setup the timeout
         with stopit.ThreadingTimeout(timeout) as to_ctx_mrg:
             assert to_ctx_mrg.state == to_ctx_mrg.EXECUTING
@@ -175,6 +180,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
             self._iterations_done = True
             return pd.DataFrame(data=data_clean, columns=keys)
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
+            print("Timed Out...")
             self.is_fitted = False
             self._has_finished = False
             self._iterations_done = False
@@ -196,7 +202,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
         from sklearn.linear_model import LogisticRegression
         from sklearn.svm import SVR
         from sklearn.metrics import f1_score, make_scorer, r2_score
-        
+
 
         is_classification = self.__isCat_95in10(self.train_y)
         if is_classification == True:
@@ -206,7 +212,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
             self.model = SVR()
             self.scorer = make_scorer(r2_score, greater_is_better=False) # score will be * -1, if greater_is_better is set to False
 
-            
+
 
 
     def __imputationGreedySearch(self, data, label):
@@ -251,18 +257,18 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
 
             iteration -= 1
 
-        
-        if (self.verbose>0): 
+
+        if (self.verbose>0):
             print("max score is {}, min score is {}\n".format(max_score, min_score))
             print("and the best score is given by the imputation combination: ")
 
         best_imputation = {}    # key: col_name; value: imputation strategy
         for i in range(len(best_combo)):
             best_imputation[col_names[missing_col_id[i]]] = self.imputation_strategies[best_combo[i]]
-            if (self.verbose>0): 
+            if (self.verbose>0):
                 print(self.imputation_strategies[best_combo[i]] + " for the column {}".format(col_names[missing_col_id[i]]))
 
-        
+
         return best_imputation
 
     #============================================ helper  functions ============================================
@@ -290,7 +296,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
         data = mvp.df2np(data, missing_col_id, self.verbose) # no need for label
 
         strategies = [] # list of strategies, exactly match with missing_col_id
-        # extra missing-value columns occurs, using default "mean"; 
+        # extra missing-value columns occurs, using default "mean";
         # some missing-value columns not occurs, ignore them
         for i in range(len(missing_col_id)):
             name = col_names[missing_col_id[i]]
@@ -299,7 +305,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
             else:
                 strategies.append(strategies_dict[name])
 
-        print(strategies)            
+        print(strategies)
         # 2. impute data
         data_clean = mvp.imputeData(data, missing_col_id, strategies, verbose)
 
