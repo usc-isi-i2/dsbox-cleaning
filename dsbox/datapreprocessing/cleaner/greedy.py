@@ -109,8 +109,12 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
         with stopit.ThreadingTimeout(timeout) as to_ctx_mrg:
             assert to_ctx_mrg.state == to_ctx_mrg.EXECUTING
 
-            data = self.train_x.copy()
-            label = self.train_y.copy()
+            if isinstance(self.train_x, pd.DataFrame):
+                data = self.train_x.copy()
+                label = self.train_y.copy()
+            else:
+                data = self.train_x[0].copy()
+                label = self.train_y[0].copy()
 
             # start fitting...
             # 1. to figure out what kind of problem it is and assign model and scorer
@@ -161,7 +165,11 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
         if (timeout is None):
             timeout = math.inf
 
-        data = inputs.copy()
+        if isinstance(inputs, pd.DataFrame):
+            data = inputs.copy()
+        else:
+            data = inputs[0].copy()
+
         # record keys:
         keys = data.keys()
 
