@@ -35,9 +35,10 @@ with open(jsonCall['dataset_schema'], 'r') as inputFile:
 
 # Load the input files from the data_root folder path information, replacing missing values with zeros
 dataRoot = jsonCall['data_root']
-trainData = pd.read_csv( path.join(dataRoot, 'trainData.csv') )
-trainTargets = pd.read_csv( path.join(dataRoot, 'trainTargets.csv') )
-testData = pd.read_csv( path.join(dataRoot, 'testData.csv') )
+trainData = pd.read_csv( path.join(dataRoot, 'trainData.csv.gz') )
+trainTargets = pd.read_csv( path.join(dataRoot, 'trainTargets.csv.gz') )
+#testData = pd.read_csv( path.join(dataRoot, 'testData.csv.gz') )
+testData = pd.read_csv( path.join(dataRoot, 'trainData.csv.gz') )
 
 print(trainData.head())
 print(trainTargets.head())
@@ -53,8 +54,6 @@ encodedTestData = enc.produce(inputs=testData)
 
 # Initialize the DSBox imputer
 imputer = MeanImputation()
-imputer.set_params(verbose=0)
-imputer.set_training_data(inputs=encodedData)	# unsupervised
 imputer.fit(timeout=10)	# give 10 seconds to fit
 print (imputer.get_call_metadata())	# to see wether fit worked
 imputedData = imputer.produce(inputs=encodedData, timeout=10)
