@@ -8,11 +8,12 @@ from primitive_interfaces.base import CallMetadata
 import stopit
 import math
 
+
 Input = pd.DataFrame
 Output = pd.DataFrame
 
 Params = NamedTuple("params", [
-    ('verbose', int)]
+    ('regression_models', dict)]
     ) 
 
 
@@ -41,19 +42,24 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
     
     """
 
-    def __init__(self) -> None:
+    def __init__(self, verbose=0) -> None:
         self.best_imputation = None
         self.train_x = None
         self.is_fitted = False
         self._has_finished = False
-        self.verbose = 0
-
-
-    def set_params(self, verbose=0) -> None:
         self.verbose = verbose
 
+
+    def set_params(self, *, params: Params) -> None:
+        self.is_fitted = len(params.regression_models) > 0
+        self._has_finished = self.is_fitted
+        self.best_imputation = params.regression_models
+
     def get_params(self) -> Params:
-        return Params(verbose=self.verbose)
+        if self.is_fitted:
+            return Params(regression_models=self.best_imputation)
+        else:
+            return Params(regression_models=dict())
 
 
     def get_call_metadata(self) -> CallMetadata:
@@ -164,8 +170,11 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
             self._has_finished = True
             return pd.DataFrame(data=data_clean, columns=keys)
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
+            print ("Timed Out...")
+            self.is_fitted = False
             self._has_finished = False
-            return None
+            self._iterations_done = False
+            return
 
 
 

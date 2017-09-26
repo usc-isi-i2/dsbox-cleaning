@@ -130,6 +130,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
             self._has_finished = True
             self._iterations_done = True
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
+            print ("Timed Out...")
             self.is_fitted = False
             self._has_finished = False
             self._iterations_done = False
