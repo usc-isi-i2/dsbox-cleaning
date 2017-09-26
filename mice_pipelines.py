@@ -47,7 +47,6 @@ print(testData.head())
 
 enc = Encoder()
 enc.set_training_data(inputs=trainData)
-enc.set_params(params=Params(n_limit=10, text2int=True))
 enc.fit()
 encodedData = enc.produce(inputs=trainData)
 encodedTestData = enc.produce(inputs=testData)
@@ -55,7 +54,7 @@ encodedTestData = enc.produce(inputs=testData)
 # Initialize the DSBox imputer
 imputer = MICE()
 print (imputer.get_call_metadata())	# to see wether fit worked
-imputedData = imputer.produce(inputs=encodedData, timeout=10)
+imputedData = imputer.produce(inputs=encodedData, timeout=100)
 print (imputer.get_call_metadata())	# to see wether produce worked
 
 model = BaggingClassifier()

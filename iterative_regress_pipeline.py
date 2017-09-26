@@ -39,14 +39,13 @@ trainData = pd.read_csv( path.join(dataRoot, 'trainData.csv.gz') )
 trainTargets = pd.read_csv( path.join(dataRoot, 'trainTargets.csv.gz') )
 testData = pd.read_csv( path.join(dataRoot, 'testData.csv.gz') )
 
-print(trainData.head())
+print(trainData.columns)
 print(trainTargets.head())
 print(np.asarray(trainTargets['Class']))
-print(testData.head())
+print(testData.columns)
 
 enc = Encoder()
 enc.set_training_data(inputs=trainData)
-enc.set_params(params=Params(n_limit=10, text2int=True))
 enc.fit()
 encodedData = enc.produce(inputs=trainData)
 encodedTestData = enc.produce(inputs=testData)
@@ -54,7 +53,7 @@ encodedTestData = enc.produce(inputs=testData)
 # Initialize the DSBox imputer
 imputer = IterativeRegressionImputation(verbose=0)
 imputer.set_training_data(inputs=encodedData)	# unsupervised
-imputer.fit(timeout=10)	# give 10 seconds to fit
+imputer.fit(timeout=100)	# give 100 seconds to fit
 print (imputer.get_call_metadata())	# to see wether fit worked
 print ("\nParams:")
 print (imputer.get_params())
@@ -62,7 +61,7 @@ print (imputer.get_params())
 imputer2 = IterativeRegressionImputation(verbose=0)
 imputer2.set_params(params=imputer.get_params())
 
-imputedData = imputer2.produce(inputs=encodedData, timeout=10)
+imputedData = imputer2.produce(inputs=encodedData, timeout=100)
 print (imputer2.get_call_metadata())	# to see wether produce worked
 
 model = BaggingClassifier()

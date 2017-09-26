@@ -54,7 +54,6 @@ testData = pd.read_csv( path.join(dataRoot, 'testData.csv.gz') )
 
 enc = Encoder()
 enc.set_training_data(inputs=trainData)
-enc.set_params(params=Params(n_limit=10, text2int=True))
 enc.fit()
 encodedData = enc.produce(inputs=trainData)
 encodedTestData = enc.produce(inputs=testData)
@@ -62,7 +61,7 @@ encodedTestData = enc.produce(inputs=testData)
 # Initialize the DSBox imputer
 imputer = GreedyImputation(verbose=0)
 imputer.set_training_data(inputs=encodedData, outputs=text2int(trainTargets['Class']))	# unsupervised
-imputer.fit(timeout=10.0)	# give 10 seconds to fit
+imputer.fit(timeout=100.0)	# give 10 seconds to fit
 
 print (imputer.get_call_metadata())	# to see wether fit worked
 print('\nParams:')
@@ -71,7 +70,7 @@ print(imputer.get_params())
 imputer2 = GreedyImputation(verbose=0)
 imputer2.set_params(params=imputer.get_params())
 
-imputedData = imputer2.produce(inputs=encodedData, timeout=10.0)
+imputedData = imputer2.produce(inputs=encodedData, timeout=100.0)
 print (imputer2.get_call_metadata())	# to see wether produce worked
 
 
