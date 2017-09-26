@@ -21,8 +21,9 @@ Input = pd.DataFrame
 Output = pd.DataFrame
 
 Params = NamedTuple('Params', [
-    ('n_limit', int),
-    ('text2int', bool),
+    ('mapping', dict),
+    ('all_columns', list),
+    ('empty_columns', list)
     ])
 
 
@@ -37,27 +38,27 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
        - n_limit: max number of distinct values to one-hot encode,
          remaining values with fewer occurence are put in [colname]_other_ column.
 
-    2. uses data given in fit() function to tune the encoder.
+    2. feed in data by set_training_data, then apply fit() function to tune the encoder.
 
-    3. transform(): input data to be encoded and output the result.
+    3. produce(): input data would be encoded and return.
     """
 
     def __repr__(self):
         return "%s(%r)" % ('Encoder', self.__dict__)
 
 
-    def __init__(self, *, categorical_features = '95in10'):
+    def __init__(self, *, categorical_features='95in10', text2int=True, n_limit=10) -> None:
 
         self.categorical_features = categorical_features
-        self.label = None
-        self.table = None
-        self.columns = None
-        self.empty = []
+        self.n_limit = n_limit
+        self.text2int = text2int
+        
+        self.mapping = None
+        self.all_columns = []
+        self.empty_columns = []
 
         self.training_inputs = None
         self.fitted = False
-        self.n_limit = 10
-        self.text2int = True
 
 
     def __column_features(self, col, n_limit):
@@ -77,7 +78,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
             if col.count() == 0:
                 print('Warning:',col.name,'is an empty column.')
                 print('The encoder will discard it.')
-                self.empty.append(col.name)
+                self.empty_columns.append(col.name)
                 return
 
 	    # if dtype = integer
@@ -97,13 +98,15 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
             return
 
 
-    def get_params(self):
-        return Params(n_limit=self.n_limit, text2int=self.text2int)
+    def get_params(self) -> Params:
+        return Params(mapping=self.mapping, all_columns=self.all_columns, empty_columns=self.empty_columns)
 
 
-    def set_params(self, *, params: Params):
-        self.n_limit = params.n_limit
-        self.text2int = params.text2int
+    def set_params(self, *, params: Params) -> None:
+        self.fitted = True
+        self.mapping = params.mapping
+        self.all_columns = params.all_columns
+        self.empty_columns = params.empty_columns
 
 
     def set_training_data(self, *, inputs: Sequence[Input]):
@@ -111,12 +114,12 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
         self.fitted = False
 
 
-    def fit(self, *, timeout:float = None, iterations: int = None):
+    def fit(self, *, timeout:float = None, iterations: int = None) -> None:
         """
-        Feed in data set to fit, e.g. trainData.
+        Need training data from set_training_data first.
         The encoder would record categorical columns identified and
         the corresponding (with top n occurrence) column values to
-        one-hot encode later in the transform step.
+        one-hot encode later in the produce step.
         """
         if self.fitted:
             return
@@ -126,7 +129,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
 
         data_copy = self.training_inputs.copy()
 
-        self.columns = set(data_copy.columns)
+        self.all_columns = set(data_copy.columns)
 
         if self.categorical_features == '95in10':
             idict = {}
@@ -135,7 +138,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
                 p = self.__process(col, self.categorical_features, self.n_limit)
                 if p:
                     idict[p[0]] = p[1]
-            self.table = idict
+            self.mapping = idict
         self.fitted = True
 
 
@@ -148,27 +151,31 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
         Missing(NaN) cells in a column one-hot encoded would give
         out a row of all-ZERO columns for the target column.
         """
+        
+        if isinstance(inputs, pd.DataFrame):
+            data_copy = inputs.copy()
+        else:
+            data_copy = inputs[0].copy()
 
-        data_copy = inputs.copy()
-        data_enc = data_copy[list(self.table.keys())]
-        data_else = data_copy.drop(self.table.keys(),axis=1)
+        data_enc = data_copy[list(self.mapping.keys())]
+        data_else = data_copy.drop(self.mapping.keys(),axis=1)
 
         set_columns = set(data_copy.columns)
 
-        if set_columns != self.columns:
+        if set_columns != self.all_columns:
             raise ValueError('Columns(features) fed at produce() differ from fitted data.')
 
-        data_enc = data_copy[list(self.table.keys())]
-        data_else = data_copy.drop(self.table.keys(),axis=1)
+        data_enc = data_copy[list(self.mapping.keys())]
+        data_else = data_copy.drop(self.mapping.keys(),axis=1)
 
         res = []
         for column_name in data_enc:
             col = data_enc[column_name]
-            chg_v = lambda x: 'other_' if (x and x not in self.table[col.name]) else x
+            chg_v = lambda x: 'other_' if (x and x not in self.mapping[col.name]) else x
             col = col.apply(chg_v)
             encoded = pd.get_dummies(col, dummy_na=True, prefix=col.name)
 
-            missed = (["%s_%s"%(col.name,str(i)) for i in self.table[col.name] if
+            missed = (["%s_%s"%(col.name,str(i)) for i in self.mapping[col.name] if
                     "%s_%s"%(col.name,str(i)) not in list(encoded.columns)])
 
             for m in missed:
@@ -176,7 +183,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
 
             res.append(encoded)
 
-        data_else.drop(self.empty, axis=1, inplace=True)
+        data_else.drop(self.empty_columns, axis=1, inplace=True)
         if self.text2int:
             for column_name in data_else:
                 if data_else[column_name].dtype.kind not in np.typecodes['AllInteger']+'uf':
