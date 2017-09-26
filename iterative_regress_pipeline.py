@@ -35,9 +35,9 @@ with open(jsonCall['dataset_schema'], 'r') as inputFile:
 
 # Load the input files from the data_root folder path information, replacing missing values with zeros
 dataRoot = jsonCall['data_root']
-trainData = pd.read_csv( path.join(dataRoot, 'trainData.csv') )
-trainTargets = pd.read_csv( path.join(dataRoot, 'trainTargets.csv') )
-testData = pd.read_csv( path.join(dataRoot, 'testData.csv') )
+trainData = pd.read_csv( path.join(dataRoot, 'trainData.csv.gz') )
+trainTargets = pd.read_csv( path.join(dataRoot, 'trainTargets.csv.gz') )
+testData = pd.read_csv( path.join(dataRoot, 'testData.csv.gz') )
 
 print(trainData.head())
 print(trainTargets.head())
@@ -52,13 +52,18 @@ encodedData = enc.produce(inputs=trainData)
 encodedTestData = enc.produce(inputs=testData)
 
 # Initialize the DSBox imputer
-imputer = IterativeRegressionImputation()
-imputer.set_params(verbose=0)
+imputer = IterativeRegressionImputation(verbose=0)
 imputer.set_training_data(inputs=encodedData)	# unsupervised
 imputer.fit(timeout=10)	# give 10 seconds to fit
 print (imputer.get_call_metadata())	# to see wether fit worked
-imputedData = imputer.produce(inputs=encodedData, timeout=10)
-print (imputer.get_call_metadata())	# to see wether produce worked
+print ("\nParams:")
+print (imputer.get_params())
+
+imputer2 = IterativeRegressionImputation(verbose=0)
+imputer2.set_params(params=imputer.get_params())
+
+imputedData = imputer2.produce(inputs=encodedData, timeout=10)
+print (imputer2.get_call_metadata())	# to see wether produce worked
 
 model = BaggingClassifier()
 trainedModel = model.fit(imputedData, np.asarray(trainTargets['Class']))

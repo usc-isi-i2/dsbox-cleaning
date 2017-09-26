@@ -54,7 +54,6 @@ encodedTestData = enc.produce(inputs=testData)
 
 # Initialize the DSBox imputer
 imputer = MeanImputation()
-imputer.fit(timeout=10)	# give 10 seconds to fit
 print (imputer.get_call_metadata())	# to see wether fit worked
 imputedData = imputer.produce(inputs=encodedData, timeout=10)
 print (imputer.get_call_metadata())	# to see wether produce worked
