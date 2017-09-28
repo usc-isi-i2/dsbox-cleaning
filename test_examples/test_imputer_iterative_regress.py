@@ -23,11 +23,13 @@ data.drop("d3mIndex",axis=1)    # drop because id, useless
 
 # STEP 2: go to use the Imputer !
 # check iterative_regress
-imputer = IterativeRegressionImputation()
-imputer.set_params(verbose=1)
+imputer = IterativeRegressionImputation(verbose=1)
 imputer.set_training_data(inputs=data)	# unsupervised
 imputer.fit(timeout=10)	# give 10 seconds to fit
 print (imputer.get_call_metadata())	# to see wether fit worked
+print ("\nParams:")
+print (imputer.get_params())
+
 result = imputer.produce(inputs=data, timeout=0.5)
 print (imputer.get_call_metadata())	# to see wether produce worked
 

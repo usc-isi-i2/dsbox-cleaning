@@ -47,8 +47,7 @@ data.drop("d3mIndex",axis=1)    # drop because id, useless
 
 # STEP 2: go to use the Imputer !
 # check GreedyImputation
-imputer = GreedyImputation()
-imputer.set_params(verbose=1)
+imputer = GreedyImputation(verbose=1)
 imputer.set_training_data(inputs=data, outputs=label)	# unsupervised
 imputer.fit(timeout=10)	# give 10 seconds to fit
 print (imputer.get_call_metadata())	# to see wether fit worked

@@ -27,11 +27,7 @@ label = text2int(pd.read_csv(label_name)["Class"])
 data.drop("d3mIndex",axis=1)    # drop because id, useless
 
 # STEP 2: go to use the Imputer !
-imputer = KNNImputation()
-imputer.set_params(verbose=1)
-imputer.set_training_data(inputs=data)	# unsupervised
-imputer.fit(timeout=10)	# give 10 seconds to fit
-print (imputer.get_call_metadata())	# to see wether fit worked
+imputer = KNNImputation(verbose=1)
 result = imputer.produce(inputs=data, timeout=10)
 print (imputer.get_call_metadata())	# to see wether produce worked
 
