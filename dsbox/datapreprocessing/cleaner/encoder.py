@@ -84,14 +84,14 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
 	    # if dtype = integer
             elif col.dtype.kind in np.typecodes['AllInteger']+'u':
                 if isCat_95in10(col):
-                    return self.__column_features(col.astype(float), n_limit)
+                    return self.__column_features(col.astype(str), n_limit)
 
             # if dtype = category
             elif col.dtype.name == 'category':
                 return self.__column_features(col, n_limit)
 
             # for the rest other than float
-            elif col.dtype.name not in np.typecodes['AllFloat']:
+            elif col.dtype.kind not in np.typecodes['AllFloat']:
                 if isCat_95in10(col):
                     return self.__column_features(col, n_limit)
 
@@ -171,8 +171,14 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
         res = []
         for column_name in data_enc:
             col = data_enc[column_name]
+            col.is_copy = False
+
+            chg_t = lambda x: str(int(x)) if type(x) is not str else x
+            col[col.notnull()] = col[col.notnull()].apply(chg_t)
+            
             chg_v = lambda x: 'other_' if (x and x not in self.mapping[col.name]) else x
             col = col.apply(chg_v)
+            
             encoded = pd.get_dummies(col, dummy_na=True, prefix=col.name)
 
             missed = (["%s_%s"%(col.name,str(i)) for i in self.mapping[col.name] if
@@ -201,6 +207,13 @@ if __name__ == '__main__':
     df = pd.DataFrame({'A':[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],'B':[1,2,3,4,5,1,2,3,4,5,1,2,3,4,5]})
     train_x = df
     enc.set_training_data(inputs=train_x)
-    enc.set_params(params=Params(10, False))
     enc.fit()
-    print(enc.produce(inputs=train_x))
+    print(enc.produce(inputs=df))
+    
+    #save model for later use
+    model = enc.get_params()
+
+    enc2 = Encoder()
+    df2 = pd.DataFrame({'A':[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],'B':[2.0,7,3,1,6,1,2,4,2,5,1,2,4,4,3]})
+    enc2.set_params(params=model)
+    print(enc2.produce(inputs=df2))
