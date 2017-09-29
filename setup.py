@@ -20,7 +20,8 @@ setup(name='dsbox-datacleaning',
               'dsbox.Encoder = dsbox.datapreprocessing.cleaner:Encoder',
               'dsbox.GreedyImputation = dsbox.datapreprocessing.cleaner:GreedyImputation',
               'dsbox.IterativeRegressionImputation = dsbox.datapreprocessing.cleaner:IterativeRegressionImputation',
-              'dsbox.KNNImputation = dsbox.datapreprocessing.cleaner:KNNImputation',
+              'dsbox.MiceImputation = dsbox.datapreprocessing.cleaner:MICE',
+              'dsbox.KnnImputation = dsbox.datapreprocessing.cleaner:KNNImputation',
               'dsbox.MeanImputation = dsbox.datapreprocessing.cleaner:MeanImputation'
           ],
       }
