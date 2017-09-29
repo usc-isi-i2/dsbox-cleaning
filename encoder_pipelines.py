@@ -52,8 +52,15 @@ print(enc.get_params())
 
 imputer = Imputer()
 model = BaggingClassifier()
-processedTrainData = imputer.fit_transform(enc.produce(inputs=trainData))
+
+print(trainData.columns)
+
+encodedTrainData = enc.produce(inputs=trainData)
+processedTrainData = imputer.fit_transform(encodedTrainData)
 trainedModel = model.fit(processedTrainData, np.asarray(trainTargets['Class']))
+
+print(encodedTrainData.columns)
+
 
 predictedTargets = trainedModel.predict(imputer.fit_transform(enc.produce(inputs=testData)))
 print(predictedTargets)
@@ -61,4 +68,3 @@ print(predictedTargets)
 # Outputs the predicted targets in the location specified in the JSON configuration file
 with open(jsonCall['output_file'], 'w') as outputFile:
     output = pd.DataFrame(predictedTargets).to_csv(outputFile, index_label='d3mIndex', header=['Class'])
-
