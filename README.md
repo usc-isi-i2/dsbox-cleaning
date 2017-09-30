@@ -83,12 +83,18 @@ Note:
 ```python
 from dsbox.datapreprocessing.cleaner import Encoder
 
+train_x = pd.read_csv(train_dataset)
+test_x = pd.read_csv(test_dataset)
+
 enc = Encoder()
-train_x = pd.read_csv(your_dataset)
 enc.set_training_data(inputs=train_x)
-enc.set_params(params=Params(10, False)) # if you want to set n_limit and text2int parameter
 enc.fit()
 result = enc.produce(inputs=train_x)
+
+p = enc.get_params()
+enc2 = Encoder()
+enc2.set_params(params=p)
+result2 = enc2.produce(inputs=test_x)
 ```
 
 ### TODO:
