@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 
 from os import path
+import sys
+sys.path.append("../")
 
 import pandas as pd
 import numpy as np
 import json
 
 
-from dsbox.datapreprocessing.cleaner import IterativeRegressionImputation
+from dsbox.datapreprocessing.cleaner import KNNImputation
 from dsbox.datapreprocessing.cleaner import Encoder
 from dsbox.datapreprocessing.cleaner.encoder import Params
 
@@ -37,12 +39,13 @@ with open(jsonCall['dataset_schema'], 'r') as inputFile:
 dataRoot = jsonCall['data_root']
 trainData = pd.read_csv( path.join(dataRoot, 'trainData.csv.gz') )
 trainTargets = pd.read_csv( path.join(dataRoot, 'trainTargets.csv.gz') )
-testData = pd.read_csv( path.join(dataRoot, 'testData.csv.gz') )
+# testData = pd.read_csv( path.join(dataRoot, 'testData.csv.gz') )
+testData = pd.read_csv( path.join(dataRoot, 'trainData.csv.gz') )
 
-print(trainData.columns)
+print(trainData.head())
 print(trainTargets.head())
 print(np.asarray(trainTargets['Class']))
-print(testData.columns)
+print(testData.head())
 
 enc = Encoder()
 enc.set_training_data(inputs=trainData)
@@ -51,18 +54,10 @@ encodedData = enc.produce(inputs=trainData)
 encodedTestData = enc.produce(inputs=testData)
 
 # Initialize the DSBox imputer
-imputer = IterativeRegressionImputation(verbose=0)
-imputer.set_training_data(inputs=encodedData)	# unsupervised
-imputer.fit(timeout=100)	# give 100 seconds to fit
+imputer = KNNImputation()
 print (imputer.get_call_metadata())	# to see wether fit worked
-print ("\nParams:")
-print (imputer.get_params())
-
-imputer2 = IterativeRegressionImputation(verbose=0)
-imputer2.set_params(params=imputer.get_params())
-
-imputedData = imputer2.produce(inputs=encodedData, timeout=100)
-print (imputer2.get_call_metadata())	# to see wether produce worked
+imputedData = imputer.produce(inputs=encodedData, timeout=100)
+print (imputer.get_call_metadata())	# to see wether produce worked
 
 model = BaggingClassifier()
 trainedModel = model.fit(imputedData, np.asarray(trainTargets['Class']))

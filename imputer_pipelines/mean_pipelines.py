@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 from os import path
+import sys
+sys.path.append("../")
 
 import pandas as pd
 import numpy as np
