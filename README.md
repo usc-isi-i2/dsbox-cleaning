@@ -17,9 +17,14 @@ if you have conda, simply do the following:
 conda-env create .
 source activate mv-py3
 ```
+### Run Tests
+```sh
+cd unit_tests
+python -m unittest discover
+```
 
 ### Usage:
-see [test_examples](./test_examples):
+see:
 
 ```python
 """
