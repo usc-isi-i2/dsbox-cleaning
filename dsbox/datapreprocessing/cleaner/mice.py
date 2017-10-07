@@ -26,15 +26,13 @@ class MICE(TransformerPrimitiveBase[Input, Output]):
 
     def __init__(self, verbose=0) -> None:
         self.train_x = None
-        self.is_fitted = True
-        self._has_finished = True
-        self._iterations_done = True
+        self._has_finished = False
+        self._iterations_done = False
         self.verbose = verbose
 
 
     def get_call_metadata(self) -> CallMetadata:
             return CallMetadata(has_finished=self._has_finished, iterations_done=self._iterations_done)
-
 
 
     def produce(self, *, inputs: Sequence[Input], timeout: float = None, iterations: int = None) -> Sequence[Output]:
@@ -59,10 +57,6 @@ class MICE(TransformerPrimitiveBase[Input, Output]):
 
         """
 
-        if (not self.is_fitted):
-            # todo: specify a NotFittedError, like in sklearn
-            raise ValueError("Calling produce before fitting.")
-
         if (timeout is None):
             timeout = math.inf
         if (iterations is None):
@@ -85,12 +79,10 @@ class MICE(TransformerPrimitiveBase[Input, Output]):
 
 
         if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
-            self.is_fitted = True
             self._has_finished = True
             self._iterations_done = True
             return pd.DataFrame(data=data_clean, columns=keys)
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
-            self.is_fitted = False
             self._has_finished = False
             self._iterations_done = False
             return None
@@ -102,7 +94,9 @@ class MICE(TransformerPrimitiveBase[Input, Output]):
         """
         wrap fancyimpute-mice
         """
-        test_data = mvp.df2np(test_data, [], self.verbose)
+        missing_col_id = []
+        test_data = mvp.df2np(test_data, missing_col_id, self.verbose)
+        if (len(missing_col_id) == 0): return test_data
         complete_data = mice(n_imputations=iterations, verbose=self.verbose).complete(test_data)
         return complete_data
 

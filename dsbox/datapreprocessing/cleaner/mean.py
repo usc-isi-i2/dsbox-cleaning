@@ -21,9 +21,8 @@ class MeanImputation(TransformerPrimitiveBase[Input, Output]):
 
     def __init__(self, verbose=0) -> None:
         self.train_x = None
-        self.is_fitted = True
-        self._has_finished = True
-        self._iterations_done = True
+        self._has_finished = False
+        self._iterations_done = False
         self.verbose = verbose
 
     def get_call_metadata(self) -> CallMetadata:
@@ -52,10 +51,6 @@ class MeanImputation(TransformerPrimitiveBase[Input, Output]):
 
         """
 
-        if (not self.is_fitted):
-            # todo: specify a NotFittedError, like in sklearn
-            raise ValueError("Calling produce before fitting.")
-
         if (timeout is None):
             timeout = math.inf
         if (iterations is None):
@@ -77,12 +72,10 @@ class MeanImputation(TransformerPrimitiveBase[Input, Output]):
             data_clean = self.__mean(data)
 
         if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
-            self.is_fitted = True
             self._has_finished = True
             self._iterations_done = True
             return pd.DataFrame(data=data_clean, columns=keys)
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
-            self.is_fitted = False
             self._has_finished = False
             self._iterations_done = False
             return None
@@ -93,6 +86,8 @@ class MeanImputation(TransformerPrimitiveBase[Input, Output]):
         """
         wrap fancyimpute-mean
         """
-        test_data = mvp.df2np(test_data, [], self.verbose)
+        missing_col_id = []
+        test_data = mvp.df2np(test_data, missing_col_id, self.verbose)
+        if (len(missing_col_id) == 0): return test_data  # no missing value found
         complete_data = SimpleFill(fill_method="mean").complete(test_data)
         return complete_data

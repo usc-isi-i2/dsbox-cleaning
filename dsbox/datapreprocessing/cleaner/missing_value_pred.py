@@ -97,6 +97,8 @@ def bayeImpute(data, target_col, verbose=0):
     x_test = data[mv_mask]
     x_train = data[~mv_mask]
     y_train = target[~mv_mask]
+
+    # special case in fit:
     # check if valid to regression: wether only one value exist in target. 
     # If happen, use default "mean" method (which is all same)
     is_other_value = False in (y_train == y_train[0])
@@ -107,11 +109,18 @@ def bayeImpute(data, target_col, verbose=0):
 
     model.fit(x_train, y_train)
     result = model.predict(x_test)
+    # special case in predict:
+    # if the model goes wrong: predicts nan value. using mean method instead
+    if (pd.isnull(result).sum() > 0):
+        if (verbose > 0): print ("Warning: model gets nan value, using mean instead")
+        model = "mean"
+        original_data[:,target_col] = myImputer(original_data[:,target_col], model)
+        return original_data, model
+
     original_data[mv_mask, target_col] = result #put the imputation result back to original data, following the index
 
     # print("coefficient: {}".format(model.coef_))
     return original_data, model
-
 
 
 def transform(data, target_col, model, verbose=0):
@@ -132,6 +141,13 @@ def transform(data, target_col, model, verbose=0):
     y_train = target[~mv_mask]
 
     result = model.predict(x_test)
+    # special case in predict:
+    # if the model goes wrong: predicts nan value. using mean method instead
+    if (pd.isnull(result).sum() > 0):
+        if (verbose > 0): print ("Warning: model gets nan value, using mean instead")
+        model = "mean"
+        original_data[:,target_col] = myImputer(original_data[:,target_col], model)
+        return original_data
     original_data[mv_mask, target_col] = result #put the imputation result back to original data, following the index
 
     # print("coefficient: {}".format(model.coef_))

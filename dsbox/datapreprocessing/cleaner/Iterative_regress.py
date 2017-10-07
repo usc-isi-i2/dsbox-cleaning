@@ -45,8 +45,9 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
     def __init__(self, verbose=0) -> None:
         self.best_imputation = None
         self.train_x = None
-        self.is_fitted = False
-        self._has_finished = False
+        self.is_fitted = True
+        self._has_finished = True
+        self._iterations_done = True
         self.verbose = verbose
 
 
@@ -75,8 +76,12 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
         inputs : Sequence[Input]
             The inputs.
         """
-        self.train_x = inputs
-        self.is_fitted = False
+        if (pd.isnull(inputs).sum().sum() == 0):    # no missing value exists
+            self.is_fitted = True
+            if (self.verbose > 0): print ("Warning: no missing value in train dataset")
+        else:
+            self.train_x = inputs
+            self.is_fitted = False
 
 
     def fit(self, *, timeout: float = None, iterations: int = None) -> None:
@@ -116,8 +121,12 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
 
         if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
             self.is_fitted = True
+            self._iterations_done = True
             self._has_finished = True
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
+            self.is_fitted = False
+            self._iterations_done = False
+            self._has_finished = False
             return
 
 
@@ -146,6 +155,11 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
         if (not self.is_fitted):
             # todo: specify a NotFittedError, like in sklearn
             raise ValueError("Calling produce before fitting.")
+        if (pd.isnull(inputs).sum().sum() == 0):    # no missing value exists
+            if (self.verbose > 0): print ("Warning: no missing value in test dataset")
+            self._has_finished = True
+            return inputs
+
 
         if (timeout is None):
             timeout = math.inf

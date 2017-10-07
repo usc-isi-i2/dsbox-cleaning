@@ -46,9 +46,10 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
         self.imputation_strategies = ["mean", "max", "min", "zero"]
         self.train_x = None
         self.train_y = None
-        self.is_fitted = False
-        self._has_finished = False
-        self.verbose = 0
+        self.is_fitted = True
+        self._has_finished = True
+        self._iterations_done = True
+        self.verbose = verbose
 
 
     def set_params(self, *, params: Params) -> None:
@@ -346,7 +347,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
         X_test = X_test[~mask_test]
         y_test = y_test[~mask_test]
 
-        model = self.model.fit(X_train, y_train)
+        model = self.model.fit(X_train, y_train.ravel())
         score = self.scorer(model, X_test, y_test)  # refer to sklearn scorer: score will be * -1 with the real score value
         if (self.verbose>0): print("score is: {}".format(score))
 
