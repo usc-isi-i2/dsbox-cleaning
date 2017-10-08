@@ -174,6 +174,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
 
         # record keys:
         keys = data.keys()
+        index = data.index
 
         # setup the timeout
         with stopit.ThreadingTimeout(timeout) as to_ctx_mrg:
@@ -188,7 +189,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
             self.is_fitted = True
             self._has_finished = True
             self._iterations_done = True
-            return pd.DataFrame(data=data_clean, columns=keys)
+            return pd.DataFrame(data_clean, index, keys)
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
             print("Timed Out...")
             self.is_fitted = False

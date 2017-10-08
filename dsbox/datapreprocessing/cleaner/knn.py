@@ -70,6 +70,7 @@ class KNNImputation(TransformerPrimitiveBase[Input, Output]):
             data = inputs[0].copy()
         # record keys:
         keys = data.keys()
+        index = data.index
 
         # setup the timeout
         with stopit.ThreadingTimeout(timeout) as to_ctx_mrg:
@@ -83,7 +84,7 @@ class KNNImputation(TransformerPrimitiveBase[Input, Output]):
         if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
             self._has_finished = True
             self._iterations_done = True
-            return pd.DataFrame(data=data_clean, columns=keys)
+            return pd.DataFrame(data_clean, index, keys)
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
             self._has_finished = False
             self._iterations_done = False

@@ -170,6 +170,7 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
         data = inputs.copy()
         # record keys:
         keys = data.keys()
+        index = data.index
         
         # setup the timeout
         with stopit.ThreadingTimeout(timeout) as to_ctx_mrg:
@@ -182,7 +183,7 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
         if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
             self.is_fitted = True
             self._has_finished = True
-            return pd.DataFrame(data=data_clean, columns=keys)
+            return pd.DataFrame(data_clean, index, keys)
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
             print ("Timed Out...")
             self.is_fitted = False
