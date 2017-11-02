@@ -14,6 +14,49 @@ Output = pd.DataFrame
 
 
 class MICE(TransformerPrimitiveBase[Input, Output]):
+    __author__ = "USC ISI"
+    __metadata__ = {
+    "id": "3f72646a-6d70-3b65-ab42-f6a41552cecb",
+    "name": "dsbox.datapreprocessing.cleaner.MICE",
+    "common_name": "DSBox MICE Imputer",
+    "description": "Impute missing values using the MICE algorithm",
+    "languages": [
+        "python3.5", "python3.6"
+    ],
+    "library": "dsbox",
+    "version": "0.2.0",
+    "is_class": True,
+    "parameters": [],
+    "task_type": [
+        "Data preprocessing"
+    ],
+    "tags": [
+        "preprocessing",
+        "imputation"
+    ],
+    "build": [
+        {
+            "type": "pip",
+            "package": "dsbox-datacleaning"
+        }
+    ],
+    "team": "USC ISI",
+    "schema_version": 1.0,
+    "interfaces": [ "TransformerPrimitiveBase" ],
+    "interfaces_version": "2017.9.22rc0",
+    "compute_resources": {
+        "cores_per_node": [],
+        "disk_per_node": [],
+        "expected_running_time": [],
+        "gpus_per_node": [],
+        "mem_per_gpu": [],
+        "mem_per_node": [],
+        "num_nodes": [],
+        "sample_size": [],
+        "sample_unit": []
+    }
+}
+
     """
     Impute the missing value using k nearest neighbors (weighted average). 
     This class is a wrapper from fancyimpute-mice

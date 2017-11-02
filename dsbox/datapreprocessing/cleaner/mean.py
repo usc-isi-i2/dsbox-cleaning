@@ -15,6 +15,49 @@ Input = pd.DataFrame
 Output = pd.DataFrame
 
 class MeanImputation(TransformerPrimitiveBase[Input, Output]):
+    __author__ = "USC ISI"
+    __metadata__ = {
+        "id": "7894b699-61e9-3a50-ac9f-9bc510466667",
+        "name": "dsbox.datapreprocessing.cleaner.MeanImputation",
+        "common_name": "DSBox Mean Imputer",
+        "description": "Impute missing values using mean",
+        "languages": [
+            "python3.5", "python3.6"
+        ],
+        "library": "dsbox",
+        "version": "0.2.0",
+        "is_class": true,
+        "parameters": [],
+        "task_type": [
+            "Data preprocessing"
+        ],
+        "tags": [
+            "preprocessing",
+            "imputation"
+        ],
+        "build": [
+            {
+                "type": "pip",
+                "package": "dsbox-datacleaning"
+            }
+        ],
+        "team": "USC ISI",
+        "schema_version": 1.0,
+        "interfaces": [ "TransformerPrimitiveBase" ],
+        "interfaces_version": "2017.9.22rc0",
+        "compute_resources": {
+            "cores_per_node": [],
+            "disk_per_node": [],
+            "expected_running_time": [],
+            "gpus_per_node": [],
+            "mem_per_gpu": [],
+            "mem_per_node": [],
+            "num_nodes": [],
+            "sample_size": [],
+            "sample_unit": []
+        }
+    }
+
     """
     Imputate the missing value using the `mean` value of the attribute
     """

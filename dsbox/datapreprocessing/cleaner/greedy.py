@@ -17,6 +17,47 @@ Params = NamedTuple("Params", [
 
 
 class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
+    __author__ = "USC ISI"
+    __metadata__ = {
+        "id": "ebebb1fa-a20c-38b9-9f22-bc92bc548c19",
+        "name": "dsbox.datapreprocessing.cleaner.GreedyImputation",
+        "common_name": "DSBox Greedy Imputer",
+        "team": "USC ISI",
+        "task_type": [ "Data preprocessing" ],
+        "tags": [
+            "preprocessing",
+            "imputation"
+        ],
+        "description": "Impute missing values using greedy search, supervised learining",
+        "languages": [
+            "python3.5", "python3.6"
+        ],
+        "library": "dsbox",
+        "version": "0.2.0",
+        "is_class": True,
+        "schema_version": 1.0,
+        "parameters": [],
+        "build": [
+            {
+                "type": "pip",
+                "package": "dsbox-datacleaning"
+            }
+        ],
+        "interfaces": [ "SupervisedLearnerPrimitiveBase" ],
+        "interfaces_version": "2017.9.22rc0",
+        "compute_resources": {
+            "cores_per_node": [],
+            "disk_per_node": [],
+            "expected_running_time": [],
+            "gpus_per_node": [],
+            "mem_per_gpu": [],
+            "mem_per_node": [],
+            "num_nodes": [],
+            "sample_size": [],
+            "sample_unit": []
+        }
+    }
+
     """
     Impute the missing value by greedy search of the combinations of standalone simple imputation method.
 

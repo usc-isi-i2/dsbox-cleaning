@@ -14,6 +14,52 @@ Output = pd.DataFrame
 
 
 class KNNImputation(TransformerPrimitiveBase[Input, Output]):
+    __author__ = "USC ISI"
+    __metadata__ = {
+        "id": "faeeb725-6546-3f55-b80d-8b79d5ca270a",
+        "name": "dsbox.datapreprocessing.cleaner.KNNImputation",
+        "common_name": "DSBox KNN Imputer",
+        "description": "Impute missing values using k-nearest neighbor",
+        "languages": [
+            "python3.5",
+            "python3.6"
+        ],
+        "library": "dsbox",
+        "version": "0.2.0",
+        "is_class": true,
+        "parameters": [],
+        "task_type": [
+            "Data preprocessing"
+        ],
+        "tags": [
+            "preprocessing",
+            "imputation"
+        ],
+        "build": [
+            {
+                "type": "pip",
+                "package": "dsbox-datacleaning"
+            }
+        ],
+        "team": "USC ISI",
+        "schema_version": 1.0,
+        "interfaces": [
+            "TransformerPrimitiveBase"
+        ],
+        "interfaces_version": "2017.9.22rc0",
+        "compute_resources": {
+            "cores_per_node": [],
+            "disk_per_node": [],
+            "expected_running_time": [],
+            "gpus_per_node": [],
+            "mem_per_gpu": [],
+            "mem_per_node": [],
+            "num_nodes": [],
+            "sample_size": [],
+            "sample_unit": []
+        }
+    }
+
     """
     Impute the missing value using k nearest neighbors (weighted average). 
     This class is a wrapper from fancyimpute-knn

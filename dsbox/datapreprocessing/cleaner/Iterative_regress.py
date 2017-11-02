@@ -18,6 +18,50 @@ Params = NamedTuple("params", [
 
 
 class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
+    __author__ = "USC ISI"
+    __metadata__ = {
+        "id": "f70b2324-1102-35f7-aaf6-7cd8e860acc4",
+        "name": "dsbox.datapreprocessing.cleaner.IterativeRegressionImputation",
+        "common_name": "DSBox Iterative Regression Imputer",
+        "description": "Impute missing values using iterative regression",
+        "languages": [
+            "python3.5", "python3.6"
+        ],
+        "library": "dsbox",
+        "version": "0.2.0",
+        "is_class": True,
+        "parameters": [],
+        "task_type": [
+            "Data preprocessing"
+        ],
+        "tags": [
+            "preprocessing",
+            "imputation"
+        ],
+        "build": [
+            {
+                "type": "pip",
+                "package": "dsbox-datacleaning"
+            }
+        ],
+        "team": "USC ISI",
+        "schema_version": 1.0,
+        "interfaces": [ "UnsupervisedLearnerPrimitiveBase" ],
+        "interfaces_version": "2017.9.22rc0",
+        "compute_resources": {
+            "cores_per_node": [],
+            "disk_per_node": [],
+            "expected_running_time": [],
+            "gpus_per_node": [],
+            "mem_per_gpu": [],
+            "mem_per_node": [],
+            "num_nodes": [],
+            "sample_size": [],
+            "sample_unit": []
+        }
+    }
+
+
     """
     Impute the missing value by iteratively regress using other attributes. 
         It will fit and fill the missing value in the training set, and keep the learned models.
