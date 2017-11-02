@@ -72,6 +72,53 @@ class Label_encoder(object):
 
 
 class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
+    __author__ = "USC ISI"
+    __metadata__ = {
+            "id": "18f0bb42-6350-3753-8f2d-d1c3da70f279",
+            "name": "dsbox.datapreprocessing.cleaner.Encoder",
+            "common_name": "DSBox Data Encoder",
+            "team": "USC ISI",
+            "task_type": [ "Data preprocessing" ],
+            "tags": [ "preprocesing", "encoding" ],
+            "description": "Encode data, such as one-hot encoding for categorical data",
+            "languages": [ "python3.5", "python3.6" ],
+            "library": "dsbox",
+            "version": "0.2.0",
+            "is_class": True,
+            "schema_version": 1.0,
+            "parameters": [
+                {
+                    "name": "n_limit",
+                    "description": "Max number of distinct values to one-hot encode",
+                    "type": "int",
+                    "default": "10",
+                    "is_hyperparameter": True
+                    },
+                {
+                    "name": "text2int",
+                    "description": "Encode text strings as integers. For example, set to true if text strings encode categorical data, and set to false if text strings contain natural language text.",
+                    "type": "boolean",
+                    "default": "true",
+                    "is_hyperparameter": True
+                    }
+                ],
+            "build": [ { "type": "pip", "package": "dsbox-datacleaning" } ],
+            "compute_resources": {
+                "cores_per_node": [],
+                "disk_per_node": [],
+                "expected_running_time": [],
+                "gpus_per_node": [],
+                "mem_per_gpu": [],
+                "mem_per_node": [],
+                "num_nodes": [],
+                "sample_size":[],
+                "sample_unit":[]
+                },
+            "interfaces": [ "UnsupervisedLearnerPrimitiveBase" ],
+            "interfaces_version": "2017.9.22rc0",
+
+            }
+
     """
     An one-hot encoder, which
 
