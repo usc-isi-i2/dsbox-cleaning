@@ -29,29 +29,54 @@ class TestMean(unittest.TestCase):
 
 	def setUp(self):
 		self.imputer = MeanImputation(verbose=1)
+		self.enough_time = 100
+		self.not_enough_time = 0.00001
 
 	def test_init(self):
 		self.assertEqual(self.imputer.get_call_metadata(), 
 			CallMetadata(has_finished=False, iterations_done=False))
 
 	def test_run(self):
-		result = self.imputer.produce(inputs=data, timeout=10)
-		self.helper_impute_result_check(data,result)
-		self.assertEqual(self.imputer.get_call_metadata(), 
+		# part 1
+		imputer = MeanImputation(verbose=1)
+		imputer.set_training_data(inputs=data)	
+		imputer.fit(timeout=self.enough_time)
+		print (imputer.get_params())
+		self.assertEqual(imputer.get_call_metadata(), 
+			CallMetadata(has_finished=True, iterations_done=True))
+
+		result = imputer.produce(inputs=data, timeout=self.enough_time)
+		self.helper_impute_result_check(data, result)
+
+		# part2: test set_params()
+		imputer2 = MeanImputation(verbose=1)
+		imputer2.set_params(params=imputer.get_params())
+		self.assertEqual(imputer.get_call_metadata(), 
+			CallMetadata(has_finished=True, iterations_done=True))
+		result2 = imputer2.produce(inputs=data, timeout=self.enough_time)
+		self.assertEqual(result2.equals(result), True)	# two imputers' results should be same
+		self.assertEqual(imputer.get_call_metadata(), 
 			CallMetadata(has_finished=True, iterations_done=True))
 
 	def test_timeout(self):
-		result = self.imputer.produce(inputs=data, timeout=0.00001)
-		self.assertEqual(self.imputer.get_call_metadata(), 
+		imputer = MeanImputation(verbose=1)
+		imputer.set_training_data(inputs=data)	
+		imputer.fit(timeout=self.not_enough_time)
+		self.assertEqual(imputer.get_call_metadata(), 
 			CallMetadata(has_finished=False, iterations_done=False))
+		with self.assertRaises(ValueError):	# ValueError is because: have on fitted yet
+			result = imputer.produce(inputs=data, timeout=self.not_enough_time)
 
 	def test_noMV(self):
 		"""
 		test on the dataset has no missing values
 		"""
-		result = self.imputer.produce(inputs=data, timeout=10)
-		result2 = self.imputer.produce(inputs=result, timeout=10)	# result contains no missing value
-		
+		imputer = MeanImputation(verbose=1)
+		imputer.set_training_data(inputs=data)	
+		imputer.fit(timeout=self.enough_time)
+		result = imputer.produce(inputs=data, timeout=self.enough_time)
+		result2 = imputer.produce(inputs=result, timeout=self.enough_time)	# `result` contains no missing value
+
 		self.assertEqual(result.equals(result2), True)
 	
 	def helper_impute_result_check(self, data, result):
