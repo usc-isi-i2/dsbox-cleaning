@@ -26,7 +26,7 @@ class MeanImputation(TransformerPrimitiveBase[Input, Output]):
         ],
         "library": "dsbox",
         "version": "0.2.0",
-        "is_class": true,
+        "is_class": True,
         "parameters": [],
         "task_type": [
             "Data preprocessing"
