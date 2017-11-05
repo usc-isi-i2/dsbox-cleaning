@@ -171,7 +171,11 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
 
             # start completing data...
             if (self.verbose>0): print("=========> impute by mean value of the attribute:")
+
+            # assume the features of testing data are same with the training data
+            # therefore, only use the mean_values to impute, should get a clean dataset
             data_clean = data.fillna(value=self.mean_values)
+
 
         if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
             self._has_finished = True

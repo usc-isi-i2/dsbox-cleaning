@@ -15,13 +15,11 @@ from dsbox.datapreprocessing.cleaner import IterativeRegressionImputation
 from primitive_interfaces.base import CallMetadata
 
 # get data
-data_path = "../../../dsbox-data/o_38/encoded/"
-data_name = data_path + "trainData_encoded.csv"
-label_name = data_path + "trainTargets_encoded.csv" # make sure your label target is in the second column of this file
-data = pd.read_csv(data_name)
+data_name =  "data.csv"
+label_name =  "targets.csv" # make sure your label target is in the second column of this file
+data = pd.read_csv(data_name, index_col='d3mIndex')
 missing_value_mask = pd.isnull(data)
-label = text2int(pd.read_csv(label_name)["Class"])
-data = data.drop("d3mIndex",axis=1)    # drop because id, useless
+label = text2int(pd.read_csv(label_name, index_col='d3mIndex')["Class"])
 
 
 import unittest
@@ -29,68 +27,68 @@ import unittest
 class TestMean(unittest.TestCase):
 	def setUp(self):
 		self.enough_time = 100
-		self.not_enough_time = 0.0001
+		self.not_enough_time = 0.1
 
 
-	# def test_init(self):
-	# 	"""
-	# 	test if the init status is correct;
-	# 	note: 
-	# 		for SupervisedLearnerPrimitive, it is different than TransformerPrimitive. The 
-	# 		original status is all "True". This is for the imputer instance that has not been fitted
-	# 		but `set_params()`, can also directly `produce()` <- see test_run() part2
-	# 	"""
-	# 	imputer = IterativeRegressionImputation(verbose=1)
-	# 	self.assertEqual(imputer.get_call_metadata(), 
-	# 		CallMetadata(has_finished=True, iterations_done=True))
+	def test_init(self):
+		"""
+		test if the init status is correct;
+		note: 
+			for SupervisedLearnerPrimitive, it is different than TransformerPrimitive. The 
+			original status is all "True". This is for the imputer instance that has not been fitted
+			but `set_params()`, can also directly `produce()` <- see test_run() part2
+		"""
+		imputer = IterativeRegressionImputation(verbose=1)
+		self.assertEqual(imputer.get_call_metadata(), 
+			CallMetadata(has_finished=True, iterations_done=True))
 
-	# def test_run(self):
-	# 	"""
-	# 	normal usage run test
-	# 	"""
-	# 	# part 1
-	# 	imputer = IterativeRegressionImputation(verbose=1)
-	# 	imputer.set_training_data(inputs=data)	
-	# 	imputer.fit(timeout=self.enough_time)
-	# 	self.assertEqual(imputer.get_call_metadata(), 
-	# 		CallMetadata(has_finished=True, iterations_done=True))
+	def test_run(self):
+		"""
+		normal usage run test
+		"""
+		# part 1
+		imputer = IterativeRegressionImputation(verbose=1)
+		imputer.set_training_data(inputs=data)	
+		imputer.fit(timeout=self.enough_time)
+		self.assertEqual(imputer.get_call_metadata(), 
+			CallMetadata(has_finished=True, iterations_done=True))
 
-	# 	result = imputer.produce(inputs=data, timeout=self.enough_time)
-	# 	self.helper_impute_result_check(data, result)
+		result = imputer.produce(inputs=data, timeout=self.enough_time)
+		self.helper_impute_result_check(data, result)
 
-	# 	# part2: test set_params()
-	# 	imputer2 = IterativeRegressionImputation(verbose=1)
-	# 	imputer2.set_params(params=imputer.get_params())
-	# 	self.assertEqual(imputer.get_call_metadata(), 
-	# 		CallMetadata(has_finished=True, iterations_done=True))
-	# 	result2 = imputer2.produce(inputs=data, timeout=self.enough_time)
-	# 	self.assertEqual(result2.equals(result), True)	# two imputers' results should be same
-	# 	self.assertEqual(imputer.get_call_metadata(), 
-	# 		CallMetadata(has_finished=True, iterations_done=True))
+		# part2: test set_params()
+		imputer2 = IterativeRegressionImputation(verbose=1)
+		imputer2.set_params(params=imputer.get_params())
+		self.assertEqual(imputer.get_call_metadata(), 
+			CallMetadata(has_finished=True, iterations_done=True))
+		result2 = imputer2.produce(inputs=data, timeout=self.enough_time)
+		self.assertEqual(result2.equals(result), True)	# two imputers' results should be same
+		self.assertEqual(imputer.get_call_metadata(), 
+			CallMetadata(has_finished=True, iterations_done=True))
 
 
 
-	# def test_timeout(self):
-	# 	imputer = IterativeRegressionImputation(verbose=1)
-	# 	imputer.set_training_data(inputs=data)	
-	# 	imputer.fit(timeout=self.not_enough_time)
-	# 	self.assertEqual(imputer.get_call_metadata(), 
-	# 		CallMetadata(has_finished=False, iterations_done=False))
-	# 	with self.assertRaises(ValueError):
-	# 		result = imputer.produce(inputs=data, timeout=self.not_enough_time)
+	def test_timeout(self):
+		imputer = IterativeRegressionImputation(verbose=1)
+		imputer.set_training_data(inputs=data)	
+		imputer.fit(timeout=self.not_enough_time)
+		self.assertEqual(imputer.get_call_metadata(), 
+			CallMetadata(has_finished=False, iterations_done=False))
+		with self.assertRaises(ValueError):
+			result = imputer.produce(inputs=data, timeout=self.not_enough_time)
 		
 
-	# def test_noMV(self):
-	# 	"""
-	# 	test on the dataset has no missing values
-	# 	"""
-	# 	imputer = IterativeRegressionImputation(verbose=1)
-	# 	imputer.set_training_data(inputs=data)	
-	# 	imputer.fit(timeout=self.enough_time)
-	# 	result = imputer.produce(inputs=data, timeout=self.enough_time)
-	# 	result2 = imputer.produce(inputs=result, timeout=self.enough_time)	# `result` contains no missing value
+	def test_noMV(self):
+		"""
+		test on the dataset has no missing values
+		"""
+		imputer = IterativeRegressionImputation(verbose=1)
+		imputer.set_training_data(inputs=data)	
+		imputer.fit(timeout=self.enough_time)
+		result = imputer.produce(inputs=data, timeout=self.enough_time)
+		result2 = imputer.produce(inputs=result, timeout=self.enough_time)	# `result` contains no missing value
 		
-	# 	self.assertEqual(result.equals(result2), True)
+		self.assertEqual(result.equals(result2), True)
 
 	def test_notAlign(self):
 		"""

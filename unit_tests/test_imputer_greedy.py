@@ -15,13 +15,11 @@ from dsbox.datapreprocessing.cleaner import GreedyImputation
 from primitive_interfaces.base import CallMetadata
 
 # get data
-data_path = "../../../dsbox-data/o_38/encoded/"
-data_name = data_path + "trainData_encoded.csv"
-label_name = data_path + "trainTargets_encoded.csv" # make sure your label target is in the second column of this file
-data = pd.read_csv(data_name)
+data_name =  "data.csv"
+label_name =  "targets.csv" # make sure your label target is in the second column of this file
+data = pd.read_csv(data_name, index_col='d3mIndex')
 missing_value_mask = pd.isnull(data)
-label = text2int(pd.read_csv(label_name)["Class"])
-data = data.drop("d3mIndex",axis=1)    # drop because id, useless
+label = text2int(pd.read_csv(label_name, index_col='d3mIndex')["Class"])
 
 
 import unittest
