@@ -247,10 +247,8 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
         """
         Convert and output the input data into encoded format,
         using the trained (fitted) encoder.
-        Notice that a [colname]_other_ column is always kept for
-        one-hot encoded columns.
-        Missing(NaN) cells in a column one-hot encoded would give
-        out a row of all-ZERO columns for the target column.
+        Notice that [colname]_other_ and [colname]_nan columns 
+        are always kept for one-hot encoded columns.
         """
 
         if isinstance(inputs, pd.DataFrame):
