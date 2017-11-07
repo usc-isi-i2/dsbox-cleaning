@@ -255,10 +255,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
             data_copy = inputs.copy()
         else:
             data_copy = inputs[0].copy()
-
-        data_enc = data_copy[list(self.mapping.keys())]
-        data_else = data_copy.drop(self.mapping.keys(),axis=1)
-
+ 
         set_columns = set(data_copy.columns)
 
         if set_columns != self.all_columns:
