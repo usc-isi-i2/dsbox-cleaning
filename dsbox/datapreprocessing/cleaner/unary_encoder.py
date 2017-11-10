@@ -96,7 +96,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
         return unary.drop(col.name,axis=1)
 
 
-    def produce(self, *, inputs: Sequence[Input], timeout:float = None, iterations: int = None):
+    def produce(self, *, inputs: Sequence[Input], timeout:float = None, iterations: int = None) -> pd.DataFrame:
         """
         Convert and output the input data into unary encoded format,
         using the trained (fitted) encoder.
@@ -104,6 +104,8 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
         Missing(NaN) cells in a column one-hot encoded would give
         out a row of all-ZERO columns for the target column.
         """
+        if not self.fitted:
+            raise ValueError('Encoder model not fitted. Use fit()')
 
         if isinstance(inputs, pd.DataFrame):
             data_copy = inputs.copy()
@@ -127,10 +129,10 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
             #col[col.notnull()] = col[col.notnull()].apply(chg_t)
 
             chg_v = lambda x: min(self.mapping[col.name], key=lambda a:abs(a-x)) if x is not None else x
-            col = col.apply(chg_v)
-
+            col[col.notnull()] = col[col.notnull()].apply(chg_v)
+            if col.name == 'age':
+                print(col[:1999])
             encoded = self.__encode_column(col)
-
             res.append(encoded)
 
         data_else.drop(self.empty_columns, axis=1, inplace=True)
