@@ -64,15 +64,9 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
 
     """
     Impute the missing value by iteratively regress using other attributes. 
-        It will fit and fill the missing value in the training set, and keep the learned models.
-        In the `produce` phase, it will using the learned models to iteratively regress on the 
+        It will fit and fill the missing value in the training set, and store the learned models.
+        In the `produce` phase, it will use the learned models to iteratively regress on the 
         testing data again, and return the imputed testing data.
-
-    A possible improvements:
-        store the training data in `fit` phase. In the `produce` phase, concatente the training data
-        and testing data, then iteratively regress. 
-        This may be performs better. But under the assumption the training data and testing data are 
-            sampled (splited) from the whole dataset. 
     
     Parameters:
     ----------

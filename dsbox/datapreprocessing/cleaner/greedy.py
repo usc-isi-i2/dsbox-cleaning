@@ -77,9 +77,6 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
     model: a sklearn machine learning class
         The machine learning model that will be used to evaluate the imputation strategies
 
-    scorer: a sklearn metrics class
-        The metrics that will be used
-
     """
 
     def __init__(self, verbose=0) -> None:
@@ -255,7 +252,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
         from sklearn.svm import SVR
         from sklearn.metrics import f1_score, make_scorer, r2_score
 
-
+        # set default scorer
         is_classification = self.__isCat_95in10(self.train_y)
         if is_classification == True:
             self.model = LogisticRegression()

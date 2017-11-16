@@ -144,20 +144,3 @@ class MICE(TransformerPrimitiveBase[Input, Output]):
         complete_data = mice(n_imputations=iterations, verbose=self.verbose).complete(test_data)
         return complete_data
 
-
-    # bellowing way is to combine the train_data and test_data, then do the mice imputation
-    # but in usage, the user might input same data during through `set_training_data` and `produce`
-    # therefore, for now let use not use the way
-    # def __mice(self, test_data):
-    #     """
-    #     wrap fancyimpute-mice
-    #     """
-    #     test_data = mvp.df2np(test_data, [], self.verbose)
-    #     break_point = test_data.shape[0]
-    #     train_data = mvp.df2np(self.train_x, [], self.verbose)
-    #     all_data = np.concatenate((test_data,train_data), axis=0)   # include more data to use
-    #     complete_data = mice().complete(all_data)
-
-    #     return complete_data[:break_point, :]
-
-
