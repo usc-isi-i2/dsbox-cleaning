@@ -10,15 +10,18 @@ from typing import NamedTuple, Sequence
 import stopit
 import math
 
-Input = pd.DataFrame
-Output = pd.DataFrame
+from d3m_metadata.container import DataFrame
+
+Input = DataFrame
+Output = DataFrame
+Hyperparameter = None
 
 # store the mean value for each column in training data
 Params = NamedTuple("params", [
     ('mean_values', dict)]
     ) 
 
-class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
+class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Hyperparameter]):
     __author__ = "USC ISI"
     __metadata__ = {
         "id": "7894b699-61e9-3a50-ac9f-9bc510466667",

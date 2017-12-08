@@ -11,9 +11,9 @@ import math
 
 Input = pd.DataFrame
 Output = pd.DataFrame
+Hyperparameter = None
 
-
-class MICE(TransformerPrimitiveBase[Input, Output]):
+class MICE(TransformerPrimitiveBase[Input, Output, Hyperparameter]):
     __author__ = "USC ISI"
     __metadata__ = {
     "id": "3f72646a-6d70-3b65-ab42-f6a41552cecb",

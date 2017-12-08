@@ -9,11 +9,13 @@ from typing import NamedTuple, Sequence
 import stopit
 import math
 
-Input = pd.DataFrame
-Output = pd.DataFrame
+import d3m_metadata.container
 
+Input = d3m_metadata.container.DataFrame
+Output = d3m_metadata.container.DataFrame
+Hyperparameter = None
 
-class KNNImputation(TransformerPrimitiveBase[Input, Output]):
+class KNNImputation(TransformerPrimitiveBase[Input, Output, Hyperparameter]):
     __author__ = "USC ISI"
     __metadata__ = {
         "id": "faeeb725-6546-3f55-b80d-8b79d5ca270a",
@@ -85,7 +87,7 @@ class KNNImputation(TransformerPrimitiveBase[Input, Output]):
             return CallMetadata(has_finished=self._has_finished, iterations_done=self._iterations_done)
 
 
-    def produce(self, *, inputs: Sequence[Input], timeout: float = None, iterations: int = None) -> Sequence[Output]:
+    def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> Output:
         """
         precond: run fit() before
 
@@ -126,15 +128,15 @@ class KNNImputation(TransformerPrimitiveBase[Input, Output]):
             if (self.verbose>0): print("=========> impute by fancyimpute-knn:")
             data_clean = self.__knn(data)
 
-
+        result = None
         if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
             self._has_finished = True
             self._iterations_done = True
-            return pd.DataFrame(data_clean, index, keys)
+            result = pd.DataFrame(data_clean, index, keys)
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
             self._has_finished = False
             self._iterations_done = False
-            return None
+        return result
 
 
     #============================================ core function ============================================

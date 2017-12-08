@@ -12,7 +12,7 @@ def isCat_95in10(col):
 
 Input = pd.DataFrame
 Output = pd.DataFrame
-
+Hyperparameter = None
 Params = NamedTuple('Params', [
     ('mapping', dict),
     ('all_columns', list),
@@ -71,7 +71,7 @@ class Label_encoder(object):
             return self.class_index[f][x]
 
 
-class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
+class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Hyperparameter]):
     __author__ = "USC ISI"
     __metadata__ = {
             "id": "18f0bb42-6350-3753-8f2d-d1c3da70f279",

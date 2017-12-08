@@ -10,13 +10,14 @@ import math
 
 Input = pd.DataFrame
 Output = pd.DataFrame
+Hyperparameter = None
 
 Params = NamedTuple("Params", [
     ('greedy_strategy', dict)]
     )
 
 
-class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
+class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Hyperparameter]):
     __author__ = "USC ISI"
     __metadata__ = {
         "id": "ebebb1fa-a20c-38b9-9f22-bc92bc548c19",

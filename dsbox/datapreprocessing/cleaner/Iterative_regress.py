@@ -11,13 +11,14 @@ import math
 
 Input = pd.DataFrame
 Output = pd.DataFrame
+Hyperparameter = None
 
 Params = NamedTuple("params", [
     ('regression_models', dict)]
     ) 
 
 
-class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
+class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Hyperparameter]):
     __author__ = "USC ISI"
     __metadata__ = {
         "id": "f70b2324-1102-35f7-aaf6-7cd8e860acc4",
