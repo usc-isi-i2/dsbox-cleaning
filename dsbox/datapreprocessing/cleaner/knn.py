@@ -1,21 +1,28 @@
-import numpy as np
-import pandas as pd
-from fancyimpute import KNN as knn
+import numpy as np #  type: ignore
+import pandas as pd  #  type: ignore
+from fancyimpute import KNN as knn  #  type: ignore
 
 from . import missing_value_pred as mvp
 from primitive_interfaces.transformer import TransformerPrimitiveBase
 from primitive_interfaces.base import CallMetadata
 from typing import NamedTuple, Sequence
-import stopit
+import stopit #  type: ignore
 import math
 
 import d3m_metadata.container
+from d3m_metadata.hyperparams import UniformInt, Hyperparams
+import collections
 
 Input = d3m_metadata.container.DataFrame
 Output = d3m_metadata.container.DataFrame
-Hyperparameter = None
 
-class KNNImputation(TransformerPrimitiveBase[Input, Output, Hyperparameter]):
+class KnnHyperparameter(Hyperparams):
+    configuration = collections.OrderedDict({
+        'k' : UniformInt(lower=1, upper=20, default=5,
+                         description='Number of neighbors')
+        })
+    
+class KNNImputation(TransformerPrimitiveBase[Input, Output, KnnHyperparameter]):
     __author__ = "USC ISI"
     __metadata__ = {
         "id": "faeeb725-6546-3f55-b80d-8b79d5ca270a",

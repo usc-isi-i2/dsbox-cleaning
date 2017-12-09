@@ -2,23 +2,23 @@ import numpy as np
 import pandas as pd
 from . import missing_value_pred as mvp
 
-from typing import NamedTuple, Sequence
+from typing import NamedTuple, Dict
 from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 from primitive_interfaces.base import CallMetadata
 import stopit
 import math
+from d3m_metadata.container.pandas import DataFrame
 
 
-Input = pd.DataFrame
-Output = pd.DataFrame
-Hyperparameter = None
+Input = DataFrame
+Output = DataFrame
 
-Params = NamedTuple("params", [
-    ('regression_models', dict)]
+Params = NamedTuple("Params", [
+    ('regression_models', Dict)]
     ) 
 
 
-class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Hyperparameter]):
+class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, None]):
     __author__ = "USC ISI"
     __metadata__ = {
         "id": "f70b2324-1102-35f7-aaf6-7cd8e860acc4",
@@ -82,8 +82,8 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
     """
 
     def __init__(self, verbose=0) -> None:
-        self.best_imputation = None
-        self.train_x = None
+        self.best_imputation : Dict = None
+        self.train_x : Input = None
         self.is_fitted = True
         self._has_finished = True
         self._iterations_done = True
@@ -106,13 +106,13 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
             return CallMetadata(has_finished=self._has_finished, iterations_done=self._iterations_done)
 
 
-    def set_training_data(self, *, inputs: Sequence[Input]) -> None:
+    def set_training_data(self, *, inputs: Input) -> None:
         """
         Sets training data of this primitive.
 
         Parameters
         ----------
-        inputs : Sequence[Input]
+        inputs : Input
             The inputs.
         """
         if (pd.isnull(inputs).sum().sum() == 0):    # no missing value exists
@@ -140,7 +140,7 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
 
         # if already fitted on current dataset, do nothing
         if self.is_fitted:
-            return True
+            return
 
         if (timeout is None):
             timeout = math.inf
@@ -166,10 +166,9 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
             self.is_fitted = False
             self._iterations_done = False
             self._has_finished = False
-            return
 
 
-    def produce(self, *, inputs: Sequence[Input], timeout: float = None, iterations: int = None) -> Sequence[Output]:
+    def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> Output:
         """
         precond: run fit() before
 
@@ -219,16 +218,17 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
             if (self.verbose > 0) : print("=========> iteratively regress method:")
             data_clean = self.__regressImpute(data, self.best_imputation, iterations)
 
+        value = None
         if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
             self.is_fitted = True
             self._has_finished = True
-            return pd.DataFrame(data_clean, index, keys)
+            value = pd.DataFrame(data_clean, index, keys)
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
             print ("Timed Out...")
             self.is_fitted = False
             self._has_finished = False
             self._iterations_done = False
-            return
+        return value
 
 
 

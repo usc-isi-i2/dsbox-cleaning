@@ -8,12 +8,12 @@ from primitive_interfaces.base import CallMetadata
 from typing import NamedTuple, Sequence
 import stopit
 import math
+from d3m_metadata.container.pandas import DataFrame
 
-Input = pd.DataFrame
-Output = pd.DataFrame
-Hyperparameter = None
+Input = DataFrame
+Output = DataFrame
 
-class MICE(TransformerPrimitiveBase[Input, Output, Hyperparameter]):
+class MICE(TransformerPrimitiveBase[Input, Output, None]):
     __author__ = "USC ISI"
     __metadata__ = {
     "id": "3f72646a-6d70-3b65-ab42-f6a41552cecb",
@@ -78,7 +78,7 @@ class MICE(TransformerPrimitiveBase[Input, Output, Hyperparameter]):
             return CallMetadata(has_finished=self._has_finished, iterations_done=self._iterations_done)
 
 
-    def produce(self, *, inputs: Sequence[Input], timeout: float = None, iterations: int = None) -> Sequence[Output]:
+    def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> Output:
         """
         precond: run fit() before
 
@@ -121,15 +121,15 @@ class MICE(TransformerPrimitiveBase[Input, Output, Hyperparameter]):
             if (self.verbose>0): print("=========> impute by fancyimpute-mice:")
             data_clean = self.__mice(data, iterations)
 
-
+        value = None
         if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
             self._has_finished = True
             self._iterations_done = True
-            return pd.DataFrame(data_clean, index, keys)
+            value =pd.DataFrame(data_clean, index, keys)
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
             self._has_finished = False
             self._iterations_done = False
-            return None
+        return value
 
 
 

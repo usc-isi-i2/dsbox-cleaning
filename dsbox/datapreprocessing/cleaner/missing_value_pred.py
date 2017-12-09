@@ -1,5 +1,5 @@
-import pandas as pd
-import numpy as np
+import pandas as pd  # type: ignore 
+import numpy as np  # type: ignore
 
 def popular_value(array):
     """
@@ -81,8 +81,8 @@ def bayeImpute(data, target_col, verbose=0):
     return the imputated data, and model coefficient
     '''
 
-    from sklearn.linear_model import BayesianRidge, LinearRegression
-    from sklearn.ensemble import RandomForestRegressor
+    from sklearn.linear_model import BayesianRidge, LinearRegression  # type: ignore
+    from sklearn.ensemble import RandomForestRegressor  # type: ignore
     model = BayesianRidge()
     # model = LinearRegression()
     # model = RandomForestRegressor()

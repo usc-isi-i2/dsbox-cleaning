@@ -1,8 +1,9 @@
 import numpy as np
 import pandas as pd
 from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
-from typing import NamedTuple, Sequence
+from typing import NamedTuple, Dict, List, Set
 import copy
+from d3m_metadata.container.pandas import DataFrame
 
 def isCat_95in10(col):
     """
@@ -10,14 +11,14 @@ def isCat_95in10(col):
     """
     return col.value_counts().head(10).sum() / float(col.count()) > .95
 
-Input = pd.DataFrame
-Output = pd.DataFrame
-Hyperparameter = None
+Input = DataFrame
+Output = DataFrame
+
 Params = NamedTuple('Params', [
-    ('mapping', dict),
-    ('all_columns', list),
-    ('empty_columns', list),
-    ('textmapping', dict)
+    ('mapping', Dict),
+    ('all_columns', Set[str]),
+    ('empty_columns', List[str]),
+    ('textmapping', Dict)
     ])
 
 ## reference: https://github.com/scikit-learn/scikit-learn/issues/8136
@@ -71,7 +72,7 @@ class Label_encoder(object):
             return self.class_index[f][x]
 
 
-class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Hyperparameter]):
+class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, None]):
     __author__ = "USC ISI"
     __metadata__ = {
             "id": "18f0bb42-6350-3753-8f2d-d1c3da70f279",
@@ -138,19 +139,19 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Hyperparam
         return "%s(%r)" % ('Encoder', self.__dict__)
 
 
-    def __init__(self, *, categorical_features='95in10', text2int=True, n_limit=10) -> None:
+    def __init__(self, *, categorical_features='95in10', text2int=True, n_limit=12) -> None:
 
         self.categorical_features = categorical_features
         self.n_limit = n_limit
         self.text2int = text2int
         #
-        self.textmapping = None
+        self.textmapping : Dict = None
         #
-        self.mapping = None
-        self.all_columns = []
-        self.empty_columns = []
+        self.mapping : Dict = None
+        self.all_columns : Set[str] = set()
+        self.empty_columns : List[str] = []
 
-        self.training_inputs = None
+        self.training_inputs : Input = None
         self.fitted = False
 
 
@@ -202,7 +203,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Hyperparam
         self.empty_columns = params.empty_columns
         self.textmapping = params.textmapping
 
-    def set_training_data(self, *, inputs: Sequence[Input]):
+    def set_training_data(self, *, inputs: Input):
         self.training_inputs = inputs
         self.fitted = False
 
@@ -243,7 +244,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Hyperparam
         self.fitted = True
 
 
-    def produce(self, *, inputs: Sequence[Input], timeout:float = None, iterations: int = None):
+    def produce(self, *, inputs: Input, timeout:float = None, iterations: int = None):
         """
         Convert and output the input data into encoded format,
         using the trained (fitted) encoder.

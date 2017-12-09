@@ -14,14 +14,13 @@ from d3m_metadata.container import DataFrame
 
 Input = DataFrame
 Output = DataFrame
-Hyperparameter = None
 
 # store the mean value for each column in training data
-Params = NamedTuple("params", [
+Params = NamedTuple("MeanImputationParams", [
     ('mean_values', dict)]
     ) 
 
-class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Hyperparameter]):
+class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, None]):
     __author__ = "USC ISI"
     __metadata__ = {
         "id": "7894b699-61e9-3a50-ac9f-9bc510466667",
@@ -84,15 +83,15 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Hyp
         if self.is_fitted:
             return Params(mean_values=self.mean_values)
         else:
-            return Params(mean_values=dict)   
+            return Params(mean_values=dict())
 
-    def set_training_data(self, *, inputs: Sequence[Input]) -> None:
+    def set_training_data(self, *, inputs: Input) -> None:
         """
         Sets training data of this primitive.
 
         Parameters
         ----------
-        inputs : Sequence[Input]
+        inputs : Input
             The inputs.
         """
         if (pd.isnull(inputs).sum().sum() == 0):    # no missing value exists
@@ -118,7 +117,7 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Hyp
 
         # if already fitted on current dataset, do nothing
         if self.is_fitted:
-            return True
+            return
 
         if (timeout is None):
             timeout = math.inf
@@ -143,7 +142,7 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Hyp
             self._has_finished = False
             return
 
-    def produce(self, *, inputs: Sequence[Input], timeout: float = None, iterations: int = None) -> Sequence[Output]:
+    def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> Output:
         """
         precond: run fit() before
 
@@ -180,14 +179,15 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Hyp
             data_clean = data.fillna(value=self.mean_values)
 
 
+        value = None
         if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
             self._has_finished = True
             self._iterations_done = True
-            return data_clean
+            value = data_clean
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
             self._has_finished = False
             self._iterations_done = False
-            return None
+        return value
 
 
     def __get_fitted(self):
