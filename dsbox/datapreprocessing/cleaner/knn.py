@@ -18,7 +18,8 @@ Output = d3m_metadata.container.DataFrame
 
 class KnnHyperparameter(Hyperparams):
     configuration = collections.OrderedDict({
-        'k' : UniformInt(lower=1, upper=20, default=5,
+        # A reasonable upper bound would the size of the input. For now using 100.
+        'k' : UniformInt(lower=1, upper=100, default=5,
                          description='Number of neighbors')
         })
     
@@ -82,11 +83,11 @@ class KNNImputation(TransformerPrimitiveBase[Input, Output, KnnHyperparameter]):
 
     """
 
-    def __init__(self, verbose=0) -> None:
+    def __init__(self, hyperparam : KnnHyperparameter, verbose=0) -> None:
         self.train_x = None
         self._has_finished = False
         self._iterations_done = False
-        self.k = 5
+        self.k = hyperparm['k']
         self.verbose = verbose
 
 
