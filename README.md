@@ -67,7 +67,7 @@ print (imputer.get_call_metadata())	# to see wether produce worked
 see [methods](methods.md) for details.
 
 ## One-hot encoder
-The encoder takes pandas DataFrame as input, then one-hot encode columns which are considered categorical. 
+The encoder takes pandas DataFrame as input, then one-hot encode columns which are considered categorical.
 
 ```
 class Encoder(categorical_features='95in10')
@@ -78,9 +78,9 @@ For **categorical_features = '95in10'**, it takes a column as category if:
 * 95% of its data fall in 10 values.
 * For the rest values (not top 10) with low frequency, put into one column _[colname]\_other\__
 
-Note: 
+Note:
 * Maximum number of values encoded: **n_limit**, Whether to convert other text columns to integers: **text2int**.
-* Apply set_params() function to change the two parameters' values. 
+* Apply set_params() function to change the two parameters' values.
 * For one-hot encoded columns, in the output there would always be a _[colname]\_other__ column for values not appear in fitted data and values with fewer occurrence (when there are more than **n_limit** distinct values).
 
 
@@ -103,9 +103,35 @@ result2 = enc2.produce(inputs=test_x)
 ```
 
 ### TODO:
-1. Find better way to distinguish categorical columns - by statistics?
-2. More functionality and more flexible implementation for user to config prefered setting.
-3. Deal with ID-like columns: identify (also let user decide?) and delete ? 
+1. ~~Find better way to distinguish categorical columns - by statistics?~~ by Profiler
+2. ~~More functionality and more flexible implementation for user to config prefered setting.~~
+3. ~~Deal with ID-like columns: identify (also let user decide?) and delete ?~~ Will have encoders which users can specify columns to encode.
+
+
+## Unary encoder
+The encoder takes pandas DataFrame and specified column name(s) as input, then unary encode the column(s).
+
+```
+class UnaryEncoder()
+```
+
+### Usage:
+```python
+from dsbox.datapreprocessing.cleaner import UnaryEncoder
+
+train_x = pd.read_csv(train_dataset)
+test_x = pd.read_csv(test_dataset)
+
+ue = UnaryEncoder()
+ue.set_training_data(inputs=train_x, targets=['col1','col2'])
+ue.fit()
+result = ue.produce(inputs=train_x)
+
+p = ue.get_params()
+ue2 = UnaryEncoder()
+ue2.set_params(params=p)
+result2 = enc2.produce(inputs=test_x)
+```
 
 
 ## Discretizer
@@ -115,7 +141,7 @@ Take a column (pandas Series) as input, output a column with discretized values.
 * **labels**: list of values for the discretized bins, currently only for binning methods where orders of values are kept (by width and by frequency). default labels= [0,1,2...].
 
 
-Note, currently: 
+Note, currently:
 * Missing cells remain missing in the output column.
 
 ### Usage:
@@ -135,5 +161,3 @@ data["column_name"] = result
 
 ### TODO:
 - See if a better k, number of bins to choose can be found automatically. e.g. num_bins='auto'.
-
-
