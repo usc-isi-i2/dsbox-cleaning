@@ -130,8 +130,6 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
 
             chg_v = lambda x: min(self.mapping[col.name], key=lambda a:abs(a-x)) if x is not None else x
             col[col.notnull()] = col[col.notnull()].apply(chg_v)
-            if col.name == 'age':
-                print(col[:1999])
             encoded = self.__encode_column(col)
             res.append(encoded)
 
