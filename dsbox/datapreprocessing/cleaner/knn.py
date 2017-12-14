@@ -4,8 +4,7 @@ from fancyimpute import KNN as knn  #  type: ignore
 
 from . import missing_value_pred as mvp
 from primitive_interfaces.transformer import TransformerPrimitiveBase
-from primitive_interfaces.base import CallMetadata
-from typing import NamedTuple, Sequence
+from primitive_interfaces.base import CallResult
 import stopit #  type: ignore
 import math
 
@@ -17,11 +16,9 @@ Input = d3m_metadata.container.DataFrame
 Output = d3m_metadata.container.DataFrame
 
 class KnnHyperparameter(Hyperparams):
-    configuration = collections.OrderedDict({
         # A reasonable upper bound would the size of the input. For now using 100.
-        'k' : UniformInt(lower=1, upper=100, default=5,
+        k = UniformInt(lower=1, upper=100, default=5,
                          description='Number of neighbors')
-        })
     
 class KNNImputation(TransformerPrimitiveBase[Input, Output, KnnHyperparameter]):
     __author__ = "USC ISI"
@@ -87,15 +84,10 @@ class KNNImputation(TransformerPrimitiveBase[Input, Output, KnnHyperparameter]):
         self.train_x = None
         self._has_finished = False
         self._iterations_done = False
-        self.k = hyperparm['k']
+        self.k = hyperparam['k']
         self.verbose = verbose
 
-
-    def get_call_metadata(self) -> CallMetadata:
-            return CallMetadata(has_finished=self._has_finished, iterations_done=self._iterations_done)
-
-
-    def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> Output:
+    def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> CallResult[Output]:
         """
         precond: run fit() before
 
@@ -144,7 +136,7 @@ class KNNImputation(TransformerPrimitiveBase[Input, Output, KnnHyperparameter]):
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
             self._has_finished = False
             self._iterations_done = False
-        return result
+        return CallResult(result, self._has_finished, self._iterations_done)
 
 
     #============================================ core function ============================================

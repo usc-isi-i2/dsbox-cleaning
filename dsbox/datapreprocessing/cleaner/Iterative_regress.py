@@ -4,7 +4,7 @@ from . import missing_value_pred as mvp
 
 from typing import NamedTuple, Dict
 from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
-from primitive_interfaces.base import CallMetadata
+from primitive_interfaces.base import CallResult
 import stopit
 import math
 from d3m_metadata.container.pandas import DataFrame
@@ -102,10 +102,6 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
             return Params(regression_models=dict())
 
 
-    def get_call_metadata(self) -> CallMetadata:
-            return CallMetadata(has_finished=self._has_finished, iterations_done=self._iterations_done)
-
-
     def set_training_data(self, *, inputs: Input) -> None:
         """
         Sets training data of this primitive.
@@ -123,7 +119,7 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
             self.is_fitted = False
 
 
-    def fit(self, *, timeout: float = None, iterations: int = None) -> None:
+    def fit(self, *, timeout: float = None, iterations: int = None) -> CallResult[None]:
         """
         train imputation parameters. Now support:
         -> greedySearch
@@ -166,9 +162,10 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
             self.is_fitted = False
             self._iterations_done = False
             self._has_finished = False
+        return CallResult(None, self._has_finished, self._iterations_done)
 
 
-    def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> Output:
+    def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> CallResult[Output]:
         """
         precond: run fit() before
 
@@ -228,7 +225,7 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
             self.is_fitted = False
             self._has_finished = False
             self._iterations_done = False
-        return value
+        return CallResult(value, self._has_finished, self._iterations_done)
 
 
 

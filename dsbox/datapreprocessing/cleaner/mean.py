@@ -1,19 +1,21 @@
-import numpy as np
-import pandas as pd
-from fancyimpute import SimpleFill
+import numpy as np #  type: ignore
+import pandas as pd #  type: ignore
+from fancyimpute import SimpleFill #  type: ignore
 
 from . import missing_value_pred as mvp
 from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 
-from primitive_interfaces.base import CallMetadata
-from typing import NamedTuple, Sequence
-import stopit
+from primitive_interfaces.base import CallResult
+import stopit #  type: ignore
 import math
+from typing import NamedTuple, Dict
 
-from d3m_metadata.container import DataFrame
+import d3m_metadata.container
+from d3m_metadata.hyperparams import UniformInt, Hyperparams
+import collections
 
-Input = DataFrame
-Output = DataFrame
+Input = d3m_metadata.container.DataFrame
+Output = d3m_metadata.container.DataFrame
 
 # store the mean value for each column in training data
 Params = NamedTuple("MeanImputationParams", [
@@ -70,6 +72,7 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Non
 
     def __init__(self, verbose=0) -> None:
         self.train_x = None
+        self.is_fitted = False
         self._has_finished = False
         self._iterations_done = False
         self.verbose = verbose
@@ -102,11 +105,8 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Non
             self.is_fitted = False
 
 
-    def get_call_metadata(self) -> CallMetadata:
-            return CallMetadata(has_finished=self._has_finished, iterations_done=self._iterations_done)
 
-
-    def fit(self, *, timeout: float = None, iterations: int = None) -> None:
+    def fit(self, *, timeout: float = None, iterations: int = None) -> CallResult[None]:
         """
         get the mean value of each columns
 
@@ -140,9 +140,10 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Non
             self.is_fitted = False
             self._iterations_done = False
             self._has_finished = False
-            return
+        
+        return CallResult(None, self._has_finished, self._iterations_done)
 
-    def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> Output:
+    def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> CallResult[Output]:
         """
         precond: run fit() before
 
@@ -187,7 +188,7 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Non
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
             self._has_finished = False
             self._iterations_done = False
-        return value
+        return CallResult(value, self._has_finished, self._iterations_done)
 
 
     def __get_fitted(self):

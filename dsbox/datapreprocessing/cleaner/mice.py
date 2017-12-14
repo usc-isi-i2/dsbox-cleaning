@@ -4,8 +4,7 @@ from fancyimpute import MICE as mice
 
 from . import missing_value_pred as mvp
 from primitive_interfaces.transformer import TransformerPrimitiveBase
-from primitive_interfaces.base import CallMetadata
-from typing import NamedTuple, Sequence
+from primitive_interfaces.base import CallResult
 import stopit
 import math
 from d3m_metadata.container.pandas import DataFrame
@@ -58,7 +57,7 @@ class MICE(TransformerPrimitiveBase[Input, Output, None]):
 }
 
     """
-    Impute the missing value using k nearest neighbors (weighted average). 
+    Impute the missing value using MICE. 
     This class is a wrapper from fancyimpute-mice
 
     Parameters:
@@ -74,11 +73,7 @@ class MICE(TransformerPrimitiveBase[Input, Output, None]):
         self.verbose = verbose
 
 
-    def get_call_metadata(self) -> CallMetadata:
-            return CallMetadata(has_finished=self._has_finished, iterations_done=self._iterations_done)
-
-
-    def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> Output:
+    def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> CallResult[Output]:
         """
         precond: run fit() before
 
@@ -129,7 +124,7 @@ class MICE(TransformerPrimitiveBase[Input, Output, None]):
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
             self._has_finished = False
             self._iterations_done = False
-        return value
+        return CallResult(value, self._has_finished, self._iterations_done)
 
 
 

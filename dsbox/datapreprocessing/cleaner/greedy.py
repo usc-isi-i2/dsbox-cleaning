@@ -3,7 +3,7 @@ import pandas as pd  # type: ignore
 from . import missing_value_pred as mvp
 
 from primitive_interfaces.supervised_learning import SupervisedLearnerPrimitiveBase
-from primitive_interfaces.base import CallMetadata
+from primitive_interfaces.base import CallResult
 from typing import NamedTuple, Dict
 import stopit
 import math
@@ -103,10 +103,6 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Non
             return Params(greedy_strategy=dict())
 
 
-    def get_call_metadata(self) -> CallMetadata:
-            return CallMetadata(has_finished=self._has_finished, iterations_done=self._iterations_done)
-
-
     def set_training_data(self, *, inputs: Input, outputs: Output) -> None:
         """
         Sets training data of this primitive.
@@ -124,7 +120,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Non
 
 
 
-    def fit(self, *, timeout: float = None, iterations: int = None) -> None:
+    def fit(self, *, timeout: float = None, iterations: int = None) -> CallResult[None]:
         """
         train imputation parameters. Now support:
         -> greedySearch
@@ -174,10 +170,10 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Non
             self.is_fitted = False
             self._has_finished = False
             self._iterations_done = False
-            return
+        return CallResult(None, self._has_finished, self._iterations_done)
 
 
-    def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> Output:
+    def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> CallResult[Output]:
         """
         precond: run fit() before
 
@@ -231,7 +227,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Non
             self.is_fitted = False
             self._has_finished = False
             self._iterations_done = False
-        return value
+        return CallResult(value, self._has_finished, self._iterations_done)
 
 
 
