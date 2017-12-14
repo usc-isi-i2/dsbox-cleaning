@@ -193,8 +193,7 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
         if (pd.isnull(inputs).sum().sum() == 0):    # no missing value exists
             if (self.verbose > 0): print ("Warning: no missing value in test dataset")
             self._has_finished = True
-            return inputs
-
+            return CallResult(inputs, self._has_finished, self._iterations_done)
 
         if (timeout is None):
             timeout = math.inf
