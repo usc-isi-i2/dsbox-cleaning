@@ -56,21 +56,19 @@ encodedTestData = enc.produce(inputs=testData)
 imputer = IterativeRegressionImputation(verbose=0)
 imputer.set_training_data(inputs=encodedData)	# unsupervised
 imputer.fit(timeout=100)	# give 100 seconds to fit
-print (imputer.get_call_metadata())	# to see wether fit worked
 print ("\nParams:")
 print (imputer.get_params())
 
 imputer2 = IterativeRegressionImputation(verbose=0)
 imputer2.set_params(params=imputer.get_params())
 
-imputedData = imputer2.produce(inputs=encodedData, timeout=100)
-print (imputer2.get_call_metadata())	# to see wether produce worked
+imputedData = imputer2.produce(inputs=encodedData, timeout=100).value
 
 model = BaggingClassifier()
 trainedModel = model.fit(imputedData, np.asarray(trainTargets['Class']))
 
 
-predictedTargets = trainedModel.predict(imputer.produce(inputs=encodedTestData))
+predictedTargets = trainedModel.predict(imputer.produce(inputs=encodedTestData).value)
 print(predictedTargets)
 
 # Outputs the predicted targets in the location specified in the JSON configuration file

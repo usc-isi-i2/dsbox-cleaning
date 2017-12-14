@@ -1,1 +1,8 @@
 *.pyc
+
+# Mypy
+.mypy_cache
+
+# Eclipse
+.project
+.pydevproject

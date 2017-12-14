@@ -55,15 +55,13 @@ encodedTestData = enc.produce(inputs=testData)
 
 # Initialize the DSBox imputer
 imputer = MICE()
-print (imputer.get_call_metadata())	# to see wether fit worked
-imputedData = imputer.produce(inputs=encodedData, timeout=100)
-print (imputer.get_call_metadata())	# to see wether produce worked
+imputedData = imputer.produce(inputs=encodedData, timeout=100).value
 
 model = BaggingClassifier()
 trainedModel = model.fit(imputedData, np.asarray(trainTargets['Class']))
 
 
-predictedTargets = trainedModel.predict(imputer.produce(inputs=encodedTestData))
+predictedTargets = trainedModel.predict(imputer.produce(inputs=encodedTestData).value)
 print(predictedTargets)
 
 # Outputs the predicted targets in the location specified in the JSON configuration file

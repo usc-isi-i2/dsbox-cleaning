@@ -4,16 +4,15 @@ from fancyimpute import MICE as mice
 
 from . import missing_value_pred as mvp
 from primitive_interfaces.transformer import TransformerPrimitiveBase
-from primitive_interfaces.base import CallMetadata
-from typing import NamedTuple, Sequence
+from primitive_interfaces.base import CallResult
 import stopit
 import math
+from d3m_metadata.container.pandas import DataFrame
 
-Input = pd.DataFrame
-Output = pd.DataFrame
+Input = DataFrame
+Output = DataFrame
 
-
-class MICE(TransformerPrimitiveBase[Input, Output]):
+class MICE(TransformerPrimitiveBase[Input, Output, None]):
     __author__ = "USC ISI"
     __metadata__ = {
     "id": "3f72646a-6d70-3b65-ab42-f6a41552cecb",
@@ -58,7 +57,7 @@ class MICE(TransformerPrimitiveBase[Input, Output]):
 }
 
     """
-    Impute the missing value using k nearest neighbors (weighted average). 
+    Impute the missing value using MICE. 
     This class is a wrapper from fancyimpute-mice
 
     Parameters:
@@ -74,11 +73,7 @@ class MICE(TransformerPrimitiveBase[Input, Output]):
         self.verbose = verbose
 
 
-    def get_call_metadata(self) -> CallMetadata:
-            return CallMetadata(has_finished=self._has_finished, iterations_done=self._iterations_done)
-
-
-    def produce(self, *, inputs: Sequence[Input], timeout: float = None, iterations: int = None) -> Sequence[Output]:
+    def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> CallResult[Output]:
         """
         precond: run fit() before
 
@@ -121,15 +116,15 @@ class MICE(TransformerPrimitiveBase[Input, Output]):
             if (self.verbose>0): print("=========> impute by fancyimpute-mice:")
             data_clean = self.__mice(data, iterations)
 
-
+        value = None
         if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
             self._has_finished = True
             self._iterations_done = True
-            return pd.DataFrame(data_clean, index, keys)
+            value =pd.DataFrame(data_clean, index, keys)
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
             self._has_finished = False
             self._iterations_done = False
-            return None
+        return CallResult(value, self._has_finished, self._iterations_done)
 
 
 
@@ -143,21 +138,4 @@ class MICE(TransformerPrimitiveBase[Input, Output]):
         if (len(missing_col_id) == 0): return test_data
         complete_data = mice(n_imputations=iterations, verbose=self.verbose).complete(test_data)
         return complete_data
-
-
-    # bellowing way is to combine the train_data and test_data, then do the mice imputation
-    # but in usage, the user might input same data during through `set_training_data` and `produce`
-    # therefore, for now let use not use the way
-    # def __mice(self, test_data):
-    #     """
-    #     wrap fancyimpute-mice
-    #     """
-    #     test_data = mvp.df2np(test_data, [], self.verbose)
-    #     break_point = test_data.shape[0]
-    #     train_data = mvp.df2np(self.train_x, [], self.verbose)
-    #     all_data = np.concatenate((test_data,train_data), axis=0)   # include more data to use
-    #     complete_data = mice().complete(all_data)
-
-    #     return complete_data[:break_point, :]
-
 

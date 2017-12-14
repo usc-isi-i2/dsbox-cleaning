@@ -1,22 +1,23 @@
-import numpy as np
-import pandas as pd
+import numpy as np  # type: ignore
+import pandas as pd  # type: ignore
 from . import missing_value_pred as mvp
 
 from primitive_interfaces.supervised_learning import SupervisedLearnerPrimitiveBase
-from primitive_interfaces.base import CallMetadata
-from typing import NamedTuple, Sequence
+from primitive_interfaces.base import CallResult
+from typing import NamedTuple, Dict
 import stopit
 import math
+from d3m_metadata.container.pandas import DataFrame
 
-Input = pd.DataFrame
-Output = pd.DataFrame
+Input = DataFrame
+Output = DataFrame
 
 Params = NamedTuple("Params", [
-    ('greedy_strategy', dict)]
+    ('greedy_strategy', Dict)]
     )
 
 
-class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
+class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, None]):
     __author__ = "USC ISI"
     __metadata__ = {
         "id": "ebebb1fa-a20c-38b9-9f22-bc92bc548c19",
@@ -77,16 +78,13 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
     model: a sklearn machine learning class
         The machine learning model that will be used to evaluate the imputation strategies
 
-    scorer: a sklearn metrics class
-        The metrics that will be used
-
     """
 
     def __init__(self, verbose=0) -> None:
-        self.best_imputation = None
+        self.best_imputation : Dict = None
         self.imputation_strategies = ["mean", "max", "min", "zero"]
-        self.train_x = None
-        self.train_y = None
+        self.train_x : Input = None
+        self.train_y : Input = None
         self.is_fitted = True
         self._has_finished = True
         self._iterations_done = True
@@ -105,19 +103,15 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
             return Params(greedy_strategy=dict())
 
 
-    def get_call_metadata(self) -> CallMetadata:
-            return CallMetadata(has_finished=self._has_finished, iterations_done=self._iterations_done)
-
-
-    def set_training_data(self, *, inputs: Sequence[Input], outputs: Sequence[Output]) -> None:
+    def set_training_data(self, *, inputs: Input, outputs: Output) -> None:
         """
         Sets training data of this primitive.
 
         Parameters
         ----------
-        inputs : Sequence[Input]
+        inputs : Input
             The inputs.
-        outputs : Sequence[Output]
+        outputs : Output
             The outputs.
         """
         self.train_x = inputs
@@ -126,7 +120,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
 
 
 
-    def fit(self, *, timeout: float = None, iterations: int = None) -> None:
+    def fit(self, *, timeout: float = None, iterations: int = None) -> CallResult[None]:
         """
         train imputation parameters. Now support:
         -> greedySearch
@@ -142,7 +136,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
         """
         # if already fitted on current dataset, do nothing
         if self.is_fitted:
-            return True
+            return
 
         if (timeout is None):
             timeout = math.inf
@@ -176,10 +170,10 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
             self.is_fitted = False
             self._has_finished = False
             self._iterations_done = False
-            return
+        return CallResult(None, self._has_finished, self._iterations_done)
 
 
-    def produce(self, *, inputs: Sequence[Input], timeout: float = None, iterations: int = None) -> Sequence[Output]:
+    def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> CallResult[Output]:
         """
         precond: run fit() before
 
@@ -208,10 +202,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
         if (timeout is None):
             timeout = math.inf
 
-        if isinstance(inputs, pd.DataFrame):
-            data = inputs.copy()
-        else:
-            data = inputs[0].copy()
+        data = inputs.copy()
 
         # record keys:
         keys = data.keys()
@@ -225,18 +216,18 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
             if (self.verbose>0): print("=========> impute using result from greedy search:")
             data_clean = self.__simpleImpute(data, self.best_imputation)
 
-
+        value = None
         if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
             self.is_fitted = True
             self._has_finished = True
             self._iterations_done = True
-            return pd.DataFrame(data_clean, index, keys)
+            value = pd.DataFrame(data_clean, index, keys)
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
             print("Timed Out...")
             self.is_fitted = False
             self._has_finished = False
             self._iterations_done = False
-            return None
+        return CallResult(value, self._has_finished, self._iterations_done)
 
 
 
@@ -251,11 +242,11 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
             self.scorer = scorer
             return
 
-        from sklearn.linear_model import LogisticRegression
-        from sklearn.svm import SVR
-        from sklearn.metrics import f1_score, make_scorer, r2_score
+        from sklearn.linear_model import LogisticRegression  # type: ignore
+        from sklearn.svm import SVR  # type: ignore
+        from sklearn.metrics import f1_score, make_scorer, r2_score  # type: ignore
 
-
+        # set default scorer
         is_classification = self.__isCat_95in10(self.train_y)
         if is_classification == True:
             self.model = LogisticRegression()
@@ -372,7 +363,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params]):
         data_clean: the clean dataset, missing values imputed already
         label: the label for data_clean
         """
-        from sklearn.model_selection import train_test_split
+        from sklearn.model_selection import train_test_split  # type: ignore
         try:
             X_train, X_test, y_train, y_test = train_test_split(data_clean, label, test_size=0.4, random_state=0, stratify=label)
         except:

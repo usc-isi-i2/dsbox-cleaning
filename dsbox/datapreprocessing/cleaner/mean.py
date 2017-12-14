@@ -1,24 +1,28 @@
-import numpy as np
-import pandas as pd
-from fancyimpute import SimpleFill
+import numpy as np #  type: ignore
+import pandas as pd #  type: ignore
+from fancyimpute import SimpleFill #  type: ignore
 
 from . import missing_value_pred as mvp
 from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 
-from primitive_interfaces.base import CallMetadata
-from typing import NamedTuple, Sequence
-import stopit
+from primitive_interfaces.base import CallResult
+import stopit #  type: ignore
 import math
+from typing import NamedTuple, Dict
 
-Input = pd.DataFrame
-Output = pd.DataFrame
+import d3m_metadata.container
+from d3m_metadata.hyperparams import UniformInt, Hyperparams
+import collections
+
+Input = d3m_metadata.container.DataFrame
+Output = d3m_metadata.container.DataFrame
 
 # store the mean value for each column in training data
-Params = NamedTuple("params", [
+Params = NamedTuple("MeanImputationParams", [
     ('mean_values', dict)]
     ) 
 
-class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
+class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, None]):
     __author__ = "USC ISI"
     __metadata__ = {
         "id": "7894b699-61e9-3a50-ac9f-9bc510466667",
@@ -68,6 +72,7 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
 
     def __init__(self, verbose=0) -> None:
         self.train_x = None
+        self.is_fitted = False
         self._has_finished = False
         self._iterations_done = False
         self.verbose = verbose
@@ -81,15 +86,15 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
         if self.is_fitted:
             return Params(mean_values=self.mean_values)
         else:
-            return Params(mean_values=dict)   
+            return Params(mean_values=dict())
 
-    def set_training_data(self, *, inputs: Sequence[Input]) -> None:
+    def set_training_data(self, *, inputs: Input) -> None:
         """
         Sets training data of this primitive.
 
         Parameters
         ----------
-        inputs : Sequence[Input]
+        inputs : Input
             The inputs.
         """
         if (pd.isnull(inputs).sum().sum() == 0):    # no missing value exists
@@ -100,11 +105,8 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
             self.is_fitted = False
 
 
-    def get_call_metadata(self) -> CallMetadata:
-            return CallMetadata(has_finished=self._has_finished, iterations_done=self._iterations_done)
 
-
-    def fit(self, *, timeout: float = None, iterations: int = None) -> None:
+    def fit(self, *, timeout: float = None, iterations: int = None) -> CallResult[None]:
         """
         get the mean value of each columns
 
@@ -115,7 +117,7 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
 
         # if already fitted on current dataset, do nothing
         if self.is_fitted:
-            return True
+            return
 
         if (timeout is None):
             timeout = math.inf
@@ -138,9 +140,10 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
             self.is_fitted = False
             self._iterations_done = False
             self._has_finished = False
-            return
+        
+        return CallResult(None, self._has_finished, self._iterations_done)
 
-    def produce(self, *, inputs: Sequence[Input], timeout: float = None, iterations: int = None) -> Sequence[Output]:
+    def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> CallResult[Output]:
         """
         precond: run fit() before
 
@@ -177,14 +180,15 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
             data_clean = data.fillna(value=self.mean_values)
 
 
+        value = None
         if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
             self._has_finished = True
             self._iterations_done = True
-            return data_clean
+            value = data_clean
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
             self._has_finished = False
             self._iterations_done = False
-            return None
+        return CallResult(value, self._has_finished, self._iterations_done)
 
 
     def __get_fitted(self):

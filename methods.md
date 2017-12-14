@@ -53,7 +53,7 @@ their method is like:
 	then go for loops to run...
 
 
-**diff btween our method**: using `n_nearest_columns `, useful when number of column is huge; using `Posterior Predictive Distribution`.
+**diff btween iterative_regre**: using `n_nearest_columns `, useful when number of column is huge; using `Posterior Predictive Distribution`.
 
 ### 5. knn
 now using the [fancyimpute-knn](https://github.com/hammerlab/fancyimpute/blob/master/fancyimpute), they also trigger [knnimpute](https://github.com/hammerlab/knnimpute)
