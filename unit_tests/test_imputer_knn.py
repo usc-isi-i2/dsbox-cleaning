@@ -11,8 +11,7 @@ def text2int(col):
 
 import pandas as pd
 
-from dsbox.datapreprocessing.cleaner import KNNImputation
-from primitive_interfaces.base import CallMetadata
+from dsbox.datapreprocessing.cleaner import KNNImputation, KnnHyperparameter
 
 # get data
 data_name =  "data.csv"
@@ -27,29 +26,30 @@ import unittest
 class TestMean(unittest.TestCase):
 
 	def setUp(self):
-		self.imputer = KNNImputation(verbose=1)
+		hp = KnnHyperparameter.sample()
+		self.imputer = KNNImputation(hp, verbose=1)
 
 	def test_init(self):
-		self.assertEqual(self.imputer.get_call_metadata(), 
-			CallMetadata(has_finished=False, iterations_done=False))
+		self.assertEqual(self.imputer._has_finished, False)
+		self.assertEqual(self.imputer._iterations_done, False)
 
 	def test_run(self):
-		result = self.imputer.produce(inputs=data, timeout=10)
+		result = self.imputer.produce(inputs=data, timeout=10).value
 		self.helper_impute_result_check(data,result)
-		self.assertEqual(self.imputer.get_call_metadata(), 
-			CallMetadata(has_finished=True, iterations_done=True))
+		self.assertEqual(self.imputer._has_finished, True)
+		self.assertEqual(self.imputer._iterations_done, True)
 
 	def test_timeout(self):
-		result = self.imputer.produce(inputs=data, timeout=0.00001)
-		self.assertEqual(self.imputer.get_call_metadata(), 
-			CallMetadata(has_finished=False, iterations_done=False))
+		result = self.imputer.produce(inputs=data, timeout=0.000001).value
+		self.assertEqual(self.imputer._has_finished, False)
+		self.assertEqual(self.imputer._iterations_done, False)
 
 	def test_noMV(self):
 		"""
 		test on the dataset has no missing values
 		"""
-		result = self.imputer.produce(inputs=data, timeout=10)
-		result2 = self.imputer.produce(inputs=result, timeout=10)	# result contains no missing value
+		result = self.imputer.produce(inputs=data, timeout=10).value
+		result2 = self.imputer.produce(inputs=result, timeout=10).value	# result contains no missing value
 		
 		self.assertEqual(result.equals(result2), True)
 	

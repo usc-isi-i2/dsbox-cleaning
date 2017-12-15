@@ -136,7 +136,7 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
 
         # if already fitted on current dataset, do nothing
         if self.is_fitted:
-            return
+            return CallResult(None, self._has_finished, self._iterations_done)
 
         if (timeout is None):
             timeout = math.inf

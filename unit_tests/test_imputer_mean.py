@@ -12,7 +12,6 @@ def text2int(col):
 import pandas as pd
 
 from dsbox.datapreprocessing.cleaner import MeanImputation
-from primitive_interfaces.base import CallMetadata
 
 # get data
 data_name =  "data.csv"
@@ -32,8 +31,8 @@ class TestMean(unittest.TestCase):
 		self.not_enough_time = 0.000001
 
 	def test_init(self):
-		self.assertEqual(self.imputer.get_call_metadata(), 
-			CallMetadata(has_finished=False, iterations_done=False))
+		self.assertEqual(self.imputer._has_finished, False)
+		self.assertEqual(self.imputer._iterations_done, False)
 
 	def test_run(self):
 		# part 1
@@ -41,21 +40,22 @@ class TestMean(unittest.TestCase):
 		imputer.set_training_data(inputs=data)	
 		imputer.fit(timeout=self.enough_time)
 		print (imputer.get_params())
-		self.assertEqual(imputer.get_call_metadata(), 
-			CallMetadata(has_finished=True, iterations_done=True))
+		self.assertEqual(imputer._has_finished, True)
+		self.assertEqual(imputer._iterations_done, True)
 
-		result = imputer.produce(inputs=data, timeout=self.enough_time)
+		result = imputer.produce(inputs=data, timeout=self.enough_time).value
 		self.helper_impute_result_check(data, result)
 
 		# part2: test set_params()
 		imputer2 = MeanImputation(verbose=1)
 		imputer2.set_params(params=imputer.get_params())
-		self.assertEqual(imputer.get_call_metadata(), 
-			CallMetadata(has_finished=True, iterations_done=True))
-		result2 = imputer2.produce(inputs=data, timeout=self.enough_time)
+		self.assertEqual(imputer2._has_finished, True)
+		self.assertEqual(imputer2._iterations_done, True)
+
+		result2 = imputer2.produce(inputs=data, timeout=self.enough_time).value
 		self.assertEqual(result2.equals(result), True)	# two imputers' results should be same
-		self.assertEqual(imputer.get_call_metadata(), 
-			CallMetadata(has_finished=True, iterations_done=True))
+		self.assertEqual(imputer2._has_finished, True)
+		self.assertEqual(imputer2._iterations_done, True)
 
 	# mean imputation is too fast to make it timeout
 
@@ -75,8 +75,8 @@ class TestMean(unittest.TestCase):
 		imputer = MeanImputation(verbose=1)
 		imputer.set_training_data(inputs=data)	
 		imputer.fit(timeout=self.enough_time)
-		result = imputer.produce(inputs=data, timeout=self.enough_time)
-		result2 = imputer.produce(inputs=result, timeout=self.enough_time)	# `result` contains no missing value
+		result = imputer.produce(inputs=data, timeout=self.enough_time).value
+		result2 = imputer.produce(inputs=result, timeout=self.enough_time).value	# `result` contains no missing value
 
 		self.assertEqual(result.equals(result2), True)
 	
@@ -89,18 +89,18 @@ class TestMean(unittest.TestCase):
 		imputer = MeanImputation(verbose=1)
 		imputer.set_training_data(inputs=data)	
 		imputer.fit(timeout=self.enough_time)
-		result = imputer.produce(inputs=data, timeout=self.enough_time)
+		result = imputer.produce(inputs=data, timeout=self.enough_time).value
 		# PART1: when `a` > `b`
 		data2 = result.copy()
 		data2["T3"] = data["T3"].copy()	# only set this column to original column, with missing vlaues
-		result2 = imputer.produce(inputs=data2, timeout=self.enough_time)
+		result2 = imputer.produce(inputs=data2, timeout=self.enough_time).value
 		self.helper_impute_result_check(data2, result2)
 
 		# PART2: when `a` < `b`
 		imputer = MeanImputation(verbose=1)
 		imputer.set_training_data(inputs=data2)	
 		imputer.fit(timeout=self.enough_time)
-		result = imputer.produce(inputs=data, timeout=self.enough_time)	
+		result = imputer.produce(inputs=data, timeout=self.enough_time).value
 		# data contains more missingvalue columns than data2, 
 		# the imputer should triger default impute method for the column that not is trained
 		self.helper_impute_result_check(data, result)
@@ -109,7 +109,7 @@ class TestMean(unittest.TestCase):
 		imputer = MeanImputation(verbose=1)
 		imputer.set_training_data(inputs=data)	
 		imputer.fit(timeout=self.enough_time)
-		result = imputer.produce(inputs=data[0:20], timeout=self.enough_time)
+		result = imputer.produce(inputs=data[0:20], timeout=self.enough_time).value
 		self.helper_impute_result_check(data[0:20], result)
 
 

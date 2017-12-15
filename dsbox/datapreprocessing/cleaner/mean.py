@@ -80,6 +80,7 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Non
     def set_params(self, *, params: Params) -> None:
         self.is_fitted = len(params.mean_values) > 0
         self._has_finished = self.is_fitted
+        self._iterations_done = self.is_fitted
         self.mean_values = params.mean_values
 
     def get_params(self) -> Params:
@@ -158,7 +159,7 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Non
         if (pd.isnull(inputs).sum().sum() == 0):    # no missing value exists
             if (self.verbose > 0): print ("Warning: no missing value in test dataset")
             self._has_finished = True
-            return inputs
+            return CallResult(inputs, self._has_finished, self._iterations_done)
 
         if (timeout is None):
             timeout = math.inf
