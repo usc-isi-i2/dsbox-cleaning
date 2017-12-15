@@ -2,10 +2,13 @@ import pandas as pd
 import numpy as np
 from typing import NamedTuple, Sequence
 import copy
-from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 
-Input = pd.DataFrame
-Output = pd.DataFrame
+from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
+from d3m_metadata.container.pandas import DataFrame
+from d3m_metadata.hyperparams import Enumeration, Hyperparams
+
+Input = DataFrame
+Output = DataFrame
 
 Params = NamedTuple('Params', [
     ('mapping', dict),
@@ -15,14 +18,19 @@ Params = NamedTuple('Params', [
     ('target_columns',dict)
     ])
 
-class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
+class UEncHyperparameter(Hyperparams):
+    text2int = Enumeration(values=[True,False],default=False, 
+            description='Whether to convert everything to numerical')
+
+
+class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncHyperparameter]):
 
     def __repr__(self):
         return "%s(%r)" % ('UnaryEncoder', self.__dict__)
 
 
-    def __init__(self, *, text2int=False) -> None:
-        self.text2int = text2int
+    def __init__(self, hyperparam: UEncHyperparameter) -> None:
+        self.text2int = hyperparam['text2int']
         self.textmapping = None
         self.mapping = None
         self.all_columns = []
@@ -47,7 +55,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
         self.target_columns = params.target_columns
 
 
-    def set_training_data(self, *, inputs: Sequence[Input], targets: list) -> None:
+    def set_training_data(self, *, inputs: Input, targets: list) -> None:
         self.training_inputs = inputs
         self.target_columns = targets
         self.fitted = False
@@ -96,7 +104,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
         return unary.drop(col.name,axis=1)
 
 
-    def produce(self, *, inputs: Sequence[Input], timeout:float = None, iterations: int = None) -> pd.DataFrame:
+    def produce(self, *, inputs: Input, timeout:float = None, iterations: int = None) -> pd.DataFrame:
         """
         Convert and output the input data into unary encoded format,
         using the trained (fitted) encoder.
@@ -124,9 +132,6 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params]):
         for column_name in data_enc:
             col = data_enc[column_name]
             col.is_copy = False
-
-            #chg_t = lambda x: str(int(x)) if type(x) is not str else x
-            #col[col.notnull()] = col[col.notnull()].apply(chg_t)
 
             chg_v = lambda x: min(self.mapping[col.name], key=lambda a:abs(a-x)) if x is not None else x
             col[col.notnull()] = col[col.notnull()].apply(chg_v)
