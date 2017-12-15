@@ -22,6 +22,56 @@ class UEncHyperparameter(Hyperparams):
     text2int = Enumeration(values=[True,False],default=False, 
             description='Whether to convert everything to numerical')
 
+## reference: https://github.com/scikit-learn/scikit-learn/issues/8136
+class Label_encoder(object):
+    def __init__(self):
+        self.class_index = None
+    
+    def fit_pd(self, df, cols=[]):
+        '''
+        fit all columns in the df or specific list.
+        generate a dict:
+        {feature1:{label1:1,label2:2}, feature2:{label1:1,label2:2}...}
+        '''
+        if len(cols) == 0:
+            cols = df.columns
+        self.class_index = {}
+        for f in cols:
+            uf = df[f].unique()
+            self.class_index[f] = {}
+            index = 1
+            for item in uf:
+                self.class_index[f][item] = index
+                index += 1
+    
+    def transform_pd(self,df,cols=[]):
+        '''
+        transform all columns in the df or specific list from lable to index, return and update dataframe.
+        '''
+        newdf = copy.deepcopy(df)
+        if len(cols) == 0:
+            cols = df.columns
+        for f in cols:
+            if f in self.class_index:
+                newdf[f] = df[f].apply(lambda d: self.__update_label(f,d))
+        return newdf
+
+    def get_params(self):
+        return self.class_index
+
+    def set_params(self, textmapping):
+        self.class_index = textmapping
+
+    def __update_label(self,f,x):
+        '''
+        update the label to index, if not found in the dict, add and update the dict.
+        '''
+        try:
+            return self.class_index[f][x]
+        except:
+            self.class_index[f][x] = max(self.class_index[f].values())+1
+            return self.class_index[f][x]
+
 
 class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncHyperparameter]):
 
