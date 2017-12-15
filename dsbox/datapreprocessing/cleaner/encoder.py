@@ -1,9 +1,11 @@
 import numpy as np
 import pandas as pd
+import copy
+
 from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 from typing import NamedTuple, Dict, List, Set
-import copy
 from d3m_metadata.container.pandas import DataFrame
+from d3m_metadata.hyperparams import Enumeration, UniformInt, Hyperparams
 
 def isCat_95in10(col):
     """
@@ -20,6 +22,13 @@ Params = NamedTuple('Params', [
     ('empty_columns', List[str]),
     ('textmapping', Dict)
     ])
+
+
+class EncHyperparameter(Hyperparams):
+    text2int = Enumeration(values=[True,False],default=False,
+            description='Whether to convert everything to numerical')
+    n_limit = UniformInt(lower=5, upper=100, default=12,description='Maximum columns to encode')
+
 
 ## reference: https://github.com/scikit-learn/scikit-learn/issues/8136
 class Label_encoder(object):
@@ -72,7 +81,7 @@ class Label_encoder(object):
             return self.class_index[f][x]
 
 
-class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, None]):
+class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, EncHyperparameter]):
     __author__ = "USC ISI"
     __metadata__ = {
             "id": "18f0bb42-6350-3753-8f2d-d1c3da70f279",
@@ -139,11 +148,11 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, None]):
         return "%s(%r)" % ('Encoder', self.__dict__)
 
 
-    def __init__(self, *, categorical_features='95in10', text2int=True, n_limit=12) -> None:
+    def __init__(self, hyperparam: EncHyperparameter, categorical_features='95in10') -> None:
 
         self.categorical_features = categorical_features
-        self.n_limit = n_limit
-        self.text2int = text2int
+        self.n_limit = hyperparam['n_limit']
+        self.text2int = hyperparam['text2int']
         #
         self.textmapping : Dict = None
         #
@@ -248,20 +257,15 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, None]):
         """
         Convert and output the input data into encoded format,
         using the trained (fitted) encoder.
-        Notice that a [colname]_other_ column is always kept for
-        one-hot encoded columns.
-        Missing(NaN) cells in a column one-hot encoded would give
-        out a row of all-ZERO columns for the target column.
+        Notice that [colname]_other_ and [colname]_nan columns 
+        are always kept for one-hot encoded columns.
         """
 
         if isinstance(inputs, pd.DataFrame):
             data_copy = inputs.copy()
         else:
             data_copy = inputs[0].copy()
-
-        data_enc = data_copy[list(self.mapping.keys())]
-        data_else = data_copy.drop(self.mapping.keys(),axis=1)
-
+ 
         set_columns = set(data_copy.columns)
 
         if set_columns != self.all_columns:
