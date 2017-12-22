@@ -1,90 +1,89 @@
-import numpy as np #  type: ignore
 import pandas as pd #  type: ignore
-from fancyimpute import SimpleFill #  type: ignore
 
-from . import missing_value_pred as mvp
 from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 
 from primitive_interfaces.base import CallResult
 import stopit #  type: ignore
-import math
-from typing import NamedTuple, Dict
 
 import d3m_metadata.container
-from d3m_metadata.hyperparams import UniformInt, Hyperparams
-import collections
+from d3m_metadata.metadata import PrimitiveMetadata
+from d3m_metadata import params
+from d3m_metadata import hyperparams
+from d3m_metadata.hyperparams import UniformInt
 
 Input = d3m_metadata.container.DataFrame
 Output = d3m_metadata.container.DataFrame
 
 # store the mean value for each column in training data
-Params = NamedTuple("MeanImputationParams", [
-    ('mean_values', dict)]
-    ) 
+class Params(params.Params):
+    mean_values: dict
+    
+class Hyperparams(hyperparams.Hyperparams):
+    verbose: UniformInt(lower=0, upper=1, default=0)
+    
 
-class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, None]):
-    __author__ = "USC ISI"
-    __metadata__ = {
+class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Hyperparams]):
+    """
+    Impute missing values using the `mean` value of the attribute.
+    """    
+    metadata = PrimitiveMetadata({
+        ### Required
         "id": "7894b699-61e9-3a50-ac9f-9bc510466667",
-        "name": "dsbox.datapreprocessing.cleaner.MeanImputation",
-        "common_name": "DSBox Mean Imputer",
-        "description": "Impute missing values using mean",
-        "languages": [
-            "python3.5", "python3.6"
-        ],
-        "library": "dsbox",
-        "version": "0.2.0",
-        "is_class": True,
-        "parameters": [],
-        "task_type": [
-            "Data preprocessing"
-        ],
-        "tags": [
-            "preprocessing",
-            "imputation"
-        ],
-        "build": [
+        "version": "0.3.1",
+        "name": "DSBox Mean Imputer",
+        "description": "Impute missing values using the `mean` value of the attribute.",
+        "python_path": "d3m.primitives.dsbox.MeanImputation",
+        "primitive_family": "DATA_CLEANING",
+        "algorithm_types": [ "ADABOOST" ],  # !!!! Need to submit algorithm type "Imputation"
+        "source": {
+            "name": "USC ISI",
+            "uris": [
+                "https://github.com/usc-isi-i2/dsbox-cleaning.git"
+                ]
+            },
+        ### Automatically generated
+        # "primitive_code"
+        # "original_python_path"
+        # "schema"
+        # "structural_type"
+        ### Optional
+        "keywords": [ "preprocessing", "imputation" ],
+        "installation": [ 
             {
-                "type": "pip",
-                "package": "dsbox-datacleaning"
-            }
+                "type": "PIP",
+                "package": "dsbox-datacleaning",
+                "version": "0.3.1" 
+            } 
         ],
-        "team": "USC ISI",
-        "schema_version": 1.0,
-        "interfaces": [ "UnsupervisedLearnerPrimitiveBase" ],
-        "interfaces_version": "2017.9.22rc0",
-        "compute_resources": {
-            "cores_per_node": [],
-            "disk_per_node": [],
-            "expected_running_time": [],
-            "gpus_per_node": [],
-            "mem_per_gpu": [],
-            "mem_per_node": [],
-            "num_nodes": [],
-            "sample_size": [],
-            "sample_unit": []
-        }
-    }
+        "location_uris": [],
+        "precondition": [],
+        "effects": [ "NO_MISSING_VALUES" ],
+        "hyperparms_to_tune": []
+        })
 
-    """
-    Imputate the missing value using the `mean` value of the attribute
-    """
+    def __init__(self, *, hyperparams: Hyperparams, random_seed: int = 0, 
+                 docker_containers: typing.Union[typing.Dict[str, str], None] = None) -> None:
+        # All primitives must define these attributes
+        self.hyperparams = hyperparams
+        self.random_seed = random_seed
+        self.docker_containers = docker_containers
 
-    def __init__(self, verbose=0) -> None:
-        self.train_x = None
-        self.is_fitted = False
+        # All other attributes must be private with leading underscore        
+        self._train_x = None
+        self._is_fitted = False
         self._has_finished = False
         self._iterations_done = False
-        self.verbose = verbose
+        self._verbose = hyperparams['verbose'] if hyperparams else 0
+        
 
     def set_params(self, *, params: Params) -> None:
-        self.is_fitted = len(params.mean_values) > 0
-        self._has_finished = self.is_fitted
-        self._iterations_done = self.is_fitted
+        self._is_fitted = len(params.mean_values) > 0
+        self._has_finished = self._is_fitted
+        self._iterations_done = self._is_fitted
         self.mean_values = params.mean_values
 
     def get_params(self) -> Params:
-        if self.is_fitted:
+        if self._is_fitted:
             return Params(mean_values=self.mean_values)
         else:
             return Params(mean_values=dict())
@@ -99,11 +98,11 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Non
             The inputs.
         """
         if (pd.isnull(inputs).sum().sum() == 0):    # no missing value exists
-            self.is_fitted = True
-            if (self.verbose > 0): print ("Warning: no missing value in train dataset")
+            self._is_fitted = True
+            if (self._verbose > 0): print ("Warning: no missing value in train dataset")
         else:
-            self.train_x = inputs
-            self.is_fitted = False
+            self._train_x = inputs
+            self._is_fitted = False
 
 
 
@@ -117,11 +116,11 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Non
         """
 
         # if already fitted on current dataset, do nothing
-        if self.is_fitted:
+        if self._is_fitted:
             return CallResult(None, self._has_finished, self._iterations_done)
 
         if (timeout is None):
-            timeout = math.inf
+            timeout = 2**31-1
         if (iterations is None):
             self._iterations_done = True
 
@@ -130,15 +129,15 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Non
             assert to_ctx_mrg.state == to_ctx_mrg.EXECUTING
 
             # start fitting
-            if (self.verbose>0) : print("=========> mean imputation method:")
+            if (self._verbose>0) : print("=========> mean imputation method:")
             self.__get_fitted()
 
         if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
-            self.is_fitted = True
+            self._is_fitted = True
             self._iterations_done = True
             self._has_finished = True
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
-            self.is_fitted = False
+            self._is_fitted = False
             self._iterations_done = False
             self._has_finished = False
         
@@ -153,16 +152,16 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Non
         data: pandas dataframe
         """
 
-        if (not self.is_fitted):
+        if (not self._is_fitted):
             # todo: specify a NotFittedError, like in sklearn
             raise ValueError("Calling produce before fitting.")
         if (pd.isnull(inputs).sum().sum() == 0):    # no missing value exists
-            if (self.verbose > 0): print ("Warning: no missing value in test dataset")
+            if (self._verbose > 0): print ("Warning: no missing value in test dataset")
             self._has_finished = True
             return CallResult(inputs, self._has_finished, self._iterations_done)
 
         if (timeout is None):
-            timeout = math.inf
+            timeout = 2**31-1
 
         if isinstance(inputs, pd.DataFrame):
             data = inputs.copy()
@@ -174,7 +173,7 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Non
             assert to_ctx_mrg.state == to_ctx_mrg.EXECUTING
 
             # start completing data...
-            if (self.verbose>0): print("=========> impute by mean value of the attribute:")
+            if (self._verbose>0): print("=========> impute by mean value of the attribute:")
 
             # assume the features of testing data are same with the training data
             # therefore, only use the mean_values to impute, should get a clean dataset
@@ -193,6 +192,6 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Non
 
 
     def __get_fitted(self):
-        self.mean_values = self.train_x.mean(axis=0).to_dict()
+        self.mean_values = self._train_x.mean(axis=0).to_dict()
 
 

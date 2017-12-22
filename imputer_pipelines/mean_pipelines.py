@@ -11,7 +11,6 @@ import json
 
 from dsbox.datapreprocessing.cleaner import MeanImputation
 from dsbox.datapreprocessing.cleaner import Encoder
-from dsbox.datapreprocessing.cleaner.encoder import Params
 
 from sklearn.ensemble import BaggingClassifier
 
@@ -19,10 +18,9 @@ from sklearn.ensemble import BaggingClassifier
 #
 # It executes a TA1 pipeline using a ta1-pipeline-config.json file that follows this structure:
 # {
-#   "problem_schema":"path/to/problem_schema.json",
-#   "dataset_schema":"path/to/dataset_schema.json",
-#   "data_root":"path/to/data/root/folder/",
-#   "output_file":"path/to/output/file"
+#    "train_data":"path/to/train/data/folder/",
+#    "test_data":"path/to/test/data/folder/",
+#    "output_folder":"path/to/output/folder/"
 # }
 
 # Load the json configuration file
@@ -30,17 +28,39 @@ with open("ta1-pipeline-config.json", 'r') as inputFile:
     jsonCall = json.load(inputFile)
     inputFile.close()
 
+# Load the problem description schema
+with open( path.join(jsonCall['train_data'], 'problem_TRAIN', 'problemDoc.json' ) , 'r') as inputFile:
+    problemSchema = json.load(inputFile)
+    inputFile.close()
+
 # Load the json dataset description file
-with open(jsonCall['dataset_schema'], 'r') as inputFile:
+with open( path.join(jsonCall['train_data'], 'dataset_TRAIN', 'datasetDoc.json' ) , 'r') as inputFile:
     datasetSchema = json.load(inputFile)
     inputFile.close()
 
-# Load the input files from the data_root folder path information, replacing missing values with zeros
-dataRoot = jsonCall['data_root']
-trainData = pd.read_csv( path.join(dataRoot, 'trainData.csv.gz') )
-trainTargets = pd.read_csv( path.join(dataRoot, 'trainTargets.csv.gz') )
-#testData = pd.read_csv( path.join(dataRoot, 'testData.csv.gz') )
-testData = pd.read_csv( path.join(dataRoot, 'trainData.csv.gz') )
+# Get the target and attribute column ids from the dataset schema for training data
+trainAttributesColumnIds = [ item['colIndex'] for item in datasetSchema['dataResources'][0]['columns'] if 'attribute' in item['role'] ]
+trainTargetsColumnIds = [ item['colIndex'] for item in problemSchema['inputs']['data'][0]['targets'] ]
+
+# Exit if more than one target
+if len(trainTargetsColumnIds) > 1:
+    print('More than one target in the problem. Exiting.')
+    exit(1)
+
+# Get the attribute column ids from the problem schema for test data (in this example, they are the same)
+testAttributesColumnIds = trainAttributesColumnIds
+
+# Load the tabular data file for training, replace missing values, and split it in train data and targets
+trainDataResourcesPath = path.join(jsonCall['train_data'], 'dataset_TRAIN', datasetSchema['dataResources'][0]['resPath'])
+trainData = pd.read_csv( trainDataResourcesPath, header=0, usecols=trainAttributesColumnIds)
+trainTargets = pd.read_csv( trainDataResourcesPath, header=0, usecols=trainTargetsColumnIds)
+
+# Load the tabular data file for training, replace missing values, and split it in train data and targets
+testDataResourcesPath = path.join(jsonCall['test_data'], 'dataset_TEST', datasetSchema['dataResources'][0]['resPath'])
+testData = pd.read_csv( testDataResourcesPath, header=0, usecols=testAttributesColumnIds)
+
+# Get the d3mIndex of the testData
+d3mIndex = pd.read_csv( testDataResourcesPath, header=0, usecols=['d3mIndex'])
 
 print(trainData.head())
 print(trainTargets.head())
@@ -54,13 +74,13 @@ encodedData = enc.produce(inputs=trainData)
 encodedTestData = enc.produce(inputs=testData)
 
 # Initialize the DSBox imputer
-imputer = MeanImputation(verbose=0)
+imputer = MeanImputation()
 imputer.set_training_data(inputs=encodedData)	# unsupervised
 imputer.fit(timeout=100)	# give 100 seconds to fit
 print ("\nParams:")
 print (imputer.get_params())
 
-imputer2 = MeanImputation(verbose=0)
+imputer2 = MeanImputation()
 imputer2.set_params(params=imputer.get_params())
 
 imputedData = imputer2.produce(inputs=encodedData, timeout=100).value
@@ -70,8 +90,15 @@ trainedModel = model.fit(imputedData, np.asarray(trainTargets['Class']))
 
 
 predictedTargets = trainedModel.predict(imputer.produce(inputs=encodedTestData).value)
-print(predictedTargets)
+
+# Append the d3mindex column to the predicted targets
+predictedTargets = pd.DataFrame({'d3mIndex':d3mIndex['d3mIndex'], 'Class':predictedTargets})
+print(predictedTargets.head())
+
+# Get the file path of the expected outputs
+outputFilePath = path.join(jsonCall['output_folder'], problemSchema['expectedOutputs']['predictionsFile'])
 
 # Outputs the predicted targets in the location specified in the JSON configuration file
-with open(jsonCall['output_file'], 'w') as outputFile:
-    output = pd.DataFrame(predictedTargets).to_csv(outputFile, index_label='d3mIndex', header=['Class'])
+with open(outputFilePath, 'w') as outputFile:
+    output = predictedTargets.to_csv(outputFile, index=False, columns=['d3mIndex', 'Class'])
+
