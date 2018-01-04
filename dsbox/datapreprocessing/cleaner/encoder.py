@@ -1,11 +1,17 @@
-import numpy as np
-import pandas as pd
+import numpy as np # type: ignore
+import pandas as pd # type: ignore
 import copy
 
+from d3m_metadata.metadata import PrimitiveMetadata
 from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
-from typing import NamedTuple, Dict, List, Set
-from d3m_metadata.container.pandas import DataFrame
-from d3m_metadata.hyperparams import Enumeration, UniformInt, Hyperparams
+from typing import NamedTuple, Dict, List, Set, Union
+import d3m_metadata.container
+from d3m_metadata.hyperparams import Enumeration, UniformInt
+import d3m_metadata.hyperparams as hyperparams
+from d3m_metadata import params
+
+from primitive_interfaces.base import CallResult
+
 
 def isCat_95in10(col):
     """
@@ -13,21 +19,23 @@ def isCat_95in10(col):
     """
     return col.value_counts().head(10).sum() / float(col.count()) > .95
 
-Input = DataFrame
-Output = DataFrame
 
-Params = NamedTuple('Params', [
-    ('mapping', Dict),
-    ('all_columns', Set[str]),
-    ('empty_columns', List[str]),
-    ('textmapping', Dict)
-    ])
+Input = d3m_metadata.container.DataFrame
+Output = d3m_metadata.container.DataFrame
 
 
-class EncHyperparameter(Hyperparams):
+class EncParams(params.Params):
+    mapping: Union[Dict, None]
+    all_columns: Set[str]
+    empty_columns: List[str]
+    textmapping: Union[Dict, None]
+
+
+class EncHyperparameter(hyperparams.Hyperparams):
     text2int = Enumeration(values=[True,False],default=False,
             description='Whether to convert everything to numerical')
-    n_limit = UniformInt(lower=5, upper=100, default=12,description='Maximum columns to encode')
+    n_limit = UniformInt(lower=5, upper=100, default=12, description='Maximum columns to encode')
+    categorical_features = Enumeration(values=['95in10'], default='95in10', description='rule to declare categorical')
 
 
 ## reference: https://github.com/scikit-learn/scikit-learn/issues/8136
@@ -81,54 +89,7 @@ class Label_encoder(object):
             return self.class_index[f][x]
 
 
-class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, EncHyperparameter]):
-    __author__ = "USC ISI"
-    __metadata__ = {
-            "id": "18f0bb42-6350-3753-8f2d-d1c3da70f279",
-            "name": "dsbox.datapreprocessing.cleaner.Encoder",
-            "common_name": "DSBox Data Encoder",
-            "team": "USC ISI",
-            "task_type": [ "Data preprocessing" ],
-            "tags": [ "preprocesing", "encoding" ],
-            "description": "Encode data, such as one-hot encoding for categorical data",
-            "languages": [ "python3.5", "python3.6" ],
-            "library": "dsbox",
-            "version": "0.2.0",
-            "is_class": True,
-            "schema_version": 1.0,
-            "parameters": [
-                {
-                    "name": "n_limit",
-                    "description": "Max number of distinct values to one-hot encode",
-                    "type": "int",
-                    "default": "10",
-                    "is_hyperparameter": True
-                    },
-                {
-                    "name": "text2int",
-                    "description": "Encode text strings as integers. For example, set to true if text strings encode categorical data, and set to false if text strings contain natural language text.",
-                    "type": "boolean",
-                    "default": "true",
-                    "is_hyperparameter": True
-                    }
-                ],
-            "build": [ { "type": "pip", "package": "dsbox-datacleaning" } ],
-            "compute_resources": {
-                "cores_per_node": [],
-                "disk_per_node": [],
-                "expected_running_time": [],
-                "gpus_per_node": [],
-                "mem_per_gpu": [],
-                "mem_per_node": [],
-                "num_nodes": [],
-                "sample_size":[],
-                "sample_unit":[]
-                },
-            "interfaces": [ "UnsupervisedLearnerPrimitiveBase" ],
-            "interfaces_version": "2017.9.22rc0",
-
-            }
-
+class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHyperparameter]):
     """
     An one-hot encoder, which
 
@@ -143,25 +104,64 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, EncHyperpa
 
     3. produce(): input data would be encoded and return.
     """
+    
+    metadata = PrimitiveMetadata({
+        "id": "18f0bb42-6350-3753-8f2d-d1c3da70f279",
+        "version": "0.3.1",
+        "name": "DSBox Data Encoder",
+        "description": "Encode data, such as one-hot encoding for categorical data",
+        "python_path": "d3m.primitives.dsbox.Encoder",
+        "primitive_family": "DATA_CLEANING",
+        "algorithm_types": [ "ENCODE_ONE_HOT" ],  # !!!! Need to submit algorithm type "Imputation"
+        "source": {
+            "name": "USC ISI",
+            "uris": [
+                "https://github.com/usc-isi-i2/dsbox-cleaning.git"
+                ]
+            },
+        ### Automatically generated
+        # "primitive_code"
+        # "original_python_path"
+        # "schema"
+        # "structural_type"
+        ### Optional
+        "keywords": [ "preprocessing",  "encoding"],
+        "installation": [ 
+            {
+                "type": "PIP",
+                "package": "dsbox-datacleaning",
+                "version": "0.3.1" 
+            } 
+        ],
+        #"location_uris": [],
+        #"precondition": [],
+        #"effects": [],
+        #"hyperparms_to_tune": []
+        })
+    
 
     def __repr__(self):
         return "%s(%r)" % ('Encoder', self.__dict__)
 
 
-    def __init__(self, hyperparam: EncHyperparameter, categorical_features='95in10') -> None:
+    def __init__(self, *, hyperparams: EncHyperparameter, random_seed: int = 0,
+                    docker_containers: Dict[str, str] = None) -> None:
 
-        self.categorical_features = categorical_features
-        self.n_limit = hyperparam['n_limit']
-        self.text2int = hyperparam['text2int']
+        self.hyperparams = hyperparams
+        self.random_seed = random_seed
+        self.docker_containers = docker_containers
+        #self.categorical_features = categorical_features
+        #self.n_limit = hyperparam['n_limit']
+        #self.text2int = hyperparam['text2int']
         #
-        self.textmapping : Dict = None
-        #
-        self.mapping : Dict = None
-        self.all_columns : Set[str] = set()
-        self.empty_columns : List[str] = []
+        self._textmapping : Dict = None
+        
+        self._mapping : Dict = None
+        self._all_columns : Set[str] = set()
+        self._empty_columns : List[str] = []
 
-        self.training_inputs : Input = None
-        self.fitted = False
+        self._training_inputs : Input = None
+        self._fitted = False
 
 
     def __column_features(self, col, n_limit):
@@ -181,7 +181,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, EncHyperpa
             if col.count() == 0:
                 print('Warning:',col.name,'is an empty column.')
                 print('The encoder will discard it.')
-                self.empty_columns.append(col.name)
+                self._empty_columns.append(col.name)
                 return
 
 	        # if dtype = integer
@@ -201,20 +201,20 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, EncHyperpa
             return
 
 
-    def get_params(self) -> Params:
-        return Params(mapping=self.mapping, all_columns=self.all_columns, empty_columns=self.empty_columns, textmapping=self.textmapping)
+    def get_params(self) -> EncParams:
+        return EncParams(mapping=self._mapping, all_columns=self._all_columns, empty_columns=self._empty_columns, textmapping=self._textmapping)
 
 
-    def set_params(self, *, params: Params) -> None:
-        self.fitted = True
-        self.mapping = params.mapping
-        self.all_columns = params.all_columns
-        self.empty_columns = params.empty_columns
-        self.textmapping = params.textmapping
+    def set_params(self, *, params: EncParams) -> None:
+        self._fitted = True
+        self._mapping = params['mapping']
+        self._all_columns = params['all_columns']
+        self._empty_columns = params['empty_columns']
+        self._textmapping = params['textmapping']
 
-    def set_training_data(self, *, inputs: Input):
-        self.training_inputs = inputs
-        self.fitted = False
+    def set_training_data(self, *, inputs: Input) -> None:
+        self._training_inputs = inputs
+        self._fitted = False
 
 
     def fit(self, *, timeout:float = None, iterations: int = None) -> None:
@@ -224,36 +224,36 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, EncHyperpa
         the corresponding (with top n occurrence) column values to
         one-hot encode later in the produce step.
         """
-        if self.fitted:
+        if self._fitted:
             return
 
-        if self.training_inputs is None:
+        if self._training_inputs is None:
             raise ValueError('Missing training(fitting) data.')
 
-        data_copy = self.training_inputs.copy()
+        data_copy = self._training_inputs.copy()
 
-        self.all_columns = set(data_copy.columns)
+        self._all_columns = set(data_copy.columns)
 
-        if self.categorical_features == '95in10':
+        if self.hyperparams['categorical_features'] == '95in10':
             idict = {}
             for column_name in data_copy:
                 col = data_copy[column_name]
-                p = self.__process(col, self.categorical_features, self.n_limit)
+                p = self.__process(col, self.hyperparams['categorical_features'], self.hyperparams['n_limit'])
                 if p:
                     idict[p[0]] = p[1]
-            self.mapping = idict
+            self._mapping = idict
             #
-            if self.text2int:
-                texts = data_copy.drop(self.mapping.keys(),axis=1)
+            if self.hyperparams['text2int']:
+                texts = data_copy.drop(self._mapping.keys(),axis=1)
                 texts = texts.select_dtypes(include=[object])
                 le = Label_encoder()
                 le.fit_pd(texts)
-                self.textmapping = le.get_params()
+                self._textmapping = le.get_params()
             #
         self.fitted = True
 
 
-    def produce(self, *, inputs: Input, timeout:float = None, iterations: int = None):
+    def produce(self, *, inputs: Input, timeout:float = None, iterations: int = None) -> CallResult[Output]:
         """
         Convert and output the input data into encoded format,
         using the trained (fitted) encoder.
@@ -268,11 +268,11 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, EncHyperpa
  
         set_columns = set(data_copy.columns)
 
-        if set_columns != self.all_columns:
+        if set_columns != self._all_columns:
             raise ValueError('Columns(features) fed at produce() differ from fitted data.')
 
-        data_enc = data_copy[list(self.mapping.keys())]
-        data_else = data_copy.drop(self.mapping.keys(),axis=1)
+        data_enc = data_copy[list(self._mapping.keys())]
+        data_else = data_copy.drop(self._mapping.keys(),axis=1)
 
         res = []
         for column_name in data_enc:
@@ -282,12 +282,12 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, EncHyperpa
             chg_t = lambda x: str(int(x)) if type(x) is not str else x
             col[col.notnull()] = col[col.notnull()].apply(chg_t)
 
-            chg_v = lambda x: 'other_' if (x and x not in self.mapping[col.name]) else x
+            chg_v = lambda x: 'other_' if (x and x not in self._mapping[col.name]) else x
             col = col.apply(chg_v)
 
             encoded = pd.get_dummies(col, dummy_na=True, prefix=col.name)
 
-            missed = (["%s_%s"%(col.name,str(i)) for i in self.mapping[col.name] if
+            missed = (["%s_%s"%(col.name,str(i)) for i in self._mapping[col.name] if
                     "%s_%s"%(col.name,str(i)) not in list(encoded.columns)])
 
             for m in missed:
@@ -295,11 +295,11 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, EncHyperpa
 
             res.append(encoded)
 
-        data_else.drop(self.empty_columns, axis=1, inplace=True)
-        if self.text2int:
+        data_else.drop(self._empty_columns, axis=1, inplace=True)
+        if self.hyperparams['text2int']:
             texts = data_else.select_dtypes([object])
             le = Label_encoder()
-            le.set_params(self.textmapping)
+            le.set_params(self._textmapping)
             data_else[texts.columns] = le.transform_pd(texts)
             #for column_name in data_else:
             #    if data_else[column_name].dtype.kind not in np.typecodes['AllInteger']+'uf':
@@ -307,22 +307,22 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, EncHyperpa
         res.append(data_else)
         result = pd.concat(res, axis=1)
 
-        return result
+        return CallResult(result, True, 1)
 
 
-# example
-if __name__ == '__main__':
-    enc = Encoder()
-    df = pd.DataFrame({'A':[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],'B':[1,2,3,4,5,1,2,3,4,5,1,2,3,4,5]})
-    train_x = df
-    enc.set_training_data(inputs=train_x)
-    enc.fit()
-    print(enc.produce(inputs=df))
+## example
+#if __name__ == '__main__':
+#    enc = Encoder()
+#    df = pd.DataFrame({'A':[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],'B':[1,2,3,4,5,1,2,3,4,5,1,2,3,4,5]})
+#    train_x = df
+#    enc.set_training_data(inputs=train_x)
+#    enc.fit()
+#    print(enc.produce(inputs=df))
 
-    #save model for later use
-    model = enc.get_params()
+#    #save model for later use
+#    model = enc.get_params()
 
-    enc2 = Encoder()
-    df2 = pd.DataFrame({'A':[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],'B':[2.0,7,3,1,6,1,2,4,2,5,1,2,4,4,3]})
-    enc2.set_params(params=model)
-    print(enc2.produce(inputs=df2))
+#    enc2 = Encoder()
+#    df2 = pd.DataFrame({'A':[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15],'B':[2.0,7,3,1,6,1,2,4,2,5,1,2,4,4,3]})
+#    enc2.set_params(params=model)
+#    print(enc2.produce(inputs=df2))
