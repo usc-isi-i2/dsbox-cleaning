@@ -11,7 +11,7 @@ d3mIndex,Class
 38,negative
 40,negative
 46,sick
-48,negative
+48,sick
 51,negative
 55,negative
 70,negative
@@ -97,7 +97,7 @@ d3mIndex,Class
 558,negative
 568,negative
 577,sick
-582,sick
+582,negative
 585,negative
 592,negative
 596,negative
@@ -617,7 +617,7 @@ d3mIndex,Class
 3186,negative
 3189,negative
 3190,negative
-3192,sick
+3192,negative
 3193,negative
 3195,negative
 3198,negative

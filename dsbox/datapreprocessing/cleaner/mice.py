@@ -7,55 +7,20 @@ from primitive_interfaces.transformer import TransformerPrimitiveBase
 from primitive_interfaces.base import CallResult
 import stopit
 import math
-from d3m_metadata.container.pandas import DataFrame
+import typing
 
-Input = DataFrame
-Output = DataFrame
+import d3m_metadata.container
+from d3m_metadata.metadata import PrimitiveMetadata
+from d3m_metadata.hyperparams import UniformInt, Hyperparams
+import collections
 
-class MICE(TransformerPrimitiveBase[Input, Output, None]):
-    __author__ = "USC ISI"
-    __metadata__ = {
-    "id": "3f72646a-6d70-3b65-ab42-f6a41552cecb",
-    "name": "dsbox.datapreprocessing.cleaner.MICE",
-    "common_name": "DSBox MICE Imputer",
-    "description": "Impute missing values using the MICE algorithm",
-    "languages": [
-        "python3.5", "python3.6"
-    ],
-    "library": "dsbox",
-    "version": "0.2.0",
-    "is_class": True,
-    "parameters": [],
-    "task_type": [
-        "Data preprocessing"
-    ],
-    "tags": [
-        "preprocessing",
-        "imputation"
-    ],
-    "build": [
-        {
-            "type": "pip",
-            "package": "dsbox-datacleaning"
-        }
-    ],
-    "team": "USC ISI",
-    "schema_version": 1.0,
-    "interfaces": [ "TransformerPrimitiveBase" ],
-    "interfaces_version": "2017.9.22rc0",
-    "compute_resources": {
-        "cores_per_node": [],
-        "disk_per_node": [],
-        "expected_running_time": [],
-        "gpus_per_node": [],
-        "mem_per_gpu": [],
-        "mem_per_node": [],
-        "num_nodes": [],
-        "sample_size": [],
-        "sample_unit": []
-    }
-}
+Input = d3m_metadata.container.DataFrame
+Output = d3m_metadata.container.DataFrame
 
+class MiceHyperparameter(Hyperparams):
+    verbose = UniformInt(lower=0, upper=1, default=0)
+
+class MICE(TransformerPrimitiveBase[Input, Output, MiceHyperparameter]):
     """
     Impute the missing value using MICE. 
     This class is a wrapper from fancyimpute-mice
@@ -66,11 +31,54 @@ class MICE(TransformerPrimitiveBase[Input, Output, None]):
         Control the verbosity
     """
 
-    def __init__(self, verbose=0) -> None:
-        self.train_x = None
+    metadata = PrimitiveMetadata({
+        ### Required
+        "id": "3f72646a-6d70-3b65-ab42-f6a41552cecb",
+        "version": "0.3.1",
+        "name": "DSBox MICE Imputer",
+        "description": "Impute missing values using the MICE algorithm",   
+        "python_path": "d3m.primitives.dsbox.MICE",
+        "primitive_family": "DATA_CLEANING",
+        "algorithm_types": [ "ADABOOST" ],  # !!!! Need to submit algorithm type "Imputation"
+        "source": {
+            "name": "USC ISI",
+            "uris": [
+                "https://github.com/usc-isi-i2/dsbox-cleaning.git"
+                ]
+            },
+        ### Automatically generated
+        # "primitive_code"
+        # "original_python_path"
+        # "schema"
+        # "structural_type"
+        ### Optional
+        "keywords": [ "preprocessing", "imputation" ],
+        "installation": [ 
+            {
+                "type": "PIP",
+                "package": "dsbox-datacleaning",
+                "version": "0.3.1" 
+            } 
+        ],
+        "location_uris": [],
+        "precondition": [],
+        "effects": [ "NO_MISSING_VALUES" ],
+        "hyperparms_to_tune": []
+    })
+
+
+    def __init__(self, *, hyperparams: MiceHyperparameter, random_seed: int = 0, 
+                 docker_containers: typing.Union[typing.Dict[str, str], None] = None) -> None:
+        # All primitives must define these attributes
+        self.hyperparams = hyperparams
+        self.random_seed = random_seed
+        self.docker_containers = docker_containers
+
+        # All other attributes must be private with leading underscore        
+        self._train_x = None
         self._has_finished = False
         self._iterations_done = False
-        self.verbose = verbose
+        self._verbose = hyperparams['verbose'] if hyperparams else 0
 
 
     def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> CallResult[Output]:
@@ -113,7 +121,7 @@ class MICE(TransformerPrimitiveBase[Input, Output, None]):
             assert to_ctx_mrg.state == to_ctx_mrg.EXECUTING
 
             # start completing data...
-            if (self.verbose>0): print("=========> impute by fancyimpute-mice:")
+            if (self._verbose>0): print("=========> impute by fancyimpute-mice:")
             data_clean = self.__mice(data, iterations)
 
         value = None
@@ -134,8 +142,8 @@ class MICE(TransformerPrimitiveBase[Input, Output, None]):
         wrap fancyimpute-mice
         """
         missing_col_id = []
-        test_data = mvp.df2np(test_data, missing_col_id, self.verbose)
+        test_data = mvp.df2np(test_data, missing_col_id, self._verbose)
         if (len(missing_col_id) == 0): return test_data
-        complete_data = mice(n_imputations=iterations, verbose=self.verbose).complete(test_data)
+        complete_data = mice(n_imputations=iterations, verbose=self._verbose).complete(test_data)
         return complete_data
 

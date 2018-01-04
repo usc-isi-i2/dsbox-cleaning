@@ -5,6 +5,8 @@ from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimit
 from primitive_interfaces.base import CallResult
 import stopit #  type: ignore
 
+import typing
+
 import d3m_metadata.container
 from d3m_metadata.metadata import PrimitiveMetadata
 from d3m_metadata import params
@@ -16,13 +18,13 @@ Output = d3m_metadata.container.DataFrame
 
 # store the mean value for each column in training data
 class Params(params.Params):
-    mean_values: dict
+    mean_values : dict
     
-class Hyperparams(hyperparams.Hyperparams):
-    verbose: UniformInt(lower=0, upper=1, default=0)
+class MeanHyperparameter(hyperparams.Hyperparams):
+    verbose = UniformInt(lower=0, upper=1, default=0)
     
 
-class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Hyperparams]):
+class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, MeanHyperparameter]):
     """
     Impute missing values using the `mean` value of the attribute.
     """    
@@ -61,7 +63,7 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Hyp
         "hyperparms_to_tune": []
         })
 
-    def __init__(self, *, hyperparams: Hyperparams, random_seed: int = 0, 
+    def __init__(self, *, hyperparams: MeanHyperparameter, random_seed: int = 0, 
                  docker_containers: typing.Union[typing.Dict[str, str], None] = None) -> None:
         # All primitives must define these attributes
         self.hyperparams = hyperparams
@@ -77,10 +79,10 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Hyp
         
 
     def set_params(self, *, params: Params) -> None:
-        self._is_fitted = len(params.mean_values) > 0
+        self._is_fitted = len(params['mean_values']) > 0
         self._has_finished = self._is_fitted
         self._iterations_done = self._is_fitted
-        self.mean_values = params.mean_values
+        self.mean_values = params['mean_values']
 
     def get_params(self) -> Params:
         if self._is_fitted:

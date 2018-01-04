@@ -1,14 +1,25 @@
-from .mean import MeanImputation
-from .Iterative_regress import IterativeRegressionImputation
-from .greedy import GreedyImputation
 from .encoder import Encoder, EncHyperparameter
 from .unary_encoder import UnaryEncoder, UEncHyperparameter
-from .mice import MICE
+
+from .mean import MeanImputation, MeanHyperparameter
+from .Iterative_regress import IterativeRegressionImputation, IterativeRegressionHyperparameter
+from .greedy import GreedyImputation, GreedyHyperparameter
+from .mice import MICE, MiceHyperparameter
 from .knn import KNNImputation, KnnHyperparameter
+
  
-__all__ = ['Encoder', 'GreedyImputation', 'IterativeRegressionImputation', 
-			'MICE', 'KNNImputation', 'MeanImputation', 'KnnHyperparameter',
-                        'UEncHyperparameter','EncHyperparameter']
+# __all__ = ['Encoder', 'GreedyImputation', 'IterativeRegressionImputation', 
+# 			'MICE', 'KNNImputation', 'MeanImputation', 'KnnHyperparameter',
+#                         'UEncHyperparameter','EncHyperparameter']
+
+__all__ = ['Encoder', 'EncHyperparameter',
+            'UEncHyperparameter', 'UEncHyperparameter'
+            'KNNImputation',  'KnnHyperparameter',
+            'MeanImputation', 'MeanHyperparameter'
+            'MICE', 'MiceHyperparameter',
+            'IterativeRegressionImputation', 'IterativeRegressionHyperparameter',
+            'GreedyImputation', 'GreedyHyperparameter'
+            ]
 
 
 from pkgutil import extend_path

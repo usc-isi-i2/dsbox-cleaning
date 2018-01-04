@@ -1,16 +1,21 @@
 #!/usr/bin/env python3
 
 from os import path
+# TODO: remove relative import once all installed
 import sys
 sys.path.append("../")
+#================
+
 
 import pandas as pd
 import numpy as np
 import json
 
 
-from dsbox.datapreprocessing.cleaner import MeanImputation
-from dsbox.datapreprocessing.cleaner import Encoder
+from dsbox.datapreprocessing.cleaner import MeanImputation, MeanHyperparameter
+from dsbox.datapreprocessing.cleaner import Encoder, EncHyperparameter
+
+from d3m_metadata import params
 
 from sklearn.ensemble import BaggingClassifier
 
@@ -67,20 +72,23 @@ print(trainTargets.head())
 print(np.asarray(trainTargets['Class']))
 print(testData.head())
 
-enc = Encoder()
+
+hp = EncHyperparameter.sample()
+enc = Encoder(hyperparams=hp)
 enc.set_training_data(inputs=trainData)
 enc.fit()
-encodedData = enc.produce(inputs=trainData)
-encodedTestData = enc.produce(inputs=testData)
+encodedData = enc.produce(inputs=trainData).value
+encodedTestData = enc.produce(inputs=testData).value
 
 # Initialize the DSBox imputer
-imputer = MeanImputation()
+hp = MeanHyperparameter.sample()
+imputer = MeanImputation(hyperparams=hp)
 imputer.set_training_data(inputs=encodedData)	# unsupervised
 imputer.fit(timeout=100)	# give 100 seconds to fit
 print ("\nParams:")
 print (imputer.get_params())
 
-imputer2 = MeanImputation()
+imputer2 = MeanImputation(hyperparams=hp)
 imputer2.set_params(params=imputer.get_params())
 
 imputedData = imputer2.produce(inputs=encodedData, timeout=100).value

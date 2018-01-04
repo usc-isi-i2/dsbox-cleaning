@@ -7,62 +7,27 @@ from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimit
 from primitive_interfaces.base import CallResult
 import stopit
 import math
-from d3m_metadata.container.pandas import DataFrame
+import typing
+
+import d3m_metadata.container
+from d3m_metadata.metadata import PrimitiveMetadata
+from d3m_metadata import params
+from d3m_metadata import hyperparams
+from d3m_metadata.hyperparams import UniformInt
+
+Input = d3m_metadata.container.DataFrame
+Output = d3m_metadata.container.DataFrame
 
 
-Input = DataFrame
-Output = DataFrame
+# store the regression models for each missing-value column in training data
+class Params(params.Params):
+    regression_models: dict
 
-Params = NamedTuple("Params", [
-    ('regression_models', Dict)]
-    ) 
-
-
-class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, None]):
-    __author__ = "USC ISI"
-    __metadata__ = {
-        "id": "f70b2324-1102-35f7-aaf6-7cd8e860acc4",
-        "name": "dsbox.datapreprocessing.cleaner.IterativeRegressionImputation",
-        "common_name": "DSBox Iterative Regression Imputer",
-        "description": "Impute missing values using iterative regression",
-        "languages": [
-            "python3.5", "python3.6"
-        ],
-        "library": "dsbox",
-        "version": "0.2.0",
-        "is_class": True,
-        "parameters": [],
-        "task_type": [
-            "Data preprocessing"
-        ],
-        "tags": [
-            "preprocessing",
-            "imputation"
-        ],
-        "build": [
-            {
-                "type": "pip",
-                "package": "dsbox-datacleaning"
-            }
-        ],
-        "team": "USC ISI",
-        "schema_version": 1.0,
-        "interfaces": [ "UnsupervisedLearnerPrimitiveBase" ],
-        "interfaces_version": "2017.9.22rc0",
-        "compute_resources": {
-            "cores_per_node": [],
-            "disk_per_node": [],
-            "expected_running_time": [],
-            "gpus_per_node": [],
-            "mem_per_gpu": [],
-            "mem_per_node": [],
-            "num_nodes": [],
-            "sample_size": [],
-            "sample_unit": []
-        }
-    }
+class IterativeRegressionHyperparameter(hyperparams.Hyperparams):
+    verbose = UniformInt(lower=0, upper=1, default=0)
 
 
+class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, IterativeRegressionHyperparameter]):
     """
     Impute the missing value by iteratively regress using other attributes. 
         It will fit and fill the missing value in the training set, and store the learned models.
@@ -80,24 +45,65 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
         could be sklearn regression model, or "mean" (which means the regression failed)
     
     """
+    metadata = PrimitiveMetadata({
+        ### Required
+        "id": "f70b2324-1102-35f7-aaf6-7cd8e860acc4",
+        "version": "0.3.1",
+        "name": "DSBox Iterative Regression Imputer",
+        "description": "Impute missing values using iterative regression",
+        "python_path": "d3m.primitives.dsbox.IterativeRegressionImputation",
+        "primitive_family": "DATA_CLEANING",
+        "algorithm_types": [ "ADABOOST" ],  # !!!! Need to submit algorithm type "Imputation"
+        "source": {
+            "name": "USC ISI",
+            "uris": [
+                "https://github.com/usc-isi-i2/dsbox-cleaning.git"
+                ]
+            },
+        ### Automatically generated
+        # "primitive_code"
+        # "original_python_path"
+        # "schema"
+        # "structural_type"
+        ### Optional
+        "keywords": [ "preprocessing", "imputation" ],
+        "installation": [ 
+            {
+                "type": "PIP",
+                "package": "dsbox-datacleaning",
+                "version": "0.3.1" 
+            } 
+        ],
+        "location_uris": [],
+        "precondition": [],
+        "effects": [ "NO_MISSING_VALUES" ],
+        "hyperparms_to_tune": []
+        })
 
-    def __init__(self, verbose=0) -> None:
-        self.best_imputation : Dict = None
-        self.train_x : Input = None
-        self.is_fitted = True
+    def __init__(self, *, hyperparams: IterativeRegressionHyperparameter, random_seed: int = 0, 
+                 docker_containers: typing.Union[typing.Dict[str, str], None] = None) -> None:
+        # All primitives must define these attributes
+        self.hyperparams = hyperparams
+        self.random_seed = random_seed
+        self.docker_containers = docker_containers
+
+        # All other attributes must be private with leading underscore  
+        self._best_imputation : Dict = None # in params.regression_models
+        self._train_x : Input = None
+        self._is_fitted = True
         self._has_finished = True
         self._iterations_done = True
-        self.verbose = verbose
+        self._verbose = hyperparams['verbose'] if hyperparams else 0
 
 
     def set_params(self, *, params: Params) -> None:
-        self.is_fitted = len(params.regression_models) > 0
-        self._has_finished = self.is_fitted
-        self.best_imputation = params.regression_models
+        self._is_fitted = len(params['regression_models']) > 0
+        self._has_finished = self._is_fitted
+        self._best_imputation = params['regression_models']
 
     def get_params(self) -> Params:
-        if self.is_fitted:
-            return Params(regression_models=self.best_imputation)
+        if self._is_fitted:
+            return Params(regression_models=self._best_imputation)
         else:
             return Params(regression_models=dict())
 
@@ -112,11 +118,11 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
             The inputs.
         """
         if (pd.isnull(inputs).sum().sum() == 0):    # no missing value exists
-            self.is_fitted = True
-            if (self.verbose > 0): print ("Warning: no missing value in train dataset")
+            self._is_fitted = True
+            if (self._verbose > 0): print ("Warning: no missing value in train dataset")
         else:
-            self.train_x = inputs
-            self.is_fitted = False
+            self._train_x = inputs
+            self._is_fitted = False
 
 
     def fit(self, *, timeout: float = None, iterations: int = None) -> CallResult[None]:
@@ -135,7 +141,7 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
         """
 
         # if already fitted on current dataset, do nothing
-        if self.is_fitted:
+        if self._is_fitted:
             return CallResult(None, self._has_finished, self._iterations_done)
 
         if (timeout is None):
@@ -148,18 +154,18 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
         with stopit.ThreadingTimeout(timeout) as to_ctx_mrg:
             assert to_ctx_mrg.state == to_ctx_mrg.EXECUTING
 
-            data = self.train_x.copy()
+            data = self._train_x.copy()
 
             # start fitting
-            if (self.verbose>0) : print("=========> iteratively regress method:")
-            data_clean, self.best_imputation = self.__iterativeRegress(data, iterations)
+            if (self._verbose>0) : print("=========> iteratively regress method:")
+            data_clean, self._best_imputation = self.__iterativeRegress(data, iterations)
 
         if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
-            self.is_fitted = True
+            self._is_fitted = True
             self._iterations_done = True
             self._has_finished = True
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
-            self.is_fitted = False
+            self._is_fitted = False
             self._iterations_done = False
             self._has_finished = False
         return CallResult(None, self._has_finished, self._iterations_done)
@@ -187,11 +193,11 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
 
         """
 
-        if (not self.is_fitted):
+        if (not self._is_fitted):
             # todo: specify a NotFittedError, like in sklearn
             raise ValueError("Calling produce before fitting.")
         if (pd.isnull(inputs).sum().sum() == 0):    # no missing value exists
-            if (self.verbose > 0): print ("Warning: no missing value in test dataset")
+            if (self._verbose > 0): print ("Warning: no missing value in test dataset")
             self._has_finished = True
             return CallResult(inputs, self._has_finished, self._iterations_done)
 
@@ -211,17 +217,17 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
             assert to_ctx_mrg.state == to_ctx_mrg.EXECUTING
 
             # start completing data...
-            if (self.verbose > 0) : print("=========> iteratively regress method:")
-            data_clean = self.__regressImpute(data, self.best_imputation, iterations)
+            if (self._verbose > 0) : print("=========> iteratively regress method:")
+            data_clean = self.__regressImpute(data, self._best_imputation, iterations)
 
         value = None
         if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
-            self.is_fitted = True
+            self._is_fitted = True
             self._has_finished = True
             value = pd.DataFrame(data_clean, index, keys)
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
             print ("Timed Out...")
-            self.is_fitted = False
+            self._is_fitted = False
             self._has_finished = False
             self._iterations_done = False
         return CallResult(value, self._has_finished, self._iterations_done)
@@ -242,7 +248,7 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
 
         keys = data.keys()
         missing_col_id = []
-        data = mvp.df2np(data, missing_col_id, self.verbose)
+        data = mvp.df2np(data, missing_col_id, self._verbose)
         
         missing_col_data = data[:, missing_col_id]
         imputed_data = np.zeros([data.shape[0], len(missing_col_id)])
@@ -253,14 +259,14 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
         counter = 0
         # mean init all missing-value columns
         init_imputation = ["mean"] * len(missing_col_id)   
-        next_data = mvp.imputeData(data, missing_col_id, init_imputation, self.verbose)
+        next_data = mvp.imputeData(data, missing_col_id, init_imputation, self._verbose)
 
         while (counter < epoch):
             for i in range(len(missing_col_id)):
                 target_col = missing_col_id[i] 
                 next_data[:, target_col] = missing_col_data[:,i] #recover the column that to be imputed
 
-                data_clean, model_list[i] = mvp.bayeImpute(next_data, target_col, self.verbose)
+                data_clean, model_list[i] = mvp.bayeImpute(next_data, target_col, self._verbose)
                 next_data[:,target_col] = data_clean[:,target_col]    # update bayesian imputed column
                 imputed_data[:,i] = data_clean[:,target_col]    # add the imputed data
 
@@ -269,7 +275,7 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
 
             # if (counter > 0):
             #     distance = np.square(imputed_data - imputed_data_lastIter).sum()
-            #     if self.verbose: print("changed distance: {}".format(distance))
+            #     if self._verbose: print("changed distance: {}".format(distance))
             imputed_data_lastIter = np.copy(imputed_data)
             counter += 1
 
@@ -288,7 +294,7 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
         col_names = data.keys()
         # 1. convert to np array and get missing value column id
         missing_col_id = []
-        data = mvp.df2np(data, missing_col_id, self.verbose)
+        data = mvp.df2np(data, missing_col_id, self._verbose)
 
 
         model_list = [] # the model list
@@ -300,7 +306,7 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
             name = col_names[missing_col_id[i]]
             # if there is a column that not appears in trained model, impute it as "mean"
             if (name not in model_dict.keys()):
-                data = mvp.imputeData(data, [missing_col_id[i]], ["mean"], self.verbose)
+                data = mvp.imputeData(data, [missing_col_id[i]], ["mean"], self._verbose)
                 # mask[missing_col_id[i]] = False
                 print ("fill" + name + "with mean")
                 # offset += 1
@@ -315,14 +321,14 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
         counter = 0
         # mean init all missing-value columns
         init_imputation = ["mean"] * len(new_missing_col_id)   
-        next_data = mvp.imputeData(to_impute_data, new_missing_col_id, init_imputation, self.verbose)
+        next_data = mvp.imputeData(to_impute_data, new_missing_col_id, init_imputation, self._verbose)
 
         while (counter < epoch):
             for i in range(len(new_missing_col_id)):
                 target_col = new_missing_col_id[i] 
                 next_data[:, target_col] = missing_col_data[:,i] #recover the column that to be imputed
 
-                next_data = mvp.transform(next_data, target_col, model_list[i], self.verbose)
+                next_data = mvp.transform(next_data, target_col, model_list[i], self._verbose)
 
             counter += 1
 
