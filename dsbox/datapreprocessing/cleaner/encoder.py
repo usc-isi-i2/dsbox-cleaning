@@ -25,10 +25,12 @@ Output = d3m_metadata.container.DataFrame
 
 
 class EncParams(params.Params):
-    mapping: Union[Dict, None]
+    #mapping: Union[Dict, None]
+    mapping: Dict
     all_columns: Set[str]
     empty_columns: List[str]
-    textmapping: Union[Dict, None]
+    #textmapping: Union[Dict, None]
+    textmapping: Dict
 
 
 class EncHyperparameter(hyperparams.Hyperparams):
@@ -150,13 +152,18 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
         self.hyperparams = hyperparams
         self.random_seed = random_seed
         self.docker_containers = docker_containers
-        #self.categorical_features = categorical_features
-        #self.n_limit = hyperparam['n_limit']
-        #self.text2int = hyperparam['text2int']
-        #
-        self._textmapping : Dict = None
+
+        #self._textmapping : Dict = None
         
-        self._mapping : Dict = None
+        #self._mapping : Dict = None
+        #self._all_columns : Set[str] = set()
+        #self._empty_columns : List[str] = []
+
+        #self._training_inputs : Input = None
+        #self._fitted = False
+        
+        self._textmapping : Dict = {}
+        self._mapping : Dict = {}
         self._all_columns : Set[str] = set()
         self._empty_columns : List[str] = []
 
