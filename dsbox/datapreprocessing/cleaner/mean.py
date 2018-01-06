@@ -8,6 +8,7 @@ import stopit #  type: ignore
 import typing
 
 import d3m_metadata.container
+from d3m_metadata import metadata
 from d3m_metadata.metadata import PrimitiveMetadata
 from d3m_metadata import params
 from d3m_metadata import hyperparams
@@ -58,7 +59,7 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
             } 
         ],
         "location_uris": [],
-        "precondition": [],
+        "precondition": [metadata.PrimitivePrecondition.NO_CATEGORICAL_VALUES,],
         "effects": [ "NO_MISSING_VALUES" ],
         "hyperparms_to_tune": []
         })

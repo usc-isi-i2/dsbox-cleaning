@@ -10,6 +10,7 @@ import math
 import typing
 
 import d3m_metadata.container
+from d3m_metadata import metadata
 from d3m_metadata.metadata import PrimitiveMetadata
 from d3m_metadata.hyperparams import UniformInt, Hyperparams
 import collections
@@ -61,7 +62,7 @@ class MICE(TransformerPrimitiveBase[Input, Output, MiceHyperparameter]):
             } 
         ],
         "location_uris": [],
-        "precondition": [],
+        "precondition": [metadata.PrimitivePrecondition.NO_CATEGORICAL_VALUES,],
         "effects": [ "NO_MISSING_VALUES" ],
         "hyperparms_to_tune": []
     })
