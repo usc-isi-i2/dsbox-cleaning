@@ -6,22 +6,33 @@ from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimit
 from d3m_metadata import hyperparams, container, params
 from d3m_metadata.metadata import PrimitiveMetadata
 
+#from dsbox.datapreprocessing.profiler import category_detection
+
 Input = container.DataFrame
 Output = container.DataFrame
+
+#def __default_targets(data):
+#    is_category = category_detection.category_detect(data)
+#    res = []
+#    cnt = -1
+#    for col_name in data:
+#        cnt += 1
+#        if col.dtype in [int, np.int64, np.int32, np.int16, np.int8] and is_category[col_name]:
+#            res.append(cnt)
 
 class Params(params.Params):
     mapping : dict
     all_columns : list
     empty_columns : list
     textmapping : dict
-    target_columns : dict
+    target_columns : list
 
 
 class UEncHyperparameter(hyperparams.Hyperparams):
     text2int = hyperparams.Enumeration(values=[True,False],default=False, 
             description='Whether to convert everything to numerical')
     targetColumns= hyperparams.Hyperparameter(
-        default=0,
+        default= [0],
         semantic_types=["https://metadata.datadrivendiscovery.org/types/TabularColumn"],
         description="The index of the column to be encoded")
 
@@ -163,18 +174,19 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         if self._training_inputs is None:
             raise ValueError('Missing training(fitting) data.')
 
-        data_copy = self.training_inputs.copy()
+        data_copy = self._training_inputs.copy()
 
         self._all_columns = set(data_copy.columns)
 
         # mapping
-        if not set(self._target_columns).issubset(set(data_copy.columns)):
-            raise ValueError('Target columns are not subset of columns in training_inputs.')
+        if max(self._target_columns) > len(data_copy.columns)-1:
+            raise ValueError('Target columns are not subset of columns in training_inputs.(Out of range).')
 
         idict = {}
-        for target_name in self._target_columns:
-            col = data_copy[target_name]
-            idict[target_name] = sorted(col.unique())
+        for target_id in self._target_columns:
+            name = data_copy.columns[target_id]
+            col = data_copy[name]
+            idict[name] = sorted(col.unique())
         self._mapping = idict
 
         if self._text2int:
