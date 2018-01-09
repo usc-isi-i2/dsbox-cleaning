@@ -1,4 +1,5 @@
 import pandas as pd  # type: ignore
+import numpy as np  # type: ignore
 import copy
 import typing
 
@@ -6,19 +7,11 @@ from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimit
 from d3m_metadata import hyperparams, container, params
 from d3m_metadata.metadata import PrimitiveMetadata
 
-#from dsbox.datapreprocessing.profiler import category_detection
+from primitive_interfaces.base import CallResult
 
 Input = container.DataFrame
 Output = container.DataFrame
 
-#def __default_targets(data):
-#    is_category = category_detection.category_detect(data)
-#    res = []
-#    cnt = -1
-#    for col_name in data:
-#        cnt += 1
-#        if col.dtype in [int, np.int64, np.int32, np.int16, np.int8] and is_category[col_name]:
-#            res.append(cnt)
 
 class Params(params.Params):
     mapping : typing.Dict
@@ -31,10 +24,10 @@ class Params(params.Params):
 class UEncHyperparameter(hyperparams.Hyperparams):
     text2int = hyperparams.Enumeration(values=[True,False],default=False, 
             description='Whether to convert everything to numerical')
-    targetColumns= hyperparams.Hyperparameter(
-        default= [0],
-        semantic_types=["https://metadata.datadrivendiscovery.org/types/TabularColumn"],
-        description="The index of the column to be encoded")
+    #targetColumns= hyperparams.Hyperparameter(
+    #    default= [0],
+    #    semantic_types=["https://metadata.datadrivendiscovery.org/types/TabularColumn"],
+    #    description="The index of the column to be encoded")
 
 ## reference: https://github.com/scikit-learn/scikit-learn/issues/8136
 class Label_encoder(object):
@@ -133,7 +126,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         self.random_seed = random_seed
         self.docker_containers = docker_containers
         self._text2int = hyperparams['text2int']
-        self._target_columns = hyperparams['targetColumns']
+        self._target_columns = []
         self._textmapping = dict()
         self._mapping = dict()
         self._all_columns = set()
@@ -147,7 +140,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         
         # Hack to work around pytypes bug. Covert numpy int64 to int. 
         for key in self._mapping.keys():
-            self._mapping[key] = [int(x) for x in self._mapping[key]]
+            self._mapping[key] = ['nan' if np.isnan(x) else int(x) for x in self._mapping[key]]
 
         param = Params(mapping=self._mapping, all_columns=self._all_columns, empty_columns=self._empty_columns,
                        textmapping=self._textmapping, target_columns = self._target_columns)
@@ -163,9 +156,10 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         self._target_columns = params['target_columns']
 
 
-    def set_training_data(self, *, inputs: Input) -> None:
+    def set_training_data(self, *, inputs: Input, targets: Input) -> None:
         self._training_inputs = inputs
         self._fitted = False
+        self._target_columns = targets
 
 
     def fit(self, *, timeout:float = None, iterations: int = None) -> None:
@@ -174,9 +168,9 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         The encoder would record specified columns to encode and column values to
         unary encode later in the produce step.
         """
-        if self._fitted:
+        if self._fitted or self._target_columns == []:
             return
-
+        
         if self._training_inputs is None:
             raise ValueError('Missing training(fitting) data.')
 
@@ -212,7 +206,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         return unary.drop(col.name,axis=1)
 
 
-    def produce(self, *, inputs: Input, timeout:float = None, iterations: int = None) -> pd.DataFrame:
+    def produce(self, *, inputs: Input, timeout:float = None, iterations: int = None) -> CallResult[Output]:
         """
         Convert and output the input data into unary encoded format,
         using the trained (fitted) encoder.
@@ -220,6 +214,9 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         Missing(NaN) cells in a column one-hot encoded would give
         out a row of all-ZERO columns for the target column.
         """
+        if self._target_columns == []:
+            return CallResult(inputs, True, 1)
+        
         if not self._fitted:
             raise ValueError('Encoder model not fitted. Use fit()')
 
@@ -256,4 +253,4 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         res.append(data_else)
         result = pd.concat(res, axis=1)
 
-        return result
+        return CallResult(result, True, 1)
