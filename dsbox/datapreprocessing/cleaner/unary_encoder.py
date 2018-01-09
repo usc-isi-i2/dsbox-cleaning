@@ -21,11 +21,11 @@ Output = container.DataFrame
 #            res.append(cnt)
 
 class Params(params.Params):
-    mapping : dict
-    all_columns : list
-    empty_columns : list
-    textmapping : dict
-    target_columns : list
+    mapping : typing.Dict
+    all_columns : typing.Set[str]
+    empty_columns : typing.List
+    textmapping : typing.Dict
+    target_columns : typing.List[int]
 
 
 class UEncHyperparameter(hyperparams.Hyperparams):
@@ -134,9 +134,9 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         self.docker_containers = docker_containers
         self._text2int = hyperparams['text2int']
         self._target_columns = hyperparams['targetColumns']
-        self._textmapping = None
-        self._mapping = None
-        self._all_columns = []
+        self._textmapping = dict()
+        self._mapping = dict()
+        self._all_columns = set()
         self._empty_columns = []
 
         self._training_inputs = None
@@ -144,8 +144,14 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
 
 
     def get_params(self) -> Params:
-        return Params(mapping=self._mapping, all_columns=self._all_columns, empty_columns=self._empty_columns,
-                      textmapping=self._textmapping, target_columns = self._target_columns)
+        
+        # Hack to work around pytypes bug. Covert numpy int64 to int. 
+        for key in self._mapping.keys():
+            self._mapping[key] = [int(x) for x in self._mapping[key]]
+
+        param = Params(mapping=self._mapping, all_columns=self._all_columns, empty_columns=self._empty_columns,
+                       textmapping=self._textmapping, target_columns = self._target_columns)
+        return param
 
 
     def set_params(self, *, params: Params) -> None:
