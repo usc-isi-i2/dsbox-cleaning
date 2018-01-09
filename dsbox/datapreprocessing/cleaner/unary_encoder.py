@@ -156,11 +156,11 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
 
     def set_params(self, *, params: Params) -> None:
         self._fitted = True
-        self._mapping = params.mapping
-        self._all_columns = params.all_columns
-        self._empty_columns = params.empty_columns
-        self._textmapping = params.textmapping
-        self._target_columns = params.target_columns
+        self._mapping = params['mapping']
+        self._all_columns = params['all_columns']
+        self._empty_columns = params['empty_columns']
+        self._textmapping = params['textmapping']
+        self._target_columns = params['target_columns']
 
 
     def set_training_data(self, *, inputs: Input) -> None:
