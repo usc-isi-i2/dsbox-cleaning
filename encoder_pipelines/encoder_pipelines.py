@@ -60,15 +60,16 @@ testData = pd.read_csv( testDataResourcesPath, header=0, usecols=testAttributesC
 
 # Get the d3mIndex of the testData
 d3mIndex = pd.read_csv( testDataResourcesPath, header=0, usecols=['d3mIndex'])
+target_name = problemSchema['inputs']['data'][0]['targets'][0]['colName']
 
 print(trainData.head())
 print(trainTargets.head())
-print(np.asarray(trainTargets['Class']))
+print(np.asarray(trainTargets[target_name]))
 print(testData.head())
 
 # Initialize the DSBox Encoder
 
-hp = EncHyperparameter.sample()
+hp = EncHyperparameter(text2int=True,n_limit=12,categorical_features='95in10')
 enc = Encoder(hyperparams=hp)
 enc.set_training_data(inputs=trainData)
 enc.fit()
@@ -83,7 +84,7 @@ print(trainData.columns)
 
 encodedTrainData = enc.produce(inputs=trainData).value
 processedTrainData = imputer.fit_transform(encodedTrainData)
-trainedModel = model.fit(processedTrainData, np.asarray(trainTargets['Class']))
+trainedModel = model.fit(processedTrainData, np.asarray(trainTargets[target_name]))
 
 print(encodedTrainData.columns) # encoded result
 
@@ -91,7 +92,7 @@ print(encodedTrainData.columns) # encoded result
 predictedTargets = trainedModel.predict(imputer.fit_transform(enc.produce(inputs=testData).value))
 
 # Append the d3mindex column to the predicted targets
-predictedTargets = pd.DataFrame({'d3mIndex':d3mIndex['d3mIndex'], 'Class':predictedTargets})
+predictedTargets = pd.DataFrame({'d3mIndex':d3mIndex['d3mIndex'], target_name:predictedTargets})
 print(predictedTargets.head())
 
 # Get the file path of the expected outputs
@@ -100,4 +101,4 @@ outputFilePath = path.join(jsonCall['output_folder'], problemSchema['expectedOut
 
 # Outputs the predicted targets in the location specified in the JSON configuration file
 with open(outputFilePath, 'w') as outputFile:
-    output = predictedTargets.to_csv(outputFile, index=False, columns=['d3mIndex', 'Class'])
+    output = predictedTargets.to_csv(outputFile, index=False, columns=['d3mIndex', target_name])
