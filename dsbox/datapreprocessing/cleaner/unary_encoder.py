@@ -22,7 +22,7 @@ class Params(params.Params):
 
 
 class UEncHyperparameter(hyperparams.Hyperparams):
-    text2int = hyperparams.Enumeration(values=[True,False],default=False, 
+    text2int = hyperparams.Enumeration(values=[True,False],default=True, 
             description='Whether to convert everything to numerical')
     #targetColumns= hyperparams.Hyperparameter(
     #    default= [0],
@@ -140,7 +140,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         
         # Hack to work around pytypes bug. Covert numpy int64 to int. 
         for key in self._mapping.keys():
-            self._mapping[key] = ['nan' if np.isnan(x) else int(x) for x in self._mapping[key]]
+            self._mapping[key] = [np.nan if np.isnan(x) else int(x) for x in self._mapping[key]]
 
         param = Params(mapping=self._mapping, all_columns=self._all_columns, empty_columns=self._empty_columns,
                        textmapping=self._textmapping, target_columns = self._target_columns)
@@ -168,7 +168,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         The encoder would record specified columns to encode and column values to
         unary encode later in the produce step.
         """
-        if self._fitted or self._target_columns == []:
+        if self._fitted:
             return
         
         if self._training_inputs is None:
@@ -179,7 +179,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         self._all_columns = set(data_copy.columns)
 
         # mapping
-        if max(self._target_columns) > len(data_copy.columns)-1:
+        if self._target_columns and max(self._target_columns) > len(data_copy.columns)-1:
             raise ValueError('Target columns are not subset of columns in training_inputs.(Out of range).')
 
         idict = {}
@@ -214,8 +214,8 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         Missing(NaN) cells in a column one-hot encoded would give
         out a row of all-ZERO columns for the target column.
         """
-        if self._target_columns == []:
-            return CallResult(inputs, True, 1)
+        #if self._target_columns == []:
+        #    return CallResult(inputs, True, 1)
         
         if not self._fitted:
             raise ValueError('Encoder model not fitted. Use fit()')
