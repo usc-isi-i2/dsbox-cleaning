@@ -1,26 +1,33 @@
-import pandas as pd
-import numpy as np
-from typing import NamedTuple, Sequence
+import pandas as pd  # type: ignore
+import numpy as np  # type: ignore
 import copy
+import typing
 
 from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
-from d3m_metadata.container.pandas import DataFrame
-from d3m_metadata.hyperparams import Enumeration, Hyperparams
+from d3m_metadata import hyperparams, container, params
+from d3m_metadata.metadata import PrimitiveMetadata
 
-Input = DataFrame
-Output = DataFrame
+from primitive_interfaces.base import CallResult
 
-Params = NamedTuple('Params', [
-    ('mapping', dict),
-    ('all_columns', list),
-    ('empty_columns', list),
-    ('textmapping', dict),
-    ('target_columns',dict)
-    ])
+Input = container.DataFrame
+Output = container.DataFrame
 
-class UEncHyperparameter(Hyperparams):
-    text2int = Enumeration(values=[True,False],default=False, 
+
+class Params(params.Params):
+    mapping : typing.Dict
+    all_columns : typing.Set[str]
+    empty_columns : typing.List
+    textmapping : typing.Dict
+    target_columns : typing.List[int]
+
+
+class UEncHyperparameter(hyperparams.Hyperparams):
+    text2int = hyperparams.Enumeration(values=[True,False],default=True, 
             description='Whether to convert everything to numerical')
+    #targetColumns= hyperparams.Hyperparameter(
+    #    default= [0],
+    #    semantic_types=["https://metadata.datadrivendiscovery.org/types/TabularColumn"],
+    #    description="The index of the column to be encoded")
 
 ## reference: https://github.com/scikit-learn/scikit-learn/issues/8136
 class Label_encoder(object):
@@ -74,41 +81,85 @@ class Label_encoder(object):
 
 
 class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncHyperparameter]):
+    
+    metadata = PrimitiveMetadata({
+        "id": "DSBox-unary-encoder",
+        "version": "0.3.1",
+        "name": "DSBox Unary Data Encoder",
+        "description": "Encode using unary code for orinal data",
+        "python_path": "d3m.primitives.dsbox.Encoder",
+        "primitive_family": "DATA_CLEANING",
+        "algorithm_types": [ "ENCODE_ONE_HOT" ],  # !!!! Need to submit algorithm type "Imputation"
+        "source": {
+            "name": "USC ISI",
+            "uris": [
+                "https://github.com/usc-isi-i2/dsbox-cleaning.git"
+                ]
+            },
+        ### Automatically generated
+        # "primitive_code"
+        # "original_python_path"
+        # "schema"
+        # "structural_type"
+        ### Optional
+        "keywords": [ "preprocessing",  "encoding"],
+        "installation": [ 
+            {
+                "type": "PIP",
+                "package": "dsbox-datacleaning",
+                "version": "0.3.1" 
+            } 
+        ],
+        #"location_uris": [],
+        #"precondition": [],
+        #"effects": [],
+        #"hyperparms_to_tune": []
+        })    
 
     def __repr__(self):
         return "%s(%r)" % ('UnaryEncoder', self.__dict__)
 
 
-    def __init__(self, hyperparam: UEncHyperparameter) -> None:
-        self.text2int = hyperparam['text2int']
-        self.textmapping = None
-        self.mapping = None
-        self.all_columns = []
-        self.empty_columns = []
+    def __init__(self, *, hyperparams: UEncHyperparameter, random_seed: int = 0, 
+                 docker_containers: typing.Union[typing.Dict[str, str], None] = None) -> None:
+        self.hyperparams = hyperparams
+        self.random_seed = random_seed
+        self.docker_containers = docker_containers
+        self._text2int = hyperparams['text2int']
+        self._target_columns = []
+        self._textmapping = dict()
+        self._mapping = dict()
+        self._all_columns = set()
+        self._empty_columns = []
 
-        self.training_inputs = None
-        self.target_columns = None
-        self.fitted = False
+        self._training_inputs = None
+        self._fitted = False
 
 
     def get_params(self) -> Params:
-        return Params(mapping=self.mapping, all_columns=self.all_columns, empty_columns=self.empty_columns,
-                      textmapping=self.textmapping, target_columns = self.target_columns)
+        
+        # Hack to work around pytypes bug. Covert numpy int64 to int. 
+        for key in self._mapping.keys():
+            self._mapping[key] = [np.nan if np.isnan(x) else int(x) for x in self._mapping[key]]
+
+        param = Params(mapping=self._mapping, all_columns=self._all_columns, empty_columns=self._empty_columns,
+                       textmapping=self._textmapping, target_columns = self._target_columns)
+        return param
 
 
     def set_params(self, *, params: Params) -> None:
-        self.fitted = True
-        self.mapping = params.mapping
-        self.all_columns = params.all_columns
-        self.empty_columns = params.empty_columns
-        self.textmapping = params.textmapping
-        self.target_columns = params.target_columns
+        self._fitted = True
+        self._mapping = params['mapping']
+        self._all_columns = params['all_columns']
+        self._empty_columns = params['empty_columns']
+        self._textmapping = params['textmapping']
+        self._target_columns = params['target_columns']
 
 
-    def set_training_data(self, *, inputs: Input, targets: list) -> None:
-        self.training_inputs = inputs
-        self.target_columns = targets
-        self.fitted = False
+    def set_training_data(self, *, inputs: Input, targets: Input) -> None:
+        self._training_inputs = inputs
+        self._fitted = False
+        self._target_columns = targets
 
 
     def fit(self, *, timeout:float = None, iterations: int = None) -> None:
@@ -117,44 +168,45 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         The encoder would record specified columns to encode and column values to
         unary encode later in the produce step.
         """
-        if self.fitted:
+        if self._fitted:
             return
-
-        if self.training_inputs is None:
+        
+        if self._training_inputs is None:
             raise ValueError('Missing training(fitting) data.')
 
-        data_copy = self.training_inputs.copy()
+        data_copy = self._training_inputs.copy()
 
-        self.all_columns = set(data_copy.columns)
+        self._all_columns = set(data_copy.columns)
 
         # mapping
-        if not set(self.target_columns).issubset(set(data_copy.columns)):
-            raise ValueError('Target columns are not subset of columns in training_inputs.')
+        if self._target_columns and max(self._target_columns) > len(data_copy.columns)-1:
+            raise ValueError('Target columns are not subset of columns in training_inputs.(Out of range).')
 
         idict = {}
-        for target_name in self.target_columns:
-            col = data_copy[target_name]
-            idict[target_name] = sorted(col.unique())
-        self.mapping = idict
+        for target_id in self._target_columns:
+            name = data_copy.columns[target_id]
+            col = data_copy[name]
+            idict[name] = sorted(col.unique())
+        self._mapping = idict
 
-        if self.text2int:
-            texts = data_copy.drop(self.mapping.keys(),axis=1)
+        if self._text2int:
+            texts = data_copy.drop(self._mapping.keys(),axis=1)
             texts = texts.select_dtypes(include=[object])
             le = Label_encoder()
             le.fit_pd(texts)
-            self.textmapping = le.get_params()
+            self._textmapping = le.get_params()
 
-        self.fitted = True
+        self._fitted = True
 
 
     def __encode_column(self, col):
         unary = pd.DataFrame(col)
-        for v in self.mapping[col.name]:
+        for v in self._mapping[col.name]:
             unary[col.name+"_"+str(v)] = (col >= v).astype(int)
         return unary.drop(col.name,axis=1)
 
 
-    def produce(self, *, inputs: Input, timeout:float = None, iterations: int = None) -> pd.DataFrame:
+    def produce(self, *, inputs: Input, timeout:float = None, iterations: int = None) -> CallResult[Output]:
         """
         Convert and output the input data into unary encoded format,
         using the trained (fitted) encoder.
@@ -162,7 +214,10 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         Missing(NaN) cells in a column one-hot encoded would give
         out a row of all-ZERO columns for the target column.
         """
-        if not self.fitted:
+        #if self._target_columns == []:
+        #    return CallResult(inputs, True, 1)
+        
+        if not self._fitted:
             raise ValueError('Encoder model not fitted. Use fit()')
 
         if isinstance(inputs, pd.DataFrame):
@@ -172,30 +227,30 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
 
         set_columns = set(data_copy.columns)
 
-        if set_columns != self.all_columns:
+        if set_columns != self._all_columns:
             raise ValueError('Columns(features) fed at produce() differ from fitted data.')
 
-        data_enc = data_copy[list(self.mapping.keys())]
-        data_else = data_copy.drop(self.mapping.keys(),axis=1)
+        data_enc = data_copy[list(self._mapping.keys())]
+        data_else = data_copy.drop(self._mapping.keys(),axis=1)
 
         res = []
         for column_name in data_enc:
             col = data_enc[column_name]
             col.is_copy = False
 
-            chg_v = lambda x: min(self.mapping[col.name], key=lambda a:abs(a-x)) if x is not None else x
+            chg_v = lambda x: min(self._mapping[col.name], key=lambda a:abs(a-x)) if x is not None else x
             col[col.notnull()] = col[col.notnull()].apply(chg_v)
             encoded = self.__encode_column(col)
             res.append(encoded)
 
-        data_else.drop(self.empty_columns, axis=1, inplace=True)
-        if self.text2int:
+        data_else.drop(self._empty_columns, axis=1, inplace=True)
+        if self._text2int:
             texts = data_else.select_dtypes([object])
             le = Label_encoder()
-            le.set_params(self.textmapping)
+            le.set_params(self._textmapping)
             data_else[texts.columns] = le.transform_pd(texts)
 
         res.append(data_else)
         result = pd.concat(res, axis=1)
 
-        return result
+        return CallResult(result, True, 1)
