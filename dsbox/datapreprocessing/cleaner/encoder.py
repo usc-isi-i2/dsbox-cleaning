@@ -257,7 +257,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
                 le.fit_pd(texts)
                 self._textmapping = le.get_params()
             #
-        self.fitted = True
+        self._fitted = True
 
 
     def produce(self, *, inputs: Input, timeout:float = None, iterations: int = None) -> CallResult[Output]:
