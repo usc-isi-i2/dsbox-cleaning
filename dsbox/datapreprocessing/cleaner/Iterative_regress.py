@@ -119,11 +119,10 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
             The inputs.
         """
         if (pd.isnull(inputs).sum().sum() == 0):    # no missing value exists
-            self._is_fitted = True
             if (self._verbose > 0): print ("Warning: no missing value in train dataset")
-        else:
-            self._train_x = inputs
-            self._is_fitted = False
+
+        self._train_x = inputs
+        self._is_fitted = False
 
 
     def fit(self, *, timeout: float = None, iterations: int = None) -> CallResult[None]:
