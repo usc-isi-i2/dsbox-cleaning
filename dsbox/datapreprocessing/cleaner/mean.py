@@ -32,14 +32,14 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
     metadata = PrimitiveMetadata({
         ### Required
         "id": "7894b699-61e9-3a50-ac9f-9bc510466667",
-        "version": "0.3.1",
+        "version": "v0.3",
         "name": "DSBox Mean Imputer",
         "description": "Impute missing values using the `mean` value of the attribute.",
         "python_path": "d3m.primitives.dsbox.MeanImputation",
         "primitive_family": "DATA_CLEANING",
-        "algorithm_types": [ "ADABOOST" ],  # !!!! Need to submit algorithm type "Imputation"
+        "algorithm_types": [ "IMPUTATION" ],
         "source": {
-            "name": "USC ISI",
+            "name": "ISI",
             "uris": [
                 "https://github.com/usc-isi-i2/dsbox-cleaning.git"
                 ]
