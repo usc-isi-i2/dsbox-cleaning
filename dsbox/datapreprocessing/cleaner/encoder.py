@@ -2,6 +2,8 @@ import numpy as np # type: ignore
 import pandas as pd # type: ignore
 import copy
 
+import dsbox
+
 from d3m_metadata.metadata import PrimitiveMetadata
 from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 from typing import NamedTuple, Dict, List, Set, Union
@@ -109,17 +111,15 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
     
     metadata = PrimitiveMetadata({
         "id": "18f0bb42-6350-3753-8f2d-d1c3da70f279",
-        "version": "0.3.1",
+        "version": "v" + dsbox.__version__,
         "name": "DSBox Data Encoder",
         "description": "Encode data, such as one-hot encoding for categorical data",
         "python_path": "d3m.primitives.dsbox.Encoder",
         "primitive_family": "DATA_CLEANING",
         "algorithm_types": [ "ENCODE_ONE_HOT" ],  # !!!! Need to submit algorithm type "Imputation"
         "source": {
-            "name": "USC ISI",
-            "uris": [
-                "https://github.com/usc-isi-i2/dsbox-cleaning.git"
-                ]
+            "name": dsbox.__d3m_performer_team__,
+            "uris": [ dsbox.__repository__ ]
             },
         ### Automatically generated
         # "primitive_code"
@@ -128,13 +128,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
         # "structural_type"
         ### Optional
         "keywords": [ "preprocessing",  "encoding"],
-        "installation": [ 
-            {
-                "type": "PIP",
-                "package": "dsbox-datacleaning",
-                "version": "0.3.1" 
-            } 
-        ],
+        "installation": [ dsbox.__installation__ ],
         #"location_uris": [],
         #"precondition": [],
         #"effects": [],

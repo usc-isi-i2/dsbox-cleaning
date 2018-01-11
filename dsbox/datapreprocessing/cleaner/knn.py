@@ -2,6 +2,8 @@ import numpy as np #  type: ignore
 import pandas as pd  #  type: ignore
 from fancyimpute import KNN as knn  #  type: ignore
 
+import dsbox
+
 from . import missing_value_pred as mvp
 from primitive_interfaces.transformer import TransformerPrimitiveBase
 from primitive_interfaces.base import CallResult
@@ -40,17 +42,15 @@ class KNNImputation(TransformerPrimitiveBase[Input, Output, KnnHyperparameter]):
     metadata = PrimitiveMetadata({
         ### Required
         "id": "faeeb725-6546-3f55-b80d-8b79d5ca270a",
-        "version": "0.3.1",
+        "version": "v" + dsbox.__version__, 
         "name": "DSBox KNN Imputer",
         "description": "Impute missing values using k-nearest neighbor",
-        "python_path": "d3m.primitives.dsbox.KNNImputation",
+        "python_path": "d3m.primitives.dsbox.KnnImputation",
         "primitive_family": "DATA_CLEANING",
-        "algorithm_types": [ "ADABOOST" ],  # !!!! Need to submit algorithm type "Imputation"
+        "algorithm_types": [ "IMPUTATION", "K_NEAREST_NEIGHBORS" ],
         "source": {
-            "name": "USC ISI",
-            "uris": [
-                "https://github.com/usc-isi-i2/dsbox-cleaning.git"
-                ]
+            "name": dsbox.__d3m_performer_team__,
+            "uris": [ dsbox.__repository__ ]
             },
         ### Automatically generated
         # "primitive_code"
@@ -58,17 +58,11 @@ class KNNImputation(TransformerPrimitiveBase[Input, Output, KnnHyperparameter]):
         # "schema"
         # "structural_type"
         ### Optional
-        "keywords": [ "preprocessing", "imputation" ],
-        "installation": [ 
-            {
-                "type": "PIP",
-                "package": "dsbox-datacleaning",
-                "version": "0.3.1" 
-            } 
-        ],
+        "keywords": [ "preprocessing", "imputation", "knn" ],
+        "installation": [ dsbox.__installation__ ],
         "location_uris": [],
-        "precondition": [metadata.PrimitivePrecondition.NO_CATEGORICAL_VALUES,],
-        "effects": [ "NO_MISSING_VALUES" ],
+        "precondition": [ metadata.PrimitivePrecondition.NO_CATEGORICAL_VALUES ],
+        "effects": [ metadata.PrimitiveEffects.NO_MISSING_VALUES ],
         "hyperparms_to_tune": []
     })
 

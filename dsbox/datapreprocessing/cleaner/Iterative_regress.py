@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 from . import missing_value_pred as mvp
 
+import dsbox
+
 from typing import NamedTuple, Dict
 from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 from primitive_interfaces.base import CallResult
@@ -49,17 +51,15 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
     metadata = PrimitiveMetadata({
         ### Required
         "id": "f70b2324-1102-35f7-aaf6-7cd8e860acc4",
-        "version": "0.3.1",
+        "version": "v" + dsbox.__version__, 
         "name": "DSBox Iterative Regression Imputer",
         "description": "Impute missing values using iterative regression",
         "python_path": "d3m.primitives.dsbox.IterativeRegressionImputation",
         "primitive_family": "DATA_CLEANING",
-        "algorithm_types": [ "ADABOOST" ],  # !!!! Need to submit algorithm type "Imputation"
+        "algorithm_types": [ "IMPUTATION" ],
         "source": {
-            "name": "USC ISI",
-            "uris": [
-                "https://github.com/usc-isi-i2/dsbox-cleaning.git"
-                ]
+            "name": dsbox.__d3m_performer_team__,
+            "uris": [ dsbox.__repository__ ]
             },
         ### Automatically generated
         # "primitive_code"
@@ -68,16 +68,10 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
         # "structural_type"
         ### Optional
         "keywords": [ "preprocessing", "imputation" ],
-        "installation": [ 
-            {
-                "type": "PIP",
-                "package": "dsbox-datacleaning",
-                "version": "0.3.1" 
-            } 
-        ],
+        "installation": [ dsbox.__installation__ ],
         "location_uris": [],
-        "precondition": [metadata.PrimitivePrecondition.NO_CATEGORICAL_VALUES,],
-        "effects": [ "NO_MISSING_VALUES" ],
+        "precondition": [ metadata.PrimitivePrecondition.NO_CATEGORICAL_VALUES ],
+        "effects": [ metadata.PrimitiveEffects.NO_MISSING_VALUES ],
         "hyperparms_to_tune": []
         })
 

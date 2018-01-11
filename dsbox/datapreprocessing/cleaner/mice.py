@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 from fancyimpute import MICE as mice
 
+import dsbox
+
 from . import missing_value_pred as mvp
 from primitive_interfaces.transformer import TransformerPrimitiveBase
 from primitive_interfaces.base import CallResult
@@ -35,17 +37,15 @@ class MICE(TransformerPrimitiveBase[Input, Output, MiceHyperparameter]):
     metadata = PrimitiveMetadata({
         ### Required
         "id": "3f72646a-6d70-3b65-ab42-f6a41552cecb",
-        "version": "0.3.1",
+        "version": "v" + dsbox.__version__, 
         "name": "DSBox MICE Imputer",
         "description": "Impute missing values using the MICE algorithm",   
-        "python_path": "d3m.primitives.dsbox.MICE",
+        "python_path": "d3m.primitives.dsbox.MiceImputation",
         "primitive_family": "DATA_CLEANING",
-        "algorithm_types": [ "ADABOOST" ],  # !!!! Need to submit algorithm type "Imputation"
+        "algorithm_types": [ "IMPUTATION" ],
         "source": {
-            "name": "USC ISI",
-            "uris": [
-                "https://github.com/usc-isi-i2/dsbox-cleaning.git"
-                ]
+            "name": dsbox.__d3m_performer_team__,
+            "uris": [ dsbox.__repository__ ]
             },
         ### Automatically generated
         # "primitive_code"
@@ -54,16 +54,10 @@ class MICE(TransformerPrimitiveBase[Input, Output, MiceHyperparameter]):
         # "structural_type"
         ### Optional
         "keywords": [ "preprocessing", "imputation" ],
-        "installation": [ 
-            {
-                "type": "PIP",
-                "package": "dsbox-datacleaning",
-                "version": "0.3.1" 
-            } 
-        ],
+        "installation": [ dsbox.__installation__ ],
         "location_uris": [],
-        "precondition": [metadata.PrimitivePrecondition.NO_CATEGORICAL_VALUES,],
-        "effects": [ "NO_MISSING_VALUES" ],
+        "precondition": [ metadata.PrimitivePrecondition.NO_CATEGORICAL_VALUES ],
+        "effects": [ metadata.PrimitiveEffects.NO_MISSING_VALUES ],
         "hyperparms_to_tune": []
     })
 

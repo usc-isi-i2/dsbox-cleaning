@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='dsbox-datacleaning',
-      version='0.3.1.post2',
+      version='0.3.1.post6',
       url='https://github.com/usc-isi-i2/dsbox-cleaning.git',
       maintainer_email='kyao@isi.edu',
       maintainer='Ke-Thia Yao',
@@ -19,6 +19,7 @@ setup(name='dsbox-datacleaning',
       entry_points = {
           'd3m.primitives': [
               'dsbox.Encoder = dsbox.datapreprocessing.cleaner:Encoder',
+              'dsbox.UnaryEncoder = dsbox.datapreprocessing.cleaner:UnaryEncoder',
               'dsbox.GreedyImputation = dsbox.datapreprocessing.cleaner:GreedyImputation',
               'dsbox.IterativeRegressionImputation = dsbox.datapreprocessing.cleaner:IterativeRegressionImputation',
               'dsbox.MiceImputation = dsbox.datapreprocessing.cleaner:MICE',

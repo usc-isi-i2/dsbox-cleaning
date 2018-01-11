@@ -3,6 +3,8 @@ import numpy as np  # type: ignore
 import copy
 import typing
 
+import dsbox
+
 from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 from d3m_metadata import hyperparams, container, params
 from d3m_metadata.metadata import PrimitiveMetadata
@@ -84,17 +86,15 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
     
     metadata = PrimitiveMetadata({
         "id": "DSBox-unary-encoder",
-        "version": "0.3.1",
+        "version": "v" + dsbox.__version__,
         "name": "DSBox Unary Data Encoder",
         "description": "Encode using unary code for orinal data",
-        "python_path": "d3m.primitives.dsbox.Encoder",
+        "python_path": "d3m.primitives.dsbox.UnaryEncoder",
         "primitive_family": "DATA_CLEANING",
-        "algorithm_types": [ "ENCODE_ONE_HOT" ],  # !!!! Need to submit algorithm type "Imputation"
+        "algorithm_types": [ "ENCODE_ONE_HOT" ],
         "source": {
-            "name": "USC ISI",
-            "uris": [
-                "https://github.com/usc-isi-i2/dsbox-cleaning.git"
-                ]
+            "name": dsbox.__d3m_performer_team__,
+            "uris": [ dsbox.__repository__ ]
             },
         ### Automatically generated
         # "primitive_code"
@@ -103,13 +103,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         # "structural_type"
         ### Optional
         "keywords": [ "preprocessing",  "encoding"],
-        "installation": [ 
-            {
-                "type": "PIP",
-                "package": "dsbox-datacleaning",
-                "version": "0.3.1" 
-            } 
-        ],
+        "installation": [ dsbox.__installation__ ],
         #"location_uris": [],
         #"precondition": [],
         #"effects": [],

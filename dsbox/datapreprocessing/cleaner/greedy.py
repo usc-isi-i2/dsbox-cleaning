@@ -2,6 +2,8 @@ import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
 from . import missing_value_pred as mvp
 
+import dsbox
+
 from primitive_interfaces.supervised_learning import SupervisedLearnerPrimitiveBase
 from primitive_interfaces.base import CallResult
 from typing import NamedTuple, Dict
@@ -52,18 +54,16 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
     metadata = PrimitiveMetadata({
         ### Required
         "id": "ebebb1fa-a20c-38b9-9f22-bc92bc548c19",
-        "version": "0.3.1",
+        "version": "v" + dsbox.__version__,
         "name": "DSBox Greedy Imputer",
         "description": "Impute missing values using greedy search, supervised learining",
         
         "python_path": "d3m.primitives.dsbox.GreedyImputation",
         "primitive_family": "DATA_CLEANING",
-        "algorithm_types": [ "ADABOOST" ],  # !!!! Need to submit algorithm type "Imputation"
+        "algorithm_types": [ "IMPUTATION" ],
         "source": {
-            "name": "USC ISI",
-            "uris": [
-                "https://github.com/usc-isi-i2/dsbox-cleaning.git"
-                ]
+            "name": dsbox.__d3m_performer_team__,
+            "uris": [ dsbox.__repository__ ]
             },
         ### Automatically generated
         # "primitive_code"
@@ -71,17 +71,11 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
         # "schema"
         # "structural_type"
         ### Optional
-        "keywords": [ "preprocessing", "imputation" ],
-        "installation": [ 
-            {
-                "type": "PIP",
-                "package": "dsbox-datacleaning",
-                "version": "0.3.1"
-            } 
-        ],
+        "keywords": [ "preprocessing", "imputation", "greedy" ],
+        "installation": [ dsbox.__installation__ ],
         "location_uris": [],
-        "precondition": [metadata.PrimitivePrecondition.NO_CATEGORICAL_VALUES,],
-        "effects": [ "NO_MISSING_VALUES" ],
+        "precondition": [metadata.PrimitivePrecondition.NO_CATEGORICAL_VALUES ],
+        "effects": [ metadata.PrimitiveEffects.NO_MISSING_VALUES ],
         "hyperparms_to_tune": []
         })
 
