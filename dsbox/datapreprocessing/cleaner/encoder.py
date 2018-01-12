@@ -2,8 +2,6 @@ import numpy as np # type: ignore
 import pandas as pd # type: ignore
 import copy
 
-import dsbox
-
 from d3m_metadata.metadata import PrimitiveMetadata
 from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 from typing import NamedTuple, Dict, List, Set, Union
@@ -14,6 +12,7 @@ from d3m_metadata import params
 
 from primitive_interfaces.base import CallResult
 
+from . import config
 
 def isCat_95in10(col):
     """
@@ -111,15 +110,15 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
     
     metadata = PrimitiveMetadata({
         "id": "18f0bb42-6350-3753-8f2d-d1c3da70f279",
-        "version": "v" + dsbox.__version__,
+        "version": "v" + config.VERSION,
         "name": "DSBox Data Encoder",
         "description": "Encode data, such as one-hot encoding for categorical data",
         "python_path": "d3m.primitives.dsbox.Encoder",
         "primitive_family": "DATA_CLEANING",
         "algorithm_types": [ "ENCODE_ONE_HOT" ],  # !!!! Need to submit algorithm type "Imputation"
         "source": {
-            "name": dsbox.__d3m_performer_team__,
-            "uris": [ dsbox.__repository__ ]
+            "name": config.D3M_PERFORMER_TEAM,
+            "uris": [ config.REPOSITORY ]
             },
         ### Automatically generated
         # "primitive_code"
@@ -128,7 +127,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
         # "structural_type"
         ### Optional
         "keywords": [ "preprocessing",  "encoding"],
-        "installation": [ dsbox.__installation__ ],
+        "installation": [ config.INSTALLATION ],
         #"location_uris": [],
         #"precondition": [],
         #"effects": [],

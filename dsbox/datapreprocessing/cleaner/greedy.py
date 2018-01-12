@@ -2,8 +2,6 @@ import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
 from . import missing_value_pred as mvp
 
-import dsbox
-
 from primitive_interfaces.supervised_learning import SupervisedLearnerPrimitiveBase
 from primitive_interfaces.base import CallResult
 from typing import NamedTuple, Dict
@@ -17,6 +15,8 @@ from d3m_metadata.metadata import PrimitiveMetadata
 from d3m_metadata import params
 from d3m_metadata import hyperparams
 from d3m_metadata.hyperparams import UniformInt
+
+from . import config
 
 Input = d3m_metadata.container.DataFrame
 Output = d3m_metadata.container.DataFrame
@@ -54,7 +54,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
     metadata = PrimitiveMetadata({
         ### Required
         "id": "ebebb1fa-a20c-38b9-9f22-bc92bc548c19",
-        "version": "v" + dsbox.__version__,
+        "version": "v" + config.VERSION,
         "name": "DSBox Greedy Imputer",
         "description": "Impute missing values using greedy search, supervised learining",
         
@@ -62,8 +62,8 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
         "primitive_family": "DATA_CLEANING",
         "algorithm_types": [ "IMPUTATION" ],
         "source": {
-            "name": dsbox.__d3m_performer_team__,
-            "uris": [ dsbox.__repository__ ]
+            "name": config.D3M_PERFORMER_TEAM,
+            "uris": [ config.REPOSITORY ]
             },
         ### Automatically generated
         # "primitive_code"
@@ -72,7 +72,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
         # "structural_type"
         ### Optional
         "keywords": [ "preprocessing", "imputation", "greedy" ],
-        "installation": [ dsbox.__installation__ ],
+        "installation": [ config.INSTALLATION ],
         "location_uris": [],
         "precondition": [metadata.PrimitivePrecondition.NO_CATEGORICAL_VALUES ],
         "effects": [ metadata.PrimitiveEffects.NO_MISSING_VALUES ],

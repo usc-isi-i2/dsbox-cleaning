@@ -1,5 +1,4 @@
 import pandas as pd #  type: ignore
-import dsbox 
 
 from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 
@@ -14,6 +13,8 @@ from d3m_metadata.metadata import PrimitiveMetadata
 from d3m_metadata import params
 from d3m_metadata import hyperparams
 from d3m_metadata.hyperparams import UniformInt
+
+from . import config
 
 Input = d3m_metadata.container.DataFrame
 Output = d3m_metadata.container.DataFrame
@@ -33,15 +34,15 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
     metadata = PrimitiveMetadata({
         ### Required
         "id": "7894b699-61e9-3a50-ac9f-9bc510466667",
-        "version": "v" + dsbox.__version__, 
+        "version": "v" + config.VERSION, 
         "name": "DSBox Mean Imputer",
         "description": "Impute missing values using the `mean` value of the attribute.",
         "python_path": "d3m.primitives.dsbox.MeanImputation",
         "primitive_family": "DATA_CLEANING",
         "algorithm_types": [ "IMPUTATION" ],
         "source": {
-            "name": dsbox.__d3m_performer_team__,
-            "uris": [ dsbox.__repository__ ]
+            "name": config.D3M_PERFORMER_TEAM,
+            "uris": [ config.REPOSITORY ]
             },
         ### Automatically generated
         # "primitive_code"
@@ -50,7 +51,7 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
         # "structural_type"
         ### Optional
         "keywords": [ "preprocessing", "imputation", "mean" ],
-        "installation": [ dsbox.__installation__ ],
+        "installation": [ config.INSTALLATION ],
         "location_uris": [],
         "precondition":  [metadata.PrimitivePrecondition.NO_CATEGORICAL_VALUES ],
         "effects": [ metadata.PrimitiveEffects.NO_MISSING_VALUES ],

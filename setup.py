@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='dsbox-datacleaning',
-      version='0.3.1.post6',
+      version='0.3.1.post8',
       url='https://github.com/usc-isi-i2/dsbox-cleaning.git',
       maintainer_email='kyao@isi.edu',
       maintainer='Ke-Thia Yao',
@@ -13,7 +13,7 @@ setup(name='dsbox-datacleaning',
       install_requires=[
           'scipy>=0.19.0', 'numpy>=1.11.1', 'pandas>=0.20.1', 'langdetect>=1.0.7',
           'scikit-learn>=0.18.0', 'python-dateutil>=2.5.2', 'six>=1.10.0', 'keras>=2.1',
-          'tensorflow>=1.4', 'fancyimpute', 'stopit'
+          'tensorflow>=1.3', 'fancyimpute', 'stopit'
       ],
       keywords='d3m_primitive',
       entry_points = {

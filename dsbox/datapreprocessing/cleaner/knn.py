@@ -2,8 +2,6 @@ import numpy as np #  type: ignore
 import pandas as pd  #  type: ignore
 from fancyimpute import KNN as knn  #  type: ignore
 
-import dsbox
-
 from . import missing_value_pred as mvp
 from primitive_interfaces.transformer import TransformerPrimitiveBase
 from primitive_interfaces.base import CallResult
@@ -16,6 +14,8 @@ from d3m_metadata import metadata
 from d3m_metadata.metadata import PrimitiveMetadata
 from d3m_metadata.hyperparams import UniformInt, Hyperparams
 import collections
+
+from . import config
 
 Input = d3m_metadata.container.DataFrame
 Output = d3m_metadata.container.DataFrame
@@ -42,15 +42,15 @@ class KNNImputation(TransformerPrimitiveBase[Input, Output, KnnHyperparameter]):
     metadata = PrimitiveMetadata({
         ### Required
         "id": "faeeb725-6546-3f55-b80d-8b79d5ca270a",
-        "version": "v" + dsbox.__version__, 
+        "version": "v" + config.VERSION, 
         "name": "DSBox KNN Imputer",
         "description": "Impute missing values using k-nearest neighbor",
         "python_path": "d3m.primitives.dsbox.KnnImputation",
         "primitive_family": "DATA_CLEANING",
         "algorithm_types": [ "IMPUTATION", "K_NEAREST_NEIGHBORS" ],
         "source": {
-            "name": dsbox.__d3m_performer_team__,
-            "uris": [ dsbox.__repository__ ]
+            "name": config.D3M_PERFORMER_TEAM,
+            "uris": [ config.REPOSITORY ]
             },
         ### Automatically generated
         # "primitive_code"
@@ -59,7 +59,7 @@ class KNNImputation(TransformerPrimitiveBase[Input, Output, KnnHyperparameter]):
         # "structural_type"
         ### Optional
         "keywords": [ "preprocessing", "imputation", "knn" ],
-        "installation": [ dsbox.__installation__ ],
+        "installation": [ config.INSTALLATION ],
         "location_uris": [],
         "precondition": [ metadata.PrimitivePrecondition.NO_CATEGORICAL_VALUES ],
         "effects": [ metadata.PrimitiveEffects.NO_MISSING_VALUES ],

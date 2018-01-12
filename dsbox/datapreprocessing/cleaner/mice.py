@@ -2,8 +2,6 @@ import numpy as np
 import pandas as pd
 from fancyimpute import MICE as mice
 
-import dsbox
-
 from . import missing_value_pred as mvp
 from primitive_interfaces.transformer import TransformerPrimitiveBase
 from primitive_interfaces.base import CallResult
@@ -16,6 +14,8 @@ from d3m_metadata import metadata
 from d3m_metadata.metadata import PrimitiveMetadata
 from d3m_metadata.hyperparams import UniformInt, Hyperparams
 import collections
+
+from . import config
 
 Input = d3m_metadata.container.DataFrame
 Output = d3m_metadata.container.DataFrame
@@ -37,15 +37,15 @@ class MICE(TransformerPrimitiveBase[Input, Output, MiceHyperparameter]):
     metadata = PrimitiveMetadata({
         ### Required
         "id": "3f72646a-6d70-3b65-ab42-f6a41552cecb",
-        "version": "v" + dsbox.__version__, 
+        "version": "v" + config.VERSION, 
         "name": "DSBox MICE Imputer",
         "description": "Impute missing values using the MICE algorithm",   
         "python_path": "d3m.primitives.dsbox.MiceImputation",
         "primitive_family": "DATA_CLEANING",
         "algorithm_types": [ "IMPUTATION" ],
         "source": {
-            "name": dsbox.__d3m_performer_team__,
-            "uris": [ dsbox.__repository__ ]
+            "name": config.D3M_PERFORMER_TEAM,
+            "uris": [ config.REPOSITORY ]
             },
         ### Automatically generated
         # "primitive_code"
@@ -54,7 +54,7 @@ class MICE(TransformerPrimitiveBase[Input, Output, MiceHyperparameter]):
         # "structural_type"
         ### Optional
         "keywords": [ "preprocessing", "imputation" ],
-        "installation": [ dsbox.__installation__ ],
+        "installation": [ config.INSTALLATION ],
         "location_uris": [],
         "precondition": [ metadata.PrimitivePrecondition.NO_CATEGORICAL_VALUES ],
         "effects": [ metadata.PrimitiveEffects.NO_MISSING_VALUES ],

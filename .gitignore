@@ -7,4 +7,9 @@
 .project
 .pydevproject
 
+# Emacs
 *~
+
+# package build
+build
+dist

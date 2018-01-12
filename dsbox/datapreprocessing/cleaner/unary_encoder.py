@@ -3,17 +3,16 @@ import numpy as np  # type: ignore
 import copy
 import typing
 
-import dsbox
-
 from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 from d3m_metadata import hyperparams, container, params
 from d3m_metadata.metadata import PrimitiveMetadata
 
 from primitive_interfaces.base import CallResult
 
+from . import config
+
 Input = container.DataFrame
 Output = container.DataFrame
-
 
 class Params(params.Params):
     mapping : typing.Dict
@@ -86,15 +85,15 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
     
     metadata = PrimitiveMetadata({
         "id": "DSBox-unary-encoder",
-        "version": "v" + dsbox.__version__,
+        "version": "v" + config.VERSION,
         "name": "DSBox Unary Data Encoder",
         "description": "Encode using unary code for orinal data",
         "python_path": "d3m.primitives.dsbox.UnaryEncoder",
         "primitive_family": "DATA_CLEANING",
         "algorithm_types": [ "ENCODE_ONE_HOT" ],
         "source": {
-            "name": dsbox.__d3m_performer_team__,
-            "uris": [ dsbox.__repository__ ]
+            "name": config.D3M_PERFORMER_TEAM,
+            "uris": [ config.REPOSITORY ]
             },
         ### Automatically generated
         # "primitive_code"
@@ -103,7 +102,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         # "structural_type"
         ### Optional
         "keywords": [ "preprocessing",  "encoding"],
-        "installation": [ dsbox.__installation__ ],
+        "installation": [ config.INSTALLATION ],
         #"location_uris": [],
         #"precondition": [],
         #"effects": [],
