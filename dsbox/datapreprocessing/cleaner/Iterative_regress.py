@@ -2,7 +2,6 @@ import numpy as np
 import pandas as pd
 from . import missing_value_pred as mvp
 
-from typing import NamedTuple, Dict
 from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 from primitive_interfaces.base import CallResult
 import stopit
@@ -23,7 +22,7 @@ Output = d3m_metadata.container.DataFrame
 
 # store the regression models for each missing-value column in training data
 class Params(params.Params):
-    regression_models: dict
+    regression_models: typing.Dict
 
 class IterativeRegressionHyperparameter(hyperparams.Hyperparams):
     verbose = UniformInt(lower=0, upper=1, default=0)
@@ -82,7 +81,7 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
         self.docker_containers = docker_containers
 
         # All other attributes must be private with leading underscore  
-        self._best_imputation : Dict = None # in params.regression_models
+        self._best_imputation : Dict = {} # in params.regression_models
         self._train_x : Input = None
         self._is_fitted = True
         self._has_finished = True

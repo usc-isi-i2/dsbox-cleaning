@@ -11,15 +11,15 @@ def text2int(col):
 
 import pandas as pd
 
-from dsbox.datapreprocessing.cleaner import GreedyImputation
+from dsbox.datapreprocessing.cleaner import GreedyImputation, GreedyHyperparameter
 
-# get data
+# global variables
 data_name =  "data.csv"
 label_name =  "targets.csv" # make sure your label target is in the second column of this file
 data = pd.read_csv(data_name, index_col='d3mIndex')
 missing_value_mask = pd.isnull(data)
 label = text2int(pd.read_csv(label_name, index_col='d3mIndex')["Class"])
-
+hp = GreedyHyperparameter.sample()
 
 import unittest
 
@@ -27,7 +27,6 @@ class TestMean(unittest.TestCase):
 	def setUp(self):
 		self.enough_time = 100
 		self.not_enough_time = 0.0001
-
 
 	def test_init(self):
 		"""
@@ -37,7 +36,7 @@ class TestMean(unittest.TestCase):
 			original status is all "True". This is for the imputer instance that has not been fitted
 			but `set_params()`, can also directly `produce()` <- see test_run() part2
 		"""
-		imputer = GreedyImputation(verbose=1)
+		imputer = GreedyImputation(hyperparams=hp)
 		self.assertEqual(imputer._has_finished, True)
 		self.assertEqual(imputer._iterations_done, True)
 
@@ -46,7 +45,7 @@ class TestMean(unittest.TestCase):
 		normal usage run test
 		"""
 		# part 1
-		imputer = GreedyImputation(verbose=1)
+		imputer = GreedyImputation(hyperparams=hp)
 		imputer.set_training_data(inputs=data, outputs=label)	
 		imputer.fit(timeout=self.enough_time)
 		self.assertEqual(imputer._has_finished, True)
@@ -56,7 +55,7 @@ class TestMean(unittest.TestCase):
 		self.helper_impute_result_check(data, result)
 
 		# part2: test set_params()
-		imputer2 = GreedyImputation(verbose=1)
+		imputer2 = GreedyImputation(hyperparams=hp)
 		imputer2.set_params(params=imputer.get_params())
 		self.assertEqual(imputer._has_finished, True)
 		self.assertEqual(imputer._iterations_done, True)
@@ -67,9 +66,8 @@ class TestMean(unittest.TestCase):
 		self.assertEqual(imputer._iterations_done, True)
 
 
-
 	def test_timeout(self):
-		imputer = GreedyImputation(verbose=1)
+		imputer = GreedyImputation(hyperparams=hp)
 		imputer.set_training_data(inputs=data, outputs=label)	
 		imputer.fit(timeout=self.not_enough_time)
 		self.assertEqual(imputer._has_finished, False)
@@ -83,13 +81,21 @@ class TestMean(unittest.TestCase):
 		"""
 		test on the dataset has no missing values
 		"""
-		imputer = GreedyImputation(verbose=1)
+		imputer = GreedyImputation(hyperparams=hp)
+
 		imputer.set_training_data(inputs=data, outputs=label)	
 		imputer.fit(timeout=self.enough_time)
 		result = imputer.produce(inputs=data, timeout=self.enough_time).value
-		result2 = imputer.produce(inputs=result, timeout=self.enough_time).value	# `result` contains no missing value
-		
+		# 1. check produce(): `result` contains no missing value
+		result2 = imputer.produce(inputs=result, timeout=self.enough_time).value
+
 		self.assertEqual(result.equals(result2), True)
+
+		# 2. check fit() & get_params() try fit on no-missing-value dataset
+		imputer2 = GreedyImputation(hyperparams=hp)
+		imputer.set_training_data(inputs=result, outputs=label)
+		imputer.fit(timeout=self.enough_time)
+		print (imputer.get_params())
 
 	def test_notAlign(self):
 		"""
@@ -97,7 +103,7 @@ class TestMean(unittest.TestCase):
 			`a` missing-value columns in trainset, `b` missing-value columns in testset.
 			`a` > `b`, or `a` < `b`
 		"""
-		imputer = GreedyImputation(verbose=1)
+		imputer = GreedyImputation(hyperparams=hp)
 		imputer.set_training_data(inputs=data, outputs=label)	
 		imputer.fit(timeout=self.enough_time)
 		result = imputer.produce(inputs=data, timeout=self.enough_time).value
@@ -108,15 +114,13 @@ class TestMean(unittest.TestCase):
 		self.helper_impute_result_check(data2, result2)
 
 		# PART2: when `a` < `b`
-		imputer = GreedyImputation(verbose=1)
+		imputer = GreedyImputation(hyperparams=hp)
 		imputer.set_training_data(inputs=data2, outputs=label)	
 		imputer.fit(timeout=self.enough_time)
 		result = imputer.produce(inputs=data, timeout=self.enough_time).value
 		# data contains more missingvalue columns than data2, 
 		# the imputer should triger default impute method for the column that not is trained
 		self.helper_impute_result_check(data, result)
-
-		
 
 	def helper_impute_result_check(self, data, result):
 		"""
