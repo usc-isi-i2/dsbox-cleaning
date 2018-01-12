@@ -9,14 +9,13 @@ Now the functionality is limited to:
 * one label problem
 
 ### Dependencies
-[check here](environment_py3.yml)
+[check here](setup.py)
 
-if you have conda, simply do the following:
-
+To install:
 ```sh
-conda-env create .
-source activate mv-py3
+pip install --process-dependency-links git+https://github.com/usc-isi-i2/dsbox-profiling.git@v1.0
 ```
+
 ### Run Tests
 ```sh
 cd unit_tests
