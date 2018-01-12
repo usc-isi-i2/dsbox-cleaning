@@ -11,14 +11,15 @@ def text2int(col):
 
 import pandas as pd
 
-from dsbox.datapreprocessing.cleaner import MICE
+from dsbox.datapreprocessing.cleaner import MICE, MiceHyperparameter
 
-# get data
+# global variables
 data_name =  "data.csv"
 label_name =  "targets.csv" # make sure your label target is in the second column of this file
 data = pd.read_csv(data_name, index_col='d3mIndex')
 missing_value_mask = pd.isnull(data)
 label = text2int(pd.read_csv(label_name, index_col='d3mIndex')["Class"])
+hp = MiceHyperparameter.sample()
 
 
 import unittest
@@ -26,7 +27,7 @@ import unittest
 class TestMice(unittest.TestCase):
 
 	def setUp(self):
-		self.imputer = MICE(verbose=1)
+		self.imputer = MICE(hyperparams=hp)
 
 	def test_init(self):
 		self.assertEqual(self.imputer._has_finished, False)

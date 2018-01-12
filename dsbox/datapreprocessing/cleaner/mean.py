@@ -21,7 +21,7 @@ Output = d3m_metadata.container.DataFrame
 
 # store the mean value for each column in training data
 class Params(params.Params):
-    mean_values : dict
+    mean_values : typing.Dict
     
 class MeanHyperparameter(hyperparams.Hyperparams):
     verbose = UniformInt(lower=0, upper=1, default=0)

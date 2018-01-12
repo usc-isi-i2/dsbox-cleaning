@@ -13,12 +13,14 @@ import pandas as pd
 
 from dsbox.datapreprocessing.cleaner import KNNImputation, KnnHyperparameter
 
-# get data
+# global variables
 data_name =  "data.csv"
 label_name =  "targets.csv" # make sure your label target is in the second column of this file
 data = pd.read_csv(data_name, index_col='d3mIndex')
 missing_value_mask = pd.isnull(data)
 label = text2int(pd.read_csv(label_name, index_col='d3mIndex')["Class"])
+hp = KnnHyperparameter.sample()
+
 
 
 import unittest
@@ -26,8 +28,7 @@ import unittest
 class TestMean(unittest.TestCase):
 
 	def setUp(self):
-		hp = KnnHyperparameter.sample()
-		self.imputer = KNNImputation(hp, verbose=1)
+		self.imputer = KNNImputation(hyperparams=hp)
 
 	def test_init(self):
 		self.assertEqual(self.imputer._has_finished, False)
@@ -40,7 +41,7 @@ class TestMean(unittest.TestCase):
 		self.assertEqual(self.imputer._iterations_done, True)
 
 	def test_timeout(self):
-		result = self.imputer.produce(inputs=data, timeout=0.000001).value
+		result = self.imputer.produce(inputs=data, timeout=0.0001).value
 		self.assertEqual(self.imputer._has_finished, False)
 		self.assertEqual(self.imputer._iterations_done, False)
 
