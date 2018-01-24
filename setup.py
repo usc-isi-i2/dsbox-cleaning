@@ -14,10 +14,7 @@ setup(name='dsbox-datacleaning',
       install_requires=[
           'scipy>=0.19.0', 'numpy>=1.11.1', 'pandas>=0.20.1', 'langdetect>=1.0.7',
           'scikit-learn>=0.18.0', 'python-dateutil>=2.5.2', 'six>=1.10.0', 'keras>=2.1',
-          'tensorflow>=1.3', 'fancyimpute', 'stopit', 'dsbox-profiling>=1.0'
-      ],
-      dependency_links=[
-          "git+https://github.com/usc-isi-i2/dsbox-profiling.git@v1.0#egg=dsbox-profiling-1.0"
+          'tensorflow>=1.3', 'fancyimpute', 'stopit'
       ],
       keywords='d3m_primitive',
       entry_points = {
