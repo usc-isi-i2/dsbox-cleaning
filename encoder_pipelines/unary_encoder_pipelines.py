@@ -72,11 +72,11 @@ category = category_detection.category_detect(trainData)
 columns = trainData.columns
 inttype = [int,np.int8,np.int16, np.int32, np.int64,float]
 encode_columns = [i for i in range(len(trainData.columns)) if category[columns[i]] and trainData[columns[i]].dtype in inttype]
-# Initialize the DSBox Encoder
 
-hp = UEncHyperparameter(text2int=True)
+# Initialize the DSBox Unary Encoder
+hp = UEncHyperparameter(text2int=True,targetColumns=encode_columns)
 enc = UnaryEncoder(hyperparams=hp)
-enc.set_training_data(inputs=trainData, targets=encode_columns)
+enc.set_training_data(inputs=trainData)
 enc.fit()
 
 print(type(enc.get_params()))

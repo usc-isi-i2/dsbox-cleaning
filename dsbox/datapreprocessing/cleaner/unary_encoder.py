@@ -25,10 +25,10 @@ class Params(params.Params):
 class UEncHyperparameter(hyperparams.Hyperparams):
     text2int = hyperparams.Enumeration(values=[True,False],default=True, 
             description='Whether to convert everything to numerical')
-    #targetColumns= hyperparams.Hyperparameter(
-    #    default= [0],
-    #    semantic_types=["https://metadata.datadrivendiscovery.org/types/TabularColumn"],
-    #    description="The index of the column to be encoded")
+    targetColumns= hyperparams.Hyperparameter(
+        default= [],
+        semantic_types=["https://metadata.datadrivendiscovery.org/types/TabularColumn"],
+        description="The index of the column to be encoded")
 
 ## reference: https://github.com/scikit-learn/scikit-learn/issues/8136
 class Label_encoder(object):
@@ -119,7 +119,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         self.random_seed = random_seed
         self.docker_containers = docker_containers
         self._text2int = hyperparams['text2int']
-        self._target_columns = []
+        self._target_columns = hyperparams['targetColumns']
         self._textmapping = dict()
         self._mapping = dict()
         self._all_columns = set()
@@ -149,10 +149,10 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         self._target_columns = params['target_columns']
 
 
-    def set_training_data(self, *, inputs: Input, targets: Input) -> None:
+    def set_training_data(self, *, inputs: Input) -> None:
         self._training_inputs = inputs
         self._fitted = False
-        self._target_columns = targets
+        #self._target_columns = targets
 
 
     def fit(self, *, timeout:float = None, iterations: int = None) -> None:
