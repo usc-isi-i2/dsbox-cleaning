@@ -68,11 +68,6 @@ see [methods](methods.md) for details.
 
 ## One-hot encoder
 The encoder takes pandas DataFrame as input, then one-hot encode columns which are considered categorical.
-
-```
-class Encoder(categorical_features='95in10')
-```
-
 For **categorical_features = '95in10'**, it takes a column as category if:
 * its dtype is not float and
 * 95% of its data fall in 10 values.
@@ -86,18 +81,20 @@ Note:
 
 ### Usage:
 ```python
-from dsbox.datapreprocessing.cleaner import Encoder
+from dsbox.datapreprocessing.cleaner import Encoder, EncHyperparameter
 
 train_x = pd.read_csv(train_dataset)
 test_x = pd.read_csv(test_dataset)
 
-enc = Encoder()
+hp = EncHyperparameter(text2int=True,n_limit=12,categorical_features='95in10')
+enc = Encoder(hyperparams=hp)
 enc.set_training_data(inputs=train_x)
 enc.fit()
+
 result = enc.produce(inputs=train_x)
 
 p = enc.get_params()
-enc2 = Encoder()
+enc2 = Encoder(hyperparams=hp)
 enc2.set_params(params=p)
 result2 = enc2.produce(inputs=test_x)
 ```
@@ -111,25 +108,23 @@ result2 = enc2.produce(inputs=test_x)
 ## Unary encoder
 The encoder takes pandas DataFrame and specified column name(s) as input, then unary encode the column(s).
 
-```
-class UnaryEncoder()
-```
-
 ### Usage:
 ```python
-from dsbox.datapreprocessing.cleaner import UnaryEncoder
+from dsbox.datapreprocessing.cleaner import UnaryEncoder, UEncHyperparameter
 
 train_x = pd.read_csv(train_dataset)
 test_x = pd.read_csv(test_dataset)
 
-ue = UnaryEncoder()
-ue.set_training_data(inputs=train_x, targets=['col1','col2'])
-ue.fit()
-result = ue.produce(inputs=train_x)
+hp = UEncHyperparameter(text2int=True,targetColumns=[(IDs of columns you want to encode)])
+enc = UnaryEncoder(hyperparams=hp)
+enc.set_training_data(inputs=train_x)
+enc.fit()
 
-p = ue.get_params()
-ue2 = UnaryEncoder()
-ue2.set_params(params=p)
+result = enc.produce(inputs=train_x)
+
+p = enc.get_params()
+enc2 = UnaryEncoder(hyperparams=hp)
+enc2.set_params(params=p)
 result2 = enc2.produce(inputs=test_x)
 ```
 
