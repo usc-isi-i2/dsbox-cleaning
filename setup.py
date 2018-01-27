@@ -1,11 +1,12 @@
 from setuptools import setup
 
 setup(name='dsbox-datacleaning',
-      version='0.3.1.post8',
+      version='1.0.0',
+      description='DSBox data preprocessing tools for cleaning data',
+      author='USC ISI',
       url='https://github.com/usc-isi-i2/dsbox-cleaning.git',
       maintainer_email='kyao@isi.edu',
       maintainer='Ke-Thia Yao',
-      description='DSBox data preprocessing tools for cleaning data',
       license='MIT',
       packages=['dsbox', 'dsbox.datapreprocessing', 'dsbox.datapreprocessing.cleaner'],
       zip_safe=False,
@@ -28,3 +29,7 @@ setup(name='dsbox-datacleaning',
           ],
       }
 )
+
+
+
+

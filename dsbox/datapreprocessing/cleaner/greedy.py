@@ -4,7 +4,6 @@ from . import missing_value_pred as mvp
 
 from primitive_interfaces.supervised_learning import SupervisedLearnerPrimitiveBase
 from primitive_interfaces.base import CallResult
-from typing import NamedTuple, Dict
 import stopit
 import math
 import typing
@@ -23,7 +22,7 @@ Output = d3m_metadata.container.DataFrame
 
 # store the best imputation strategy for each missing-value column in training data
 class Params(params.Params):
-    greedy_strategy: dict
+    greedy_strategy: typing.Dict
 
 class GreedyHyperparameter(hyperparams.Hyperparams):
     verbose = UniformInt(lower=0, upper=1, default=0)
@@ -88,7 +87,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
 
         # All other attributes must be private with leading underscore  
         self._imputation_strategies = ["mean", "max", "min", "zero"]
-        self._best_imputation : Dict = None # in params.regression_models
+        self._best_imputation : Dict = {} # in params.regression_models
         self._train_x : Input = None
         self._train_y : Input = None
         self._is_fitted = True

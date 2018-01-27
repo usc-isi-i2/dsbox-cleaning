@@ -2,7 +2,7 @@
 
 D3M_API_VERSION = '2018.1.5'
 VERSION = "1.0.0"
-TAG_NAME = ""
+TAG_NAME = "v1.0"
 
 REPOSITORY = "https://github.com/usc-isi-i2/dsbox-cleaning"
 PACAKGE_NAME = "dsbox-datacleaning"

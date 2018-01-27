@@ -1,5 +1,5 @@
 """
-test program for GreedyImputation, a SupervisedLearnerPrimitive imputer
+test program for IterativeRegressionImputation, a SupervisedLearnerPrimitive imputer
 """
 import sys
 sys.path.append("../")
@@ -11,14 +11,15 @@ def text2int(col):
 
 import pandas as pd
 
-from dsbox.datapreprocessing.cleaner import IterativeRegressionImputation
+from dsbox.datapreprocessing.cleaner import IterativeRegressionImputation, IterativeRegressionHyperparameter
 
-# get data
+# global variables
 data_name =  "data.csv"
 label_name =  "targets.csv" # make sure your label target is in the second column of this file
 data = pd.read_csv(data_name, index_col='d3mIndex')
 missing_value_mask = pd.isnull(data)
 label = text2int(pd.read_csv(label_name, index_col='d3mIndex')["Class"])
+hp = IterativeRegressionHyperparameter.sample()
 
 
 import unittest
@@ -37,7 +38,7 @@ class TestMean(unittest.TestCase):
 			original status is all "True". This is for the imputer instance that has not been fitted
 			but `set_params()`, can also directly `produce()` <- see test_run() part2
 		"""
-		imputer = IterativeRegressionImputation(verbose=1)
+		imputer = IterativeRegressionImputation(hyperparams=hp)
 		self.assertEqual(imputer._has_finished, True)
 		self.assertEqual(imputer._iterations_done, True)
 
@@ -46,7 +47,7 @@ class TestMean(unittest.TestCase):
 		normal usage run test
 		"""
 		# part 1
-		imputer = IterativeRegressionImputation(verbose=1)
+		imputer = IterativeRegressionImputation(hyperparams=hp)
 		imputer.set_training_data(inputs=data)	
 		imputer.fit(timeout=self.enough_time)
 		self.assertEqual(imputer._has_finished, True)
@@ -56,7 +57,7 @@ class TestMean(unittest.TestCase):
 		self.helper_impute_result_check(data, result)
 
 		# part2: test set_params()
-		imputer2 = IterativeRegressionImputation(verbose=1)
+		imputer2 = IterativeRegressionImputation(hyperparams=hp)
 		imputer2.set_params(params=imputer.get_params())
 		self.assertEqual(imputer._has_finished, True)
 		self.assertEqual(imputer._iterations_done, True)
@@ -67,9 +68,8 @@ class TestMean(unittest.TestCase):
 		self.assertEqual(imputer._iterations_done, True)
 
 
-
 	def test_timeout(self):
-		imputer = IterativeRegressionImputation(verbose=1)
+		imputer = IterativeRegressionImputation(hyperparams=hp)
 		imputer.set_training_data(inputs=data)	
 		imputer.fit(timeout=self.not_enough_time)
 		self.assertEqual(imputer._has_finished, False)
@@ -82,13 +82,21 @@ class TestMean(unittest.TestCase):
 		"""
 		test on the dataset has no missing values
 		"""
-		imputer = IterativeRegressionImputation(verbose=1)
+		imputer = IterativeRegressionImputation(hyperparams=hp)
+		
 		imputer.set_training_data(inputs=data)	
 		imputer.fit(timeout=self.enough_time)
 		result = imputer.produce(inputs=data, timeout=self.enough_time).value
-		result2 = imputer.produce(inputs=result, timeout=self.enough_time).value	# `result` contains no missing value
-		
+		# 1. check produce(): `result` contains no missing value
+		result2 = imputer.produce(inputs=result, timeout=self.enough_time).value
+
 		self.assertEqual(result.equals(result2), True)
+
+		# 2. check fit() & get_params() try fit on no-missing-value dataset
+		imputer2 = IterativeRegressionImputation(hyperparams=hp)
+		imputer.set_training_data(inputs=result)
+		imputer.fit(timeout=self.enough_time)
+		print (imputer.get_params())
 
 	def test_notAlign(self):
 		"""
@@ -96,7 +104,7 @@ class TestMean(unittest.TestCase):
 			`a` missing-value columns in trainset, `b` missing-value columns in testset.
 			`a` > `b`, or `a` < `b`
 		"""
-		imputer = IterativeRegressionImputation(verbose=1)
+		imputer = IterativeRegressionImputation(hyperparams=hp)
 		imputer.set_training_data(inputs=data)	
 		imputer.fit(timeout=self.enough_time)
 		result = imputer.produce(inputs=data, timeout=self.enough_time).value
@@ -107,7 +115,7 @@ class TestMean(unittest.TestCase):
 		self.helper_impute_result_check(data2, result2)
 
 		# PART2: when `a` < `b`
-		imputer = IterativeRegressionImputation(verbose=1)
+		imputer = IterativeRegressionImputation(hyperparams=hp)
 		imputer.set_training_data(inputs=data2)	
 		imputer.fit(timeout=self.enough_time)
 		result = imputer.produce(inputs=data, timeout=self.enough_time).value
@@ -116,7 +124,7 @@ class TestMean(unittest.TestCase):
 		self.helper_impute_result_check(data, result)
 
 		# PART3: trunk the data : sample wise
-		imputer = IterativeRegressionImputation(verbose=1)
+		imputer = IterativeRegressionImputation(hyperparams=hp)
 		imputer.set_training_data(inputs=data)	
 		imputer.fit(timeout=self.enough_time)
 		result = imputer.produce(inputs=data[0:20], timeout=self.enough_time).value
