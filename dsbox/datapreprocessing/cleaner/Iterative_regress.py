@@ -49,7 +49,7 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
     metadata = PrimitiveMetadata({
         ### Required
         "id": "f70b2324-1102-35f7-aaf6-7cd8e860acc4",
-        "version": "v" + config.VERSION, 
+        "version": config.VERSION, 
         "name": "DSBox Iterative Regression Imputer",
         "description": "Impute missing values using iterative regression",
         "python_path": "d3m.primitives.dsbox.IterativeRegressionImputation",

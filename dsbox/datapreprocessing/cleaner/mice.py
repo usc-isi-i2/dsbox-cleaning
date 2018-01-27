@@ -37,7 +37,7 @@ class MICE(TransformerPrimitiveBase[Input, Output, MiceHyperparameter]):
     metadata = PrimitiveMetadata({
         ### Required
         "id": "3f72646a-6d70-3b65-ab42-f6a41552cecb",
-        "version": "v" + config.VERSION, 
+        "version": config.VERSION, 
         "name": "DSBox MICE Imputer",
         "description": "Impute missing values using the MICE algorithm",   
         "python_path": "d3m.primitives.dsbox.MiceImputation",

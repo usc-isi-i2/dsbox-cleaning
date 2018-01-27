@@ -42,7 +42,7 @@ class KNNImputation(TransformerPrimitiveBase[Input, Output, KnnHyperparameter]):
     metadata = PrimitiveMetadata({
         ### Required
         "id": "faeeb725-6546-3f55-b80d-8b79d5ca270a",
-        "version": "v" + config.VERSION, 
+        "version": config.VERSION, 
         "name": "DSBox KNN Imputer",
         "description": "Impute missing values using k-nearest neighbor",
         "python_path": "d3m.primitives.dsbox.KnnImputation",

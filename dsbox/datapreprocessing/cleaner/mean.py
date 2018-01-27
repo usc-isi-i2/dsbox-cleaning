@@ -34,7 +34,7 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
     metadata = PrimitiveMetadata({
         ### Required
         "id": "7894b699-61e9-3a50-ac9f-9bc510466667",
-        "version": "v" + config.VERSION, 
+        "version": config.VERSION, 
         "name": "DSBox Mean Imputer",
         "description": "Impute missing values using the `mean` value of the attribute.",
         "python_path": "d3m.primitives.dsbox.MeanImputation",

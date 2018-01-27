@@ -53,7 +53,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
     metadata = PrimitiveMetadata({
         ### Required
         "id": "ebebb1fa-a20c-38b9-9f22-bc92bc548c19",
-        "version": "v" + config.VERSION,
+        "version": config.VERSION,
         "name": "DSBox Greedy Imputer",
         "description": "Impute missing values using greedy search, supervised learining",
         

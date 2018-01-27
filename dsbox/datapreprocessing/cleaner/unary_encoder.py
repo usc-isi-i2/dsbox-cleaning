@@ -85,7 +85,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
     
     metadata = PrimitiveMetadata({
         "id": "DSBox-unary-encoder",
-        "version": "v" + config.VERSION,
+        "version": config.VERSION,
         "name": "DSBox Unary Data Encoder",
         "description": "Encode using unary code for orinal data",
         "python_path": "d3m.primitives.dsbox.UnaryEncoder",

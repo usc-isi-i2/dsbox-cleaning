@@ -110,7 +110,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
     
     metadata = PrimitiveMetadata({
         "id": "18f0bb42-6350-3753-8f2d-d1c3da70f279",
-        "version": "v" + config.VERSION,
+        "version": config.VERSION,
         "name": "DSBox Data Encoder",
         "description": "Encode data, such as one-hot encoding for categorical data",
         "python_path": "d3m.primitives.dsbox.Encoder",
