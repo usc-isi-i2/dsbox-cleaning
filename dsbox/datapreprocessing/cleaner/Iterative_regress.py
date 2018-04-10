@@ -2,23 +2,20 @@ import numpy as np
 import pandas as pd
 from . import missing_value_pred as mvp
 
-from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
-from primitive_interfaces.base import CallResult
+from d3m.primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
+from d3m.primitive_interfaces.base import CallResult
 import stopit
 import math
 import typing
 
-import d3m_metadata.container
-from d3m_metadata import metadata
-from d3m_metadata.metadata import PrimitiveMetadata
-from d3m_metadata import params
-from d3m_metadata import hyperparams
-from d3m_metadata.hyperparams import UniformInt
+from d3m import metadata, container
+from d3m.metadata import hyperparams, params
+from d3m.metadata.hyperparams import UniformInt
 
 from . import config
 
-Input = d3m_metadata.container.DataFrame
-Output = d3m_metadata.container.DataFrame
+Input = container.DataFrame
+Output = container.DataFrame
 
 # store the regression models for each missing-value column in training data
 class Params(params.Params):
@@ -46,7 +43,7 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
         could be sklearn regression model, or "mean" (which means the regression failed)
     
     """
-    metadata = PrimitiveMetadata({
+    metadata = hyperparams.base.PrimitiveMetadata({
         ### Required
         "id": "f70b2324-1102-35f7-aaf6-7cd8e860acc4",
         "version": config.VERSION, 
@@ -68,17 +65,16 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
         "keywords": [ "preprocessing", "imputation" ],
         "installation": [ config.INSTALLATION ],
         "location_uris": [],
-        "precondition": [ metadata.PrimitivePrecondition.NO_CATEGORICAL_VALUES ],
-        "effects": [ metadata.PrimitiveEffects.NO_MISSING_VALUES ],
+        "precondition": [ hyperparams.base.PrimitivePrecondition.NO_CATEGORICAL_VALUES ],
+        "effects": [ hyperparams.base.PrimitiveEffects.NO_MISSING_VALUES ],
         "hyperparms_to_tune": []
         })
 
-    def __init__(self, *, hyperparams: IterativeRegressionHyperparameter, random_seed: int = 0, 
-                 docker_containers: typing.Union[typing.Dict[str, str], None] = None) -> None:
+    def __init__(self, *, hyperparams: IterativeRegressionHyperparameter) -> None:
+        super().__init__(hyperparams=hyperparams)
+
         # All primitives must define these attributes
         self.hyperparams = hyperparams
-        self.random_seed = random_seed
-        self.docker_containers = docker_containers
 
         # All other attributes must be private with leading underscore  
         self._best_imputation : Dict = {} # in params.regression_models

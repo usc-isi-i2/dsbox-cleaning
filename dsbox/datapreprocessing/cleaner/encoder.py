@@ -2,15 +2,13 @@ import numpy as np # type: ignore
 import pandas as pd # type: ignore
 import copy
 
-from d3m_metadata.metadata import PrimitiveMetadata
-from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
+from d3m.primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 from typing import NamedTuple, Dict, List, Set, Union
-import d3m_metadata.container
-from d3m_metadata.hyperparams import Enumeration, UniformInt
-import d3m_metadata.hyperparams as hyperparams
-from d3m_metadata import params
+import d3m
+from d3m.metadata import hyperparams, params
+from d3m.metadata.hyperparams import Enumeration, UniformInt
 
-from primitive_interfaces.base import CallResult
+from d3m.primitive_interfaces.base import CallResult
 
 from . import config
 
@@ -21,8 +19,8 @@ def isCat_95in10(col):
     return col.value_counts().head(10).sum() / float(col.count()) > .95
 
 
-Input = d3m_metadata.container.DataFrame
-Output = d3m_metadata.container.DataFrame
+Input = d3m.container.DataFrame
+Output = d3m.container.DataFrame
 
 
 class EncParams(params.Params):
@@ -108,7 +106,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
     3. produce(): input data would be encoded and return.
     """
     
-    metadata = PrimitiveMetadata({
+    metadata = hyperparams.base.PrimitiveMetadata({
         "id": "18f0bb42-6350-3753-8f2d-d1c3da70f279",
         "version": config.VERSION,
         "name": "DSBox Data Encoder",
@@ -139,12 +137,10 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
         return "%s(%r)" % ('Encoder', self.__dict__)
 
 
-    def __init__(self, *, hyperparams: EncHyperparameter, random_seed: int = 0,
-                    docker_containers: Dict[str, str] = None) -> None:
+    def __init__(self, *, hyperparams: EncHyperparameter) -> None:
+        super().__init__(hyperparams=hyperparams)
 
         self.hyperparams = hyperparams
-        self.random_seed = random_seed
-        self.docker_containers = docker_containers
 
         #self._textmapping : Dict = None
         

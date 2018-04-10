@@ -3,22 +3,22 @@ import pandas as pd
 from fancyimpute import MICE as mice
 
 from . import missing_value_pred as mvp
-from primitive_interfaces.transformer import TransformerPrimitiveBase
-from primitive_interfaces.base import CallResult
+from d3m.primitive_interfaces.transformer import TransformerPrimitiveBase
+from d3m.primitive_interfaces.base import CallResult
 import stopit
 import math
 import typing
 
-import d3m_metadata.container
-from d3m_metadata import metadata
-from d3m_metadata.metadata import PrimitiveMetadata
-from d3m_metadata.hyperparams import UniformInt, Hyperparams
+
+from d3m import metadata, container
+from d3m.metadata import hyperparams
+from d3m.metadata.hyperparams import UniformInt, Hyperparams
 import collections
 
 from . import config
 
-Input = d3m_metadata.container.DataFrame
-Output = d3m_metadata.container.DataFrame
+Input = container.DataFrame
+Output = container.DataFrame
 
 class MiceHyperparameter(Hyperparams):
     verbose = UniformInt(lower=0, upper=1, default=0)
@@ -34,7 +34,7 @@ class MICE(TransformerPrimitiveBase[Input, Output, MiceHyperparameter]):
         Control the verbosity
     """
 
-    metadata = PrimitiveMetadata({
+    metadata = hyperparams.base.PrimitiveMetadata({
         ### Required
         "id": "3f72646a-6d70-3b65-ab42-f6a41552cecb",
         "version": config.VERSION, 
@@ -56,18 +56,16 @@ class MICE(TransformerPrimitiveBase[Input, Output, MiceHyperparameter]):
         "keywords": [ "preprocessing", "imputation" ],
         "installation": [ config.INSTALLATION ],
         "location_uris": [],
-        "precondition": [ metadata.PrimitivePrecondition.NO_CATEGORICAL_VALUES ],
-        "effects": [ metadata.PrimitiveEffects.NO_MISSING_VALUES ],
+        "precondition": [ hyperparams.base.PrimitivePrecondition.NO_CATEGORICAL_VALUES ],
+        "effects": [ hyperparams.base.PrimitiveEffects.NO_MISSING_VALUES ],
         "hyperparms_to_tune": []
     })
 
 
-    def __init__(self, *, hyperparams: MiceHyperparameter, random_seed: int = 0, 
-                 docker_containers: typing.Union[typing.Dict[str, str], None] = None) -> None:
+    def __init__(self, *, hyperparams: MiceHyperparameter) -> None:
+        super().__init__(hyperparams=hyperparams)
         # All primitives must define these attributes
         self.hyperparams = hyperparams
-        self.random_seed = random_seed
-        self.docker_containers = docker_containers
 
         # All other attributes must be private with leading underscore        
         self._train_x = None

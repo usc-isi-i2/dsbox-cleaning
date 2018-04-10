@@ -1,23 +1,20 @@
 import pandas as pd #  type: ignore
 
-from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
+from d3m.primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 
-from primitive_interfaces.base import CallResult
+from d3m.primitive_interfaces.base import CallResult
 import stopit #  type: ignore
 
 import typing
 
-import d3m_metadata.container
-from d3m_metadata import metadata
-from d3m_metadata.metadata import PrimitiveMetadata
-from d3m_metadata import params
-from d3m_metadata import hyperparams
-from d3m_metadata.hyperparams import UniformInt
+from d3m import metadata, container
+from d3m.metadata import hyperparams, params
+from d3m.metadata.hyperparams import UniformInt
 
 from . import config
 
-Input = d3m_metadata.container.DataFrame
-Output = d3m_metadata.container.DataFrame
+Input = container.DataFrame
+Output = container.DataFrame
 
 # store the mean value for each column in training data
 class Params(params.Params):
@@ -31,7 +28,7 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
     """
     Impute missing values using the `mean` value of the attribute.
     """    
-    metadata = PrimitiveMetadata({
+    metadata = hyperparams.base.PrimitiveMetadata({
         ### Required
         "id": "7894b699-61e9-3a50-ac9f-9bc510466667",
         "version": config.VERSION, 
@@ -53,17 +50,16 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
         "keywords": [ "preprocessing", "imputation", "mean" ],
         "installation": [ config.INSTALLATION ],
         "location_uris": [],
-        "precondition":  [metadata.PrimitivePrecondition.NO_CATEGORICAL_VALUES ],
-        "effects": [ metadata.PrimitiveEffects.NO_MISSING_VALUES ],
+        "precondition":  [hyperparams.base.PrimitivePrecondition.NO_CATEGORICAL_VALUES ],
+        "effects": [ hyperparams.base.PrimitiveEffects.NO_MISSING_VALUES ],
         "hyperparms_to_tune": []
         })
 
-    def __init__(self, *, hyperparams: MeanHyperparameter, random_seed: int = 0, 
-                 docker_containers: typing.Union[typing.Dict[str, str], None] = None) -> None:
+    def __init__(self, *, hyperparams: MeanHyperparameter) -> None:
+
+        super().__init__(hyperparams=hyperparams)
         # All primitives must define these attributes
         self.hyperparams = hyperparams
-        self.random_seed = random_seed
-        self.docker_containers = docker_containers
 
         # All other attributes must be private with leading underscore        
         self._train_x = None

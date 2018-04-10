@@ -2,23 +2,20 @@ import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
 from . import missing_value_pred as mvp
 
-from primitive_interfaces.supervised_learning import SupervisedLearnerPrimitiveBase
-from primitive_interfaces.base import CallResult
+from d3m.primitive_interfaces.supervised_learning import SupervisedLearnerPrimitiveBase
+from d3m.primitive_interfaces.base import CallResult
 import stopit
 import math
 import typing
 
-import d3m_metadata.container
-from d3m_metadata import metadata
-from d3m_metadata.metadata import PrimitiveMetadata
-from d3m_metadata import params
-from d3m_metadata import hyperparams
-from d3m_metadata.hyperparams import UniformInt
+from d3m import metadata, container
+from d3m.metadata import hyperparams, params
+from d3m.metadata.hyperparams import UniformInt
 
 from . import config
 
-Input = d3m_metadata.container.DataFrame
-Output = d3m_metadata.container.DataFrame
+Input = container.DataFrame
+Output = container.DataFrame
 
 # store the best imputation strategy for each missing-value column in training data
 class Params(params.Params):
@@ -50,7 +47,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
 
     """
 
-    metadata = PrimitiveMetadata({
+    metadata = hyperparams.base.PrimitiveMetadata({
         ### Required
         "id": "ebebb1fa-a20c-38b9-9f22-bc92bc548c19",
         "version": config.VERSION,
@@ -73,17 +70,15 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
         "keywords": [ "preprocessing", "imputation", "greedy" ],
         "installation": [ config.INSTALLATION ],
         "location_uris": [],
-        "precondition": [metadata.PrimitivePrecondition.NO_CATEGORICAL_VALUES ],
-        "effects": [ metadata.PrimitiveEffects.NO_MISSING_VALUES ],
+        "precondition": [hyperparams.base.PrimitivePrecondition.NO_CATEGORICAL_VALUES ],
+        "effects": [ hyperparams.base.PrimitiveEffects.NO_MISSING_VALUES ],
         "hyperparms_to_tune": []
         })
 
-    def __init__(self, *, hyperparams: GreedyHyperparameter, random_seed: int = 0, 
-                 docker_containers: typing.Union[typing.Dict[str, str], None] = None) -> None:
+    def __init__(self, *, hyperparams: GreedyHyperparameter) -> None:
+        super().__init__(hyperparams=hyperparams)
         # All primitives must define these attributes
         self.hyperparams = hyperparams
-        self.random_seed = random_seed
-        self.docker_containers = docker_containers
 
         # All other attributes must be private with leading underscore  
         self._imputation_strategies = ["mean", "max", "min", "zero"]

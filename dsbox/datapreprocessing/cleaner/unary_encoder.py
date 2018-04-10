@@ -3,16 +3,15 @@ import numpy as np  # type: ignore
 import copy
 import typing
 
-from primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
-from d3m_metadata import hyperparams, container, params
-from d3m_metadata.metadata import PrimitiveMetadata
-
-from primitive_interfaces.base import CallResult
+import d3m
+from d3m.primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
+from d3m.metadata import hyperparams, params
+from d3m.primitive_interfaces.base import CallResult
 
 from . import config
 
-Input = container.DataFrame
-Output = container.DataFrame
+Input = d3m.container.DataFrame
+Output = d3m.container.DataFrame
 
 class Params(params.Params):
     mapping : typing.Dict
@@ -83,7 +82,7 @@ class Label_encoder(object):
 
 class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncHyperparameter]):
     
-    metadata = PrimitiveMetadata({
+    metadata = hyperparams.base.PrimitiveMetadata({
         "id": "DSBox-unary-encoder",
         "version": config.VERSION,
         "name": "DSBox Unary Data Encoder",
@@ -113,11 +112,11 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         return "%s(%r)" % ('UnaryEncoder', self.__dict__)
 
 
-    def __init__(self, *, hyperparams: UEncHyperparameter, random_seed: int = 0, 
-                 docker_containers: typing.Union[typing.Dict[str, str], None] = None) -> None:
+    def __init__(self, *, hyperparams: UEncHyperparameter) -> None:
+        super().__init__(hyperparams=hyperparams)
+
         self.hyperparams = hyperparams
-        self.random_seed = random_seed
-        self.docker_containers = docker_containers
+        
         self._text2int = hyperparams['text2int']
         self._target_columns = hyperparams['targetColumns']
         self._textmapping = dict()

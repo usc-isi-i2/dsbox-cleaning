@@ -1,5 +1,5 @@
 import os
-from d3m_metadata import utils
+from d3m import utils
 
 D3M_API_VERSION = '2018.1.26'
 VERSION = "1.1.0"
