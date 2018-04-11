@@ -272,11 +272,10 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
 
         res = []
         for column_name in data_enc:
-            col = data_enc[column_name]
-            col.is_copy = False
+            col = data_enc[column_name].copy() # col can be a copy, because we do not need to modify data_enc
 
             chg_t = lambda x: str(int(x)) if type(x) is not str else x
-            col[col.notnull()] = col[col.notnull()].apply(chg_t)
+            col.loc[col.notnull()] = col[col.notnull()].apply(chg_t)
 
             chg_v = lambda x: 'other_' if (x and x not in self._mapping[col.name]) else x
             col = col.apply(chg_v)
