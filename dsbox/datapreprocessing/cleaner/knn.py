@@ -7,12 +7,10 @@ from d3m.primitive_interfaces.transformer import TransformerPrimitiveBase
 from d3m.primitive_interfaces.base import CallResult
 import stopit #  type: ignore
 import math
-import typing
 
-from d3m import metadata, container
+from d3m import container
 from d3m.metadata import hyperparams
-from d3m.metadata.hyperparams import UniformInt, Hyperparams
-import collections
+from d3m.metadata.hyperparams import UniformInt, UniformBool, Hyperparams
 
 from . import config
 
@@ -22,26 +20,30 @@ Output = container.DataFrame
 class KnnHyperparameter(Hyperparams):
     # A reasonable upper bound would the size of the input. For now using 100.
     k = UniformInt(lower=1, upper=100, default=5,
-                     description='Number of neighbors')
-    verbose = UniformInt(lower=0, upper=1, default=0)
-    
+                   description='Number of neighbors',
+                   semantic_types=['http://schema.org/Integer',
+                                   'https://metadata.datadrivendiscovery.org/types/TuningParameter'])
+    verbose = UniformBool(default=False,
+                          semantic_types=['http://schema.org/Boolean',
+                                          'https://metadata.datadrivendiscovery.org/types/ControlParameter'])
+
 class KNNImputation(TransformerPrimitiveBase[Input, Output, KnnHyperparameter]):
     """
-    Impute the missing value using k nearest neighbors (weighted average). 
+    Impute the missing value using k nearest neighbors (weighted average).
     This class is a wrapper from fancyimpute-knn
 
     Parameters:
     ----------
     k: the number of nearest neighbors
 
-    verbose: Integer
+    verbose: bool
         Control the verbosity
 
     """
     metadata = hyperparams.base.PrimitiveMetadata({
         ### Required
         "id": "faeeb725-6546-3f55-b80d-8b79d5ca270a",
-        "version": config.VERSION, 
+        "version": config.VERSION,
         "name": "DSBox KNN Imputer",
         "description": "Impute missing values using k-nearest neighbor",
         "python_path": "d3m.primitives.dsbox.KnnImputation",
@@ -72,11 +74,11 @@ class KNNImputation(TransformerPrimitiveBase[Input, Output, KnnHyperparameter]):
         # All primitives must define these attributes
         self.hyperparams = hyperparams
 
-        # All other attributes must be private with leading underscore        
+        # All other attributes must be private with leading underscore
         self._train_x = None
         self._has_finished = False
         self._iterations_done = False
-        self._verbose = hyperparams['verbose'] if hyperparams else 0
+        self._verbose = hyperparams['verbose'] if hyperparams else False
         self._k = hyperparams['k'] if hyperparams else 5
 
 
@@ -118,7 +120,7 @@ class KNNImputation(TransformerPrimitiveBase[Input, Output, KnnHyperparameter]):
             assert to_ctx_mrg.state == to_ctx_mrg.EXECUTING
 
             # start completing data...
-            if (self._verbose>0): print("=========> impute by fancyimpute-knn:")
+            if self._verbose: print("=========> impute by fancyimpute-knn:")
             data_clean = self.__knn(data)
 
         result = None
@@ -140,6 +142,5 @@ class KNNImputation(TransformerPrimitiveBase[Input, Output, KnnHyperparameter]):
         missing_col_id = []
         test_data = mvp.df2np(test_data, missing_col_id, self._verbose)
         if (len(missing_col_id) == 0): return test_data
-        complete_data = knn(k=self._k, verbose=self._verbose).complete(test_data)
+        complete_data = knn(k=self._k, verbose=(1 if self._verbose else 0)).complete(test_data)
         return complete_data
-

@@ -7,21 +7,20 @@ from .greedy import GreedyImputation, GreedyHyperparameter
 from .mice import MICE, MiceHyperparameter
 from .knn import KNNImputation, KnnHyperparameter
 
- 
-# __all__ = ['Encoder', 'GreedyImputation', 'IterativeRegressionImputation', 
+
+# __all__ = ['Encoder', 'GreedyImputation', 'IterativeRegressionImputation',
 # 			'MICE', 'KNNImputation', 'MeanImputation', 'KnnHyperparameter',
 #                         'UEncHyperparameter','EncHyperparameter']
 
 __all__ = ['Encoder', 'EncHyperparameter',
-            'UEncHyperparameter', 'UEncHyperparameter'
-            'KNNImputation',  'KnnHyperparameter',
-            'MeanImputation', 'MeanHyperparameter'
-            'MICE', 'MiceHyperparameter',
-            'IterativeRegressionImputation', 'IterativeRegressionHyperparameter',
-            'GreedyImputation', 'GreedyHyperparameter'
-            ]
+           'UEncHyperparameter', 'UEncHyperparameter',
+           'KNNImputation',  'KnnHyperparameter',
+           'MeanImputation', 'MeanHyperparameter',
+           'MICE', 'MiceHyperparameter',
+           'IterativeRegressionImputation', 'IterativeRegressionHyperparameter',
+           'GreedyImputation', 'GreedyHyperparameter'
+]
 
 
 from pkgutil import extend_path
 __path__ = extend_path(__path__, __name__)  # type: ignore
-

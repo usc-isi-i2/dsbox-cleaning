@@ -8,9 +8,9 @@ import stopit
 import math
 import typing
 
-from d3m import metadata, container
+from d3m import container
 from d3m.metadata import hyperparams, params
-from d3m.metadata.hyperparams import UniformInt
+from d3m.metadata.hyperparams import UniformBool
 
 from . import config
 
@@ -22,7 +22,9 @@ class Params(params.Params):
     greedy_strategy: typing.Dict
 
 class GreedyHyperparameter(hyperparams.Hyperparams):
-    verbose = UniformInt(lower=0, upper=1, default=0)
+    verbose = UniformBool(default=False,
+                          semantic_types=['http://schema.org/Boolean',
+                                          'https://metadata.datadrivendiscovery.org/types/ControlParameter'])
 
 
 class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, GreedyHyperparameter]):
@@ -31,7 +33,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
 
     Parameters:
     ----------
-    verbose: Integer
+    verbose: bool
         Control the verbosity
 
     Attributes:
@@ -53,7 +55,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
         "version": config.VERSION,
         "name": "DSBox Greedy Imputer",
         "description": "Impute missing values using greedy search, supervised learining",
-        
+
         "python_path": "d3m.primitives.dsbox.GreedyImputation",
         "primitive_family": "DATA_CLEANING",
         "algorithm_types": [ "IMPUTATION" ],
@@ -80,15 +82,15 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
         # All primitives must define these attributes
         self.hyperparams = hyperparams
 
-        # All other attributes must be private with leading underscore  
+        # All other attributes must be private with leading underscore
         self._imputation_strategies = ["mean", "max", "min", "zero"]
-        self._best_imputation : Dict = {} # in params.regression_models
+        self._best_imputation : typing.Dict = {} # in params.regression_models
         self._train_x : Input = None
         self._train_y : Input = None
         self._is_fitted = True
         self._has_finished = True
         self._iterations_done = True
-        self._verbose = hyperparams['verbose'] if hyperparams else 0
+        self._verbose = hyperparams['verbose'] if hyperparams else False
 
 
     def set_params(self, *, params: Params) -> None:
@@ -157,7 +159,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
             # now only support "classification" or "regresion" problem
             self._set_model_scorer()
             # 2. using the model and scorer to do greedy search
-            if (self._verbose > 0): print("=========> Greedy searched imputation:")
+            if self._verbose: print("=========> Greedy searched imputation:")
             self._best_imputation = self.__imputationGreedySearch(data, label)
 
 
@@ -213,7 +215,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
             assert to_ctx_mrg.state == to_ctx_mrg.EXECUTING
 
             # start completing data...
-            if (self._verbose>0): print("=========> impute using result from greedy search:")
+            if self._verbose: print("=========> impute using result from greedy search:")
             data_clean = self.__simpleImpute(data, self._best_imputation)
 
         value = None
@@ -288,7 +290,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
                     imputation_list = [self._imputation_strategies[x] for x in permutations]
 
                     data_clean = mvp.imputeData(data, missing_col_id, imputation_list, self._verbose)
-                    if (self._verbose>0): print("for the missing value imputation combination: {} ".format(permutations))
+                    if self._verbose: print("for the missing value imputation combination: {} ".format(permutations))
                     score = self.__evaluation(data_clean, label)
                     if (score > max_score):
                         max_score = score
@@ -301,14 +303,14 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
             iteration -= 1
 
 
-        if (self._verbose>0):
+        if self._verbose:
             print("max score is {}, min score is {}\n".format(max_score, min_score))
             print("and the best score is given by the imputation combination: ")
 
         best_imputation = {}    # key: col_name; value: imputation strategy
         for i in range(len(best_combo)):
             best_imputation[col_names[missing_col_id[i]]] = self._imputation_strategies[best_combo[i]]
-            if (self._verbose>0):
+            if self._verbose:
                 print(self._imputation_strategies[best_combo[i]] + " for the column {}".format(col_names[missing_col_id[i]]))
 
 
@@ -367,7 +369,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
         try:
             X_train, X_test, y_train, y_test = train_test_split(data_clean, label, test_size=0.4, random_state=0, stratify=label)
         except:
-            if (self._verbose>0): print("cannot stratified sample, try random sample: ")
+            if self._verbose: print("cannot stratified sample, try random sample: ")
             X_train, X_test, y_train, y_test = train_test_split(data_clean, label, test_size=0.4, random_state=42)
 
         # remove the nan rows
@@ -382,9 +384,9 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
 
         model = self.model.fit(X_train, y_train.ravel())
         score = self.scorer(model, X_test, y_test)  # refer to sklearn scorer: score will be * -1 with the real score value
-        if (self._verbose>0): print("score is: {}".format(score))
+        if self._verbose: print("score is: {}".format(score))
 
-        if (self._verbose>0): print("===========>> max score is: {}".format(score))
+        if self._verbose: print("===========>> max score is: {}".format(score))
         if (num_removed_test > 0):
             print("BUT !!!!!!!!there are {} data (total test size: {})that cannot be predicted!!!!!!\n".format(num_removed_test, mask_test.shape[0]))
         return score

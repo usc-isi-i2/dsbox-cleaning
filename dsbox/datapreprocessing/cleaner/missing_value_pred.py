@@ -1,4 +1,4 @@
-import pandas as pd  # type: ignore 
+import pandas as pd  # type: ignore
 import numpy as np  # type: ignore
 
 def popular_value(array):
@@ -20,14 +20,14 @@ def popular_value(array):
 
     return popular
 
-def myImputer(data, value="zero", verbose=0):
+def myImputer(data, value="zero", verbose=False):
     """
     INPUT:
     data: numpy array, matrix
     value:    string: "mean", "min", "max", "zero", "gaussian"
     """
     index = pd.isnull(data)
-    
+
     data_imputed = np.copy(data)
     data_drop = data[np.logical_not(index)]   #drop nan from data
     inputed_value = 0
@@ -57,7 +57,7 @@ def myImputer(data, value="zero", verbose=0):
     return data_imputed
 
 
-def imputeData(data, missing_col_id, imputation_strategies,verbose=0):
+def imputeData(data, missing_col_id, imputation_strategies, verbose=False):
     """
     impute the data using permutations array.
     INPUT:
@@ -75,7 +75,7 @@ def imputeData(data, missing_col_id, imputation_strategies,verbose=0):
 
     return data_clean
 
-def bayeImpute(data, target_col, verbose=0):
+def bayeImpute(data, target_col, verbose=False):
     '''
     currently, BayesianRidge.
     return the imputated data, and model coefficient
@@ -99,20 +99,20 @@ def bayeImpute(data, target_col, verbose=0):
     y_train = target[~mv_mask]
 
     # special case in fit:
-    # check if valid to regression: wether only one value exist in target. 
+    # check if valid to regression: wether only one value exist in target.
     # If happen, use default "mean" method (which is all same)
     is_other_value = False in (y_train == y_train[0])
     if (not is_other_value):
         model = "mean"
         original_data[mv_mask, target_col] = y_train[0] * len(mv_mask)
-        return original_data, model 
+        return original_data, model
 
     model.fit(x_train, y_train)
     result = model.predict(x_test)
     # special case in predict:
     # if the model goes wrong: predicts nan value. using mean method instead
     if (pd.isnull(result).sum() > 0):
-        if (verbose > 0): print ("Warning: model gets nan value, using mean instead")
+        if verbose: print ("Warning: model gets nan value, using mean instead")
         model = "mean"
         original_data[:,target_col] = myImputer(original_data[:,target_col], model)
         return original_data, model
@@ -123,7 +123,7 @@ def bayeImpute(data, target_col, verbose=0):
     return original_data, model
 
 
-def transform(data, target_col, model, verbose=0):
+def transform(data, target_col, model, verbose=False):
     '''
     currently, BayesianRidge.
     return the imputated data, and model coefficient
@@ -144,7 +144,7 @@ def transform(data, target_col, model, verbose=0):
     # special case in predict:
     # if the model goes wrong: predicts nan value. using mean method instead
     if (pd.isnull(result).sum() > 0):
-        if (verbose > 0): print ("Warning: model gets nan value, using mean instead")
+        if verbose: print ("Warning: model gets nan value, using mean instead")
         model = "mean"
         original_data[:,target_col] = myImputer(original_data[:,target_col], model)
         return original_data
@@ -153,7 +153,7 @@ def transform(data, target_col, model, verbose=0):
     # print("coefficient: {}".format(model.coef_))
     return original_data
 
-def df2np(data, missing_col_id=[], verbose=0):
+def df2np(data, missing_col_id=[], verbose=False):
     """
     helper function: convert dataframe to np array;
         in the meanwhile, provide the id for missing column
@@ -169,7 +169,7 @@ def df2np(data, missing_col_id=[], verbose=0):
             missing_col_name.append(col_name)
         counter += 1
 
-    if (verbose>0): print("missing column name: {}".format(missing_col_name))
+    if verbose: print("missing column name: {}".format(missing_col_name))
 
     data = data.values  #convert to np array
 

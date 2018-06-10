@@ -7,9 +7,9 @@ import stopit #  type: ignore
 
 import typing
 
-from d3m import metadata, container
+from d3m import container
 from d3m.metadata import hyperparams, params
-from d3m.metadata.hyperparams import UniformInt
+from d3m.metadata.hyperparams import UniformBool
 
 from . import config
 
@@ -19,19 +19,21 @@ Output = container.DataFrame
 # store the mean value for each column in training data
 class Params(params.Params):
     mean_values : typing.Dict
-    
+
 class MeanHyperparameter(hyperparams.Hyperparams):
-    verbose = UniformInt(lower=0, upper=1, default=0)
-    
+    verbose = UniformBool(default=False,
+                          semantic_types=['http://schema.org/Boolean',
+                                          'https://metadata.datadrivendiscovery.org/types/ControlParameter'])
+
 
 class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, MeanHyperparameter]):
     """
     Impute missing values using the `mean` value of the attribute.
-    """    
+    """
     metadata = hyperparams.base.PrimitiveMetadata({
         ### Required
         "id": "7894b699-61e9-3a50-ac9f-9bc510466667",
-        "version": config.VERSION, 
+        "version": config.VERSION,
         "name": "DSBox Mean Imputer",
         "description": "Impute missing values using the `mean` value of the attribute.",
         "python_path": "d3m.primitives.dsbox.MeanImputation",
@@ -61,13 +63,13 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
         # All primitives must define these attributes
         self.hyperparams = hyperparams
 
-        # All other attributes must be private with leading underscore        
+        # All other attributes must be private with leading underscore
         self._train_x = None
         self._is_fitted = False
         self._has_finished = False
         self._iterations_done = False
-        self._verbose = hyperparams['verbose'] if hyperparams else 0
-        
+        self._verbose = hyperparams['verbose'] if hyperparams else False
+
 
     def set_params(self, *, params: Params) -> None:
         self._is_fitted = len(params['mean_values']) > 0
@@ -91,8 +93,8 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
             The inputs.
         """
         if (pd.isnull(inputs).sum().sum() == 0):    # no missing value exists
-            if (self._verbose > 0): print ("Warning: no missing value in train dataset")
-        
+            if self._verbose: print ("Warning: no missing value in train dataset")
+
         self._train_x = inputs
         self._is_fitted = False
 
@@ -121,7 +123,7 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
             assert to_ctx_mrg.state == to_ctx_mrg.EXECUTING
 
             # start fitting
-            if (self._verbose>0) : print("=========> mean imputation method:")
+            if self._verbose : print("=========> mean imputation method:")
             self.__get_fitted()
 
         if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
@@ -132,7 +134,7 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
             self._is_fitted = False
             self._iterations_done = False
             self._has_finished = False
-        
+
         return CallResult(None, self._has_finished, self._iterations_done)
 
     def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> CallResult[Output]:
@@ -148,7 +150,7 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
             # todo: specify a NotFittedError, like in sklearn
             raise ValueError("Calling produce before fitting.")
         if (pd.isnull(inputs).sum().sum() == 0):    # no missing value exists
-            if (self._verbose > 0): print ("Warning: no missing value in test dataset")
+            if self._verbose: print ("Warning: no missing value in test dataset")
             self._has_finished = True
             return CallResult(inputs, self._has_finished, self._iterations_done)
 
@@ -165,7 +167,7 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
             assert to_ctx_mrg.state == to_ctx_mrg.EXECUTING
 
             # start completing data...
-            if (self._verbose>0): print("=========> impute by mean value of the attribute:")
+            if self._verbose: print("=========> impute by mean value of the attribute:")
 
             # assume the features of testing data are same with the training data
             # therefore, only use the mean_values to impute, should get a clean dataset
@@ -185,5 +187,3 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
 
     def __get_fitted(self):
         self.mean_values = self._train_x.mean(axis=0).to_dict()
-
-

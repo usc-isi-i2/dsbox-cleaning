@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 from fancyimpute import MICE as mice
 
@@ -7,13 +6,10 @@ from d3m.primitive_interfaces.transformer import TransformerPrimitiveBase
 from d3m.primitive_interfaces.base import CallResult
 import stopit
 import math
-import typing
 
-
-from d3m import metadata, container
+from d3m import container
 from d3m.metadata import hyperparams
-from d3m.metadata.hyperparams import UniformInt, Hyperparams
-import collections
+from d3m.metadata.hyperparams import UniformBool, Hyperparams
 
 from . import config
 
@@ -21,25 +17,27 @@ Input = container.DataFrame
 Output = container.DataFrame
 
 class MiceHyperparameter(Hyperparams):
-    verbose = UniformInt(lower=0, upper=1, default=0)
+    verbose = UniformBool(default=False,
+                          semantic_types=['http://schema.org/Boolean',
+                                          'https://metadata.datadrivendiscovery.org/types/ControlParameter'])
 
 class MICE(TransformerPrimitiveBase[Input, Output, MiceHyperparameter]):
     """
-    Impute the missing value using MICE. 
+    Impute the missing value using MICE.
     This class is a wrapper from fancyimpute-mice
 
     Parameters:
     ----------
-    verbose: Integer
+    verbose: bool
         Control the verbosity
     """
 
     metadata = hyperparams.base.PrimitiveMetadata({
         ### Required
         "id": "3f72646a-6d70-3b65-ab42-f6a41552cecb",
-        "version": config.VERSION, 
+        "version": config.VERSION,
         "name": "DSBox MICE Imputer",
-        "description": "Impute missing values using the MICE algorithm",   
+        "description": "Impute missing values using the MICE algorithm",
         "python_path": "d3m.primitives.dsbox.MiceImputation",
         "primitive_family": "DATA_CLEANING",
         "algorithm_types": [ "IMPUTATION" ],
@@ -67,11 +65,11 @@ class MICE(TransformerPrimitiveBase[Input, Output, MiceHyperparameter]):
         # All primitives must define these attributes
         self.hyperparams = hyperparams
 
-        # All other attributes must be private with leading underscore        
+        # All other attributes must be private with leading underscore
         self._train_x = None
         self._has_finished = False
         self._iterations_done = False
-        self._verbose = hyperparams['verbose'] if hyperparams else 0
+        self._verbose = hyperparams['verbose'] if hyperparams else False
 
 
     def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> CallResult[Output]:
@@ -108,13 +106,13 @@ class MICE(TransformerPrimitiveBase[Input, Output, MiceHyperparameter]):
         # record keys:
         keys = data.keys()
         index = data.index
-        
+
         # setup the timeout
         with stopit.ThreadingTimeout(timeout) as to_ctx_mrg:
             assert to_ctx_mrg.state == to_ctx_mrg.EXECUTING
 
             # start completing data...
-            if (self._verbose>0): print("=========> impute by fancyimpute-mice:")
+            if self._verbose: print("=========> impute by fancyimpute-mice:")
             data_clean = self.__mice(data, iterations)
 
         value = None
@@ -137,6 +135,5 @@ class MICE(TransformerPrimitiveBase[Input, Output, MiceHyperparameter]):
         missing_col_id = []
         test_data = mvp.df2np(test_data, missing_col_id, self._verbose)
         if (len(missing_col_id) == 0): return test_data
-        complete_data = mice(n_imputations=iterations, verbose=self._verbose).complete(test_data)
+        complete_data = mice(n_imputations=iterations, verbose=(1 if self._verbose else 0)).complete(test_data)
         return complete_data
-

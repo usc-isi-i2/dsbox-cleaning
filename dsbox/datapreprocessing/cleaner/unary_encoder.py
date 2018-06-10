@@ -22,18 +22,23 @@ class Params(params.Params):
 
 
 class UEncHyperparameter(hyperparams.Hyperparams):
-    text2int = hyperparams.Enumeration(values=[True,False],default=True, 
-            description='Whether to convert everything to numerical')
-    targetColumns= hyperparams.Hyperparameter(
-        default= [],
-        semantic_types=["https://metadata.datadrivendiscovery.org/types/TabularColumn"],
-        description="The index of the column to be encoded")
+    text2int = hyperparams.UniformBool(
+        default=True,
+        description='Whether to convert everything to numerical. For text columns, each row may get converted into a column',
+        semantic_types=['http://schema.org/Boolean',
+                        'https://metadata.datadrivendiscovery.org/types/ControlParameter'])
+    targetColumns = hyperparams.Hyperparameter[typing.List[int]](
+        default=[],
+        description='List of indices of columns to be encoded',
+        semantic_types=['https://metadata.datadrivendiscovery.org/types/TuningParameter',
+                        'https://metadata.datadrivendiscovery.org/types/TabularColumn']
+    )
 
 ## reference: https://github.com/scikit-learn/scikit-learn/issues/8136
 class Label_encoder(object):
     def __init__(self):
         self.class_index = None
-    
+
     def fit_pd(self, df, cols=[]):
         '''
         fit all columns in the df or specific list.
@@ -50,7 +55,7 @@ class Label_encoder(object):
             for item in uf:
                 self.class_index[f][item] = index
                 index += 1
-    
+
     def transform_pd(self,df,cols=[]):
         '''
         transform all columns in the df or specific list from lable to index, return and update dataframe.
@@ -81,7 +86,7 @@ class Label_encoder(object):
 
 
 class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncHyperparameter]):
-    
+
     metadata = hyperparams.base.PrimitiveMetadata({
         "id": "DSBox-unary-encoder",
         "version": config.VERSION,
@@ -106,7 +111,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         #"precondition": [],
         #"effects": [],
         #"hyperparms_to_tune": []
-        })    
+        })
 
     def __repr__(self):
         return "%s(%r)" % ('UnaryEncoder', self.__dict__)
@@ -116,21 +121,21 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         super().__init__(hyperparams=hyperparams)
 
         self.hyperparams = hyperparams
-        
+
         self._text2int = hyperparams['text2int']
         self._target_columns = hyperparams['targetColumns']
-        self._textmapping = dict()
-        self._mapping = dict()
-        self._all_columns = set()
-        self._empty_columns = []
+        self._textmapping: typing.Dict = dict()
+        self._mapping: typing.Dict = dict()
+        self._all_columns: typing.Set = set()
+        self._empty_columns: typing.List = []
 
         self._training_inputs = None
         self._fitted = False
 
 
     def get_params(self) -> Params:
-        
-        # Hack to work around pytypes bug. Covert numpy int64 to int. 
+
+        # Hack to work around pytypes bug. Covert numpy int64 to int.
         for key in self._mapping.keys():
             self._mapping[key] = [np.nan if np.isnan(x) else int(x) for x in self._mapping[key]]
 
@@ -162,7 +167,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         """
         if self._fitted:
             return
-        
+
         if self._training_inputs is None:
             raise ValueError('Missing training(fitting) data.')
 
@@ -208,7 +213,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         """
         #if self._target_columns == []:
         #    return CallResult(inputs, True, 1)
-        
+
         if not self._fitted:
             raise ValueError('Encoder model not fitted. Use fit()')
 

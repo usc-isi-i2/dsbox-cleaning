@@ -6,7 +6,7 @@ from d3m.primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPr
 from typing import NamedTuple, Dict, List, Set, Union
 import d3m
 from d3m.metadata import hyperparams, params
-from d3m.metadata.hyperparams import Enumeration, UniformInt
+from d3m.metadata.hyperparams import Enumeration, UniformInt, UniformBool
 
 from d3m.primitive_interfaces.base import CallResult
 
@@ -33,10 +33,18 @@ class EncParams(params.Params):
 
 
 class EncHyperparameter(hyperparams.Hyperparams):
-    text2int = Enumeration(values=[True,False],default=False,
-            description='Whether to convert everything to numerical')
-    n_limit = UniformInt(lower=5, upper=100, default=12, description='Maximum columns to encode')
-    categorical_features = Enumeration(values=['95in10'], default='95in10', description='rule to declare categorical')
+    text2int = UniformBool(default=False,
+                           description='Whether to convert everything to numerical. For text columns, each row may get converted into a column',
+                           semantic_types=['http://schema.org/Boolean',
+                                           'https://metadata.datadrivendiscovery.org/types/ControlParameter'])
+    n_limit = UniformInt(lower=5, upper=100, default=12,
+                         description='Limits the maximum number of columns to generate',
+                         semantic_types=['http://schema.org/Integer',
+                                         'https://metadata.datadrivendiscovery.org/types/TuningParameter'])
+    categorical_features = Enumeration(values=['95in10'], default='95in10',
+                                       description='rule to declare categorical',
+                                       semantic_types=[
+                                           'https://metadata.datadrivendiscovery.org/types/ControlParameter'])
 
 
 ## reference: https://github.com/scikit-learn/scikit-learn/issues/8136
@@ -105,7 +113,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
 
     3. produce(): input data would be encoded and return.
     """
-    
+
     metadata = hyperparams.base.PrimitiveMetadata({
         "id": "18f0bb42-6350-3753-8f2d-d1c3da70f279",
         "version": config.VERSION,
@@ -131,7 +139,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
         #"effects": [],
         #"hyperparms_to_tune": []
         })
-    
+
 
     def __repr__(self):
         return "%s(%r)" % ('Encoder', self.__dict__)
@@ -143,14 +151,14 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
         self.hyperparams = hyperparams
 
         #self._textmapping : Dict = None
-        
+
         #self._mapping : Dict = None
         #self._all_columns : Set[str] = set()
         #self._empty_columns : List[str] = []
 
         #self._training_inputs : Input = None
         #self._fitted = False
-        
+
         self._textmapping : Dict = {}
         self._mapping : Dict = {}
         self._all_columns : Set[str] = set()
@@ -253,7 +261,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
         """
         Convert and output the input data into encoded format,
         using the trained (fitted) encoder.
-        Notice that [colname]_other_ and [colname]_nan columns 
+        Notice that [colname]_other_ and [colname]_nan columns
         are always kept for one-hot encoded columns.
         """
 
@@ -261,7 +269,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
             data_copy = inputs.copy()
         else:
             data_copy = inputs[0].copy()
- 
+
         set_columns = set(data_copy.columns)
 
         if set_columns != self._all_columns:
