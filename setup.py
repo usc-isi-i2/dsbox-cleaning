@@ -25,7 +25,8 @@ setup(name='dsbox-datacleaning',
               'dsbox.IterativeRegressionImputation = dsbox.datapreprocessing.cleaner:IterativeRegressionImputation',
               'dsbox.MiceImputation = dsbox.datapreprocessing.cleaner:MICE',
               'dsbox.KnnImputation = dsbox.datapreprocessing.cleaner:KNNImputation',
-              'dsbox.MeanImputation = dsbox.datapreprocessing.cleaner:MeanImputation'
+              'dsbox.MeanImputation = dsbox.datapreprocessing.cleaner:MeanImputation',
+              'dsbox.IQRScaler = dsbox.datapreprocessing.cleaner:IQRScaler'
           ],
       }
 )

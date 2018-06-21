@@ -6,7 +6,7 @@ from .Iterative_regress import IterativeRegressionImputation, IterativeRegressio
 from .greedy import GreedyImputation, GreedyHyperparameter
 from .mice import MICE, MiceHyperparameter
 from .knn import KNNImputation, KnnHyperparameter
-
+from .IQRScaler import IQRScaler,IQRHyperparams
 
 # __all__ = ['Encoder', 'GreedyImputation', 'IterativeRegressionImputation',
 # 			'MICE', 'KNNImputation', 'MeanImputation', 'KnnHyperparameter',
@@ -18,7 +18,8 @@ __all__ = ['Encoder', 'EncHyperparameter',
            'MeanImputation', 'MeanHyperparameter',
            'MICE', 'MiceHyperparameter',
            'IterativeRegressionImputation', 'IterativeRegressionHyperparameter',
-           'GreedyImputation', 'GreedyHyperparameter'
+           'GreedyImputation', 'GreedyHyperparameter',
+           'IQRScaler','IQRHyperparams'
 ]
 
 
