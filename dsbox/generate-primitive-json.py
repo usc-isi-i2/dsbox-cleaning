@@ -25,7 +25,8 @@ PRIMITIVES = [(p, cleaner_config) for p in [
     'KnnImputation',
     'Encoder',
     'UnaryEncoder',
-    'IQRScaler']
+    'IQRScaler',
+    'Labler']
               ]
 
 for p, config in PRIMITIVES:

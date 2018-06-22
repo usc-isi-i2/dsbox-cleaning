@@ -19,7 +19,8 @@ __all__ = ['Encoder', 'EncHyperparameter',
            'MICE', 'MiceHyperparameter',
            'IterativeRegressionImputation', 'IterativeRegressionHyperparameter',
            'GreedyImputation', 'GreedyHyperparameter',
-           'IQRScaler','IQRHyperparams'
+           'IQRScaler','IQRHyperparams',
+           'Labler','Hyperparams'
 ]
 
 

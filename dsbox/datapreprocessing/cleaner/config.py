@@ -2,7 +2,7 @@ import os
 from d3m import utils
 
 D3M_API_VERSION = '2018.6.5'
-VERSION = "1.2.2"
+VERSION = "1.2.3"
 TAG_NAME = "{git_commit}".format(git_commit=utils.current_git_commit(os.path.dirname(__file__)), )
 
 REPOSITORY = "https://github.com/usc-isi-i2/dsbox-cleaning"

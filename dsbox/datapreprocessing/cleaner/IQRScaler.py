@@ -13,7 +13,7 @@ from d3m.container import DataFrame as d3m_DataFrame
 from d3m.primitive_interfaces.base import CallResult
 import numpy as np
 
-__all__ = ('RobustScaler',)
+__all__ = ('IQRScaler',)
 
 Inputs = container.DataFrame
 Outputs = container.DataFrame
@@ -56,7 +56,7 @@ class IQRHyperparams(hyperparams.Hyperparams):
     )
 
 
-class Standardizer(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, IQRHyperparams]):
+class IQRScaler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, IQRHyperparams]):
     """
         A primitive which scales all the Integer & Float variables in the Dataframe.
     """
@@ -66,7 +66,7 @@ class Standardizer(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, IQ
         "version": config.VERSION,
         "name": "DSBox feature scaler",
         "description": "A simple primitive that scales all the Integer & Float features with sklearn's robust scaler",
-        "python_path": "d3m.primitives.dsbox.Standardizer",
+        "python_path": "d3m.primitives.dsbox.IQRScaler",
         "primitive_family": "NORMALIZATION",
         "algorithm_types": ["DATA_NORMALIZATION"],
         "source": {

@@ -26,7 +26,8 @@ setup(name='dsbox-datacleaning',
               'dsbox.MiceImputation = dsbox.datapreprocessing.cleaner:MICE',
               'dsbox.KnnImputation = dsbox.datapreprocessing.cleaner:KNNImputation',
               'dsbox.MeanImputation = dsbox.datapreprocessing.cleaner:MeanImputation',
-              'dsbox.IQRScaler = dsbox.datapreprocessing.cleaner:IQRScaler'
+              'dsbox.IQRScaler = dsbox.datapreprocessing.cleaner:IQRScaler',
+              'dsbox.Labler = dsbox.datapreprocessing.cleaner:Labler',
           ],
       }
 )
