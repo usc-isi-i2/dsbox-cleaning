@@ -13,3 +13,5 @@ dependencies:
   - fancyimpute
   - dsbox-datapreprocessing
   - stopit
+  - tzlocal==1.5.1
+  - pytz==2018.3
