@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
 import re
 import numpy as np
 import os
@@ -17,11 +18,21 @@ class DataCleaning:
         num_threshold=0.1,
         common_threshold=0.9,
         ):
+
+    
+    	'''
+	    The parameter common_threshold means punctuation density in a column, determined 
+	    by the number of row that contains a specific punctuation to the number of rows.
+	    num-threshold is number density of a column, determined by the number of float or 
+	    integer to the number of rows.A large common_threshold means most of rows contains 
+	    the specific punctuation. A large num_threshold means number dominates that column.
+	    '''
+
         self.num_threshold = num_threshold
         self.common_threshold = common_threshold
         self.input_df = input_df
         self.ignore_list = ignore_list
-        
+
         if options == 0:
             self.return_rlt = self.iterations_punc()
         elif options == 1:
@@ -67,33 +78,38 @@ class DataCleaning:
                 number = ''
                 while group_id < 5:
                     if phone_match.group(group_id) != None:
-                        number += phone_match.group(group_id)+'-'
+                        number += phone_match.group(group_id) + '-'
                     group_id += 1
-            number=number.strip('-')
+            number = number.strip('-')
             new_rows.append(number)
         return new_rows
 
     def iterations_num_alpha(self):
+
         all_columns = self.input_df.columns
         require_checking = \
             list(set(all_columns).difference(set(self.ignore_list)))
         extends = {}
         for one_column in require_checking:
             isnum_alpha = self.is_num_alpha(self.input_df[one_column])
-            if isnum_alpha == True:
-                num_alpha = \
-                    self.num_alpha_splitter(self.input_df[one_column])
-                count = 0
-                for one in num_alpha:
-                    extends[one_column + '_' + str(count)] = one
-                    count += 1
+            isnum = self.num_check(self.input_df[one_column])
+            if isnum == False:
+                if isnum_alpha == True:
+                    num_alpha = \
+                        self.num_alpha_splitter(self.input_df[one_column])
+                    count = 0
+                    for one in num_alpha:
+                        extends[one_column + '_' + str(count)] = one
+                        count += 1
+
         return extends
 
     def is_num_alpha(self, rows):
         rows = self.random_50(rows)
         match_count = 0
         for row in rows:
-            num_alpha_match = re.match(r'[0-9.0-9]+|[a-zA-Z]+', str(row))
+            num_alpha_match = re.match(r'[0-9.0-9]+|[a-zA-Z]+',
+                    str(row))
             if num_alpha_match != None:
                 match_count += 1
         if float(match_count) / len(rows) > 0.5:
@@ -130,16 +146,13 @@ class DataCleaning:
                 common_list = \
                     self.find_common(self.input_df[one_column])
                 if len(common_list) >= 1:
-                    for one_split in common_list:
-                        splitted = \
-                            self.splitter(self.input_df[one_column],
-                                one_split)
-                        if len(splitted) > 1:
-                            count = 0
-                            for one in splitted:
-                                extends[one_column + '_'
-                                        + str(count)] = one
-                                count += 1
+                    count = 0
+                    splitted = self.splitter(self.input_df[one_column],
+                            common_list)
+                    if len(splitted) > 1:
+                        for one in splitted:
+                            extends[one_column + '_' + str(count)] = one
+                            count += 1
         return extends
 
     def random_50(self, rows):
@@ -180,11 +193,30 @@ class DataCleaning:
                 common_list.append(key)
         return common_list
 
-    def splitter(self, rows, one_split):
+    def splitter(self, rows, common_list):
         new_rows = []
         max_column_num = 0
+        constraints = [
+            '^',
+            '$',
+            '\\',
+            '|',
+            '{',
+            '[',
+            '(',
+            '*',
+            '+',
+            '?',
+            ]
+        re_list = ''
+        for one_split in common_list:
+            if one_split in constraints:
+                re_list += '\\' + one_split + '|'
+            else:
+                re_list += one_split + '|'
+        re_list.strip('|')
         for row in rows:
-            new_row = re.split(one_split + '*', str(row))
+            new_row = [x for x in re.split(re_list, row) if x]
             max_column_num = max(max_column_num, len(new_row))
             new_rows.append(new_row)
 
@@ -205,12 +237,11 @@ class DataCleaning:
 
 
 if __name__ == '__main__':
-    file = '/Users/xkgoodbest/Documents/ISI/learningData.csv'
+    file = '/Users/xkgoodbest/Documents/ISI/learningData 2 188.csv'
     df = pd.read_csv(file)
-    ignore_list = ['d3mIndex', 'origin']
+    ignore_list = ['d3mIndex']
 
     # options: 0 for punctuation split, 1 for num_alpha split, 2 for phone parser
 
-    punc = DataCleaning(df, ignore_list, options=2)
+    punc = DataCleaning(df, ignore_list, options=0)
     result = punc.return_func()
-
