@@ -12,6 +12,7 @@ from d3m.metadata import hyperparams, params
 from d3m.container import DataFrame as d3m_DataFrame
 from d3m.primitive_interfaces.base import CallResult
 from sklearn.preprocessing import LabelEncoder
+from collections import defaultdict
 
 __all__ = ('Labeler',)
 
@@ -54,12 +55,13 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, Hyperpar
     def __init__(self, *, hyperparams: Hyperparams) -> None:
         super().__init__(hyperparams=hyperparams)
         self.hyperparams = hyperparams
-        self._model = LabelEncoder()
-        self._fits =[]
+        #self._model = LabelEncoder()
+        #self._fits =[]
         self._training_data = None
         self._fitted = False
         self._s_cols = None
         self._temp = pd.DataFrame()
+        self._d = defaultdict(LabelEncoder)
 
     def set_training_data(self, *, inputs: Inputs) -> None:
         self._training_data = inputs
@@ -80,8 +82,7 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, Hyperpar
         print(" %d of categorical attributes " % (len(self._s_cols)))
 
         if len(self._s_cols) > 0:
-            for each in self._s_cols:
-                self._fits.append(self._model.fit(self._training_data.iloc[:,each]))
+            self._training_data.iloc[:,self._s_cols].apply(lambda x: self._d[x.name].fit(x))
             self._fitted = True
         else:
             self._fitted = False
@@ -89,11 +90,7 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, Hyperpar
     def produce(self, *, inputs: Inputs, timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
         if not self._fitted:
             return CallResult(inputs, True, 1)
-        for i,fit,each in enumerate(range(len(self._s_cols)),self._fits,self._s_cols):
-            self._temp[i] = fit.transform(self._training_data.iloc[:,each])
-        outputs = inputs.copy()
-        for id_index, od_index in zip(self._s_cols, range(temp.shape[1])):
-            outputs.iloc[:, id_index] = temp.iloc[:, od_index]
+        self._training_data.iloc[:, self._s_cols].apply(lambda x: self._d[x.name].transform(x))
 
         #new_dtype = temp.dtypes
         #lookup = {"float": ('http://schema.org/Float', 'https://metadata.datadrivendiscovery.org/types/Attribute'),
