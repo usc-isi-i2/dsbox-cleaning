@@ -117,7 +117,7 @@ class IQRScaler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, IQRHy
         if not self._fitted:
             return CallResult(inputs, True, 1)
         temp = pd.DataFrame(self._model.transform(inputs.iloc[:, self._s_cols]))
-        outputs = inputs.copy()
+        outputs = self._training_data.copy()
         for id_index, od_index in zip(self._s_cols, range(temp.shape[1])):
             outputs.iloc[:, id_index] = temp.iloc[:, od_index]
 

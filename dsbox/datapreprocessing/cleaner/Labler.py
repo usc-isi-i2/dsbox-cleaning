@@ -89,27 +89,24 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, Hyperpar
     def produce(self, *, inputs: Inputs, timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
         if not self._fitted:
             return CallResult(inputs, True, 1)
-        self._training_data.iloc[:, self._s_cols].apply(lambda x: self._d[x.name].transform(x))
+        temp = pd.DataFrame(self._training_data.iloc[:, self._s_cols].apply(lambda x: self._d[x.name].transform(x)))
+        outputs = self._training_data.copy()
+
+        for id_index, od_index in zip(self._s_cols, range(temp.shape[1])):
+            outputs.iloc[:, id_index] = temp.iloc[:, od_index]
+
+        lookup = {"int": ('http://schema.org/Integer', 'https://metadata.datadrivendiscovery.org/types/Attribute')}
 
         #new_dtype = temp.dtypes
-        #lookup = {"float": ('http://schema.org/Float', 'https://metadata.datadrivendiscovery.org/types/Attribute'),
-        #          "int": ('http://schema.org/Integer', 'https://metadata.datadrivendiscovery.org/types/Attribute')}
 
-        # for d, index in zip(new_dtype, self._s_cols):
-        #     print("old metadata : ", outputs.metadata.query((mbase.ALL_ELEMENTS, index)))
-        #     old_metadata = dict(outputs.metadata.query((mbase.ALL_ELEMENTS, index)))
-        #     if d == np.dtype(np.float16) or d == np.dtype(np.float32) or d == np.dtype(np.float64) or d == np.dtype(
-        #             np.float128):
-        #         old_metadata["semantic_types"] = lookup["float"]
-        #         old_metadata["structural_type"] = type(10.0)
-        #     else:
-        #         old_metadata["semantic_types"] = lookup["int"]
-        #         old_metadata["structural_type"] = type(10)
-        #     outputs.metadata = outputs.metadata.update((mbase.ALL_ELEMENTS, index), old_metadata)
-        #     print("updated dict : ", old_metadata)
-        #     print("check again : ", outputs.metadata.query((mbase.ALL_ELEMENTS, index)))
+        for index in self._s_cols:
+            old_metadata = dict(outputs.metadata.query((mbase.ALL_ELEMENTS, index)))
+            old_metadata["semantic_types"] = lookup["int"]
+            old_metadata["structural_type"] = type(10)
+            outputs.metadata = outputs.metadata.update((mbase.ALL_ELEMENTS, index), old_metadata)
 
         if outputs.shape == inputs.shape:
+            print("output:",outputs.head(5))
             return CallResult(d3m_DataFrame(outputs), True, 1)
         else:
             return CallResult(inputs, True, 1)
