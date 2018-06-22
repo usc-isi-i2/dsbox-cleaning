@@ -14,7 +14,7 @@ from d3m.primitive_interfaces.base import CallResult
 from sklearn.preprocessing import LabelEncoder
 from collections import defaultdict
 
-__all__ = ('Labeler',)
+__all__ = ('Labler',)
 
 Inputs = container.DataFrame
 Outputs = container.DataFrame
@@ -48,8 +48,7 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, Hyperpar
         "keywords": ["NORMALIZATION", "Labler"],
         "installation": [config.INSTALLATION],
         "precondition": ["NO_MISSING_VALUES", "CATEGORICAL_VALUES"],
-        "effects": [],
-        "hyperparms_to_tune": []
+
     })
 
     def __init__(self, *, hyperparams: Hyperparams) -> None:
