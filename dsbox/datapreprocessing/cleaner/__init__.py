@@ -7,6 +7,7 @@ from .greedy import GreedyImputation, GreedyHyperparameter
 from .mice import MICE, MiceHyperparameter
 from .knn import KNNImputation, KnnHyperparameter
 from .IQRScaler import IQRScaler,IQRHyperparams
+from .Labler import Labler,Hyperparams
 
 # __all__ = ['Encoder', 'GreedyImputation', 'IterativeRegressionImputation',
 # 			'MICE', 'KNNImputation', 'MeanImputation', 'KnnHyperparameter',
