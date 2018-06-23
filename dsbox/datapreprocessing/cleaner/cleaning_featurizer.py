@@ -3,6 +3,7 @@ from d3m import container
 from d3m.metadata import hyperparams, params
 from d3m.primitive_interfaces.base import CallResult
 from d3m.primitive_interfaces.featurization import FeaturizationTransformerPrimitiveBase
+import typing
 
 from . import config
 
@@ -12,10 +13,12 @@ Outputs = container.DataFrame
 clean_operations = ["split_phone_number_column", "split_date_column", "split_alpha_numeric_column", "split_multi_value_column"]
 
 class CleaningFeaturizerHyperparameter(hyperparams.Hyperparams):
-    features = hyperparams.Set(
-        clean_operations, clean_operations, 1, len(clean_operations),
+    features = hyperparams.Hyperparameter[typing.Union[str, None]](
+        None,
         description = 'Select one or more operations to perform: "split_phone_number_column", "split_date_column", "split_alpha_numeric_column", "split_multi_value_column"',
-        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'])
+        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter']
+    )
+
     num_threshold = hyperparams.Uniform(
         default = 0.1,
         lower = 0.1,
@@ -31,8 +34,8 @@ class CleaningFeaturizerHyperparameter(hyperparams.Hyperparams):
         description = 'Threshold for rows containing specific punctuation',
         semantic_types = ['http://schema.org/Float', 'https://metadata.datadrivendiscovery.org/types/ControlParameter'])
 
-class Params(params.Params):
-    pass
+# class Params(params.Params):
+#     components_: typing.Any
 
 class CleaningFeaturizer(FeaturizationTransformerPrimitiveBase[Inputs, Outputs, CleaningFeaturizerHyperparameter]):
     metadata = hyperparams.base.PrimitiveMetadata({
@@ -60,14 +63,15 @@ class CleaningFeaturizer(FeaturizationTransformerPrimitiveBase[Inputs, Outputs, 
         "hyperparms_to_tune": []
         })
 
-    def __init__(self):
-        pass
+    def __init__(self, *, hyperparams: CleaningFeaturizerHyperparameter) -> None:
+        super().__init__(hyperparams=hyperparams)
+        self.hyperparams = hyperparams
 
-    def set_params(self, *, params: Params) -> None:
-        pass
+    # def set_params(self, *, params: Params) -> None:
+    #     pass
 
-    def get_params(self) -> Params:
-        pass
+    # def get_params(self) -> Params:
+    #     pass
 
     def produce(self, *, inputs: Inputs, timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
         return CallResult(inputs, True, True)
