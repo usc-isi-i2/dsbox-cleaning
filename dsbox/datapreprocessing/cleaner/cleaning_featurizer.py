@@ -16,16 +16,18 @@ class CleaningFeaturizerHyperparameter(hyperparams.Hyperparams):
         clean_operations, clean_operations, 1, len(clean_operations),
         description = 'Select one or more operations to perform: "split_phone_number_column", "split_date_column", "split_alpha_numeric_column", "split_multi_value_column"',
         semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'])
-    num_threshold = hyperparams.Hyperparameter[float](
+    num_threshold = hyperparams.Uniform(
         default = 0.1,
         lower = 0.1,
         upper = 0.5,
+        upper_inclusive = True,
         description = 'Threshold for number character density of a column',
         semantic_types = ['http://schema.org/Float', 'https://metadata.datadrivendiscovery.org/types/ControlParameter'])
-    common_threshold = hyperparams.Hyperparameter[float](
+    common_threshold = hyperparams.Uniform(
         default = 0.9,
         lower = 0.7,
         upper = 0.9,
+        upper_inclusive = True,
         description = 'Threshold for rows containing specific punctuation',
         semantic_types = ['http://schema.org/Float', 'https://metadata.datadrivendiscovery.org/types/ControlParameter'])
 
