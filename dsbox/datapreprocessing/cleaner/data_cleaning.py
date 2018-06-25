@@ -223,7 +223,7 @@ class DataCleaning:
         row_count = 0
         while row_count < len(rows):
             if len(new_rows[row_count]) < max_column_num:
-                new_rows[row_count] = [np.nan] * max_column_num
+                new_rows[row_count].extend([np.nan] * (max_column_num-len(new_rows[row_count])))
             row_count += 1
         new_rows = np.array(new_rows).T
         return new_rows
