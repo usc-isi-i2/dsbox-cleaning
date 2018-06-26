@@ -19,6 +19,8 @@ setup(name='dsbox-datacleaning',
       keywords='d3m_primitive',
       entry_points = {
           'd3m.primitives': [
+              'dsbox.DateFeaturizer = dsbox.datapreprocessing.cleaner:DateFeaturizer',
+              'dsbox.CleaningFeaturizer = dsbox.datapreprocessing.cleaner:CleaningFeaturizer',
               'dsbox.Encoder = dsbox.datapreprocessing.cleaner:Encoder',
               'dsbox.UnaryEncoder = dsbox.datapreprocessing.cleaner:UnaryEncoder',
               'dsbox.GreedyImputation = dsbox.datapreprocessing.cleaner:GreedyImputation',
