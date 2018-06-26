@@ -1,0 +1,11 @@
+id,year,month,element,d1,d2,d3,d4,d5,d6,d7,d8
+id001,2010,1,tmax,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN
+id002,2010,1,tmax,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN
+id003,2010,2,tmax,NaN,27.3,24.1,NaN,NaN,NaN,NaN,NaN
+id004,2010,2,tmax,NaN,14.4,14.4,NaN,NaN,NaN,NaN,NaN
+id005,2010,3,tmin,NaN,NaN,NaN,NaN,32.1,NaN,NaN,NaN
+id006,2010,3,tmax,NaN,NaN,NaN,NaN,13.3,NaN,NaN,NaN
+id007,2010,4,tmax,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN
+id008,2010,4,tmin,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN
+id009,2010,5,tmax,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN
+id010,2010,5,tmax,NaN,NaN,NaN,NaN,NaN,NaN,NaN,NaN
