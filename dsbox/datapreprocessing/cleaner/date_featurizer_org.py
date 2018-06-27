@@ -2,6 +2,7 @@ import time
 from datetime import datetime
 import pandas as pd
 from warnings import warn
+import re
 
 from dependencies.date_extractor import DateExtractor
 
@@ -25,7 +26,7 @@ class DateFeaturizer:
 		extractor_settings: [Dict] Extractor settings for the date parser (see dependencies/date_extractor.py)
 		"""
 
-		self.df = dataframe
+		self.df = pd.DataFrame(dataframe)
 		self.min_threshold = min_threshold
 		self.create_year = create_year
 		self.create_month=create_month
@@ -46,6 +47,12 @@ class DateFeaturizer:
 		self._crD = create_day
 		self._crDow = create_day_of_week
 		self._crE = create_epoch
+
+		# Month range parser settings
+		self._month_range_pattern = r'^\w{3,9}\-\w{3,9}$'
+		self._month_range_delim = '-'
+		self._month_abbv = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Sep', 'Oct', 'Nov', 'Dec']
+		self._month_full = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 
 	def featurize_dataframe(self, sampled_df=None):
 		"""
@@ -69,13 +76,17 @@ class DateFeaturizer:
 			self.create_epoch = self._crE
 			self.create_month = self._crM
 			self.create_year = self._crY
-		return self.df
+		
+		self.df = self.df.drop(parsed_columns, axis=1)
+		return {
+			'df':self.df,
+			'date_columns':self._samples_to_print
+		}
 
 	def _featurize_column(self, values, column_label):
 		"""
 		Featurize a column that has been parsed 
 		"""
-		self._samples_to_print.append(column_label)
 		years = []
 		days = []
 		months = []
@@ -115,6 +126,36 @@ class DateFeaturizer:
 		if self.create_epoch:
 			self.df[column_label+"_epochs"] = epochs
 			self._samples_to_print.append(column_label+"_epochs")
+
+	def _parse_month_range(self, df, column_label):
+		pattern = re.compile(self._month_range_pattern)
+		
+		parsed_values = []
+
+		for item in df[column_label]:
+
+			# remove whitespace
+			item = str(item).strip()
+
+			if pattern.match(item):
+				item = item.split(self._month_range_delim)
+
+				if item[0] in self._month_abbv and item[1] in self._month_abbv:
+					parsed_values.append(item)
+				elif item[0] in self._month_full and item[1] in self._month_full:
+					parsed_values.append(item)
+				else:
+					parsed_values.append(None)
+			else:
+				parsed_values.append(None)
+		
+		frac_parsed = 1 - ((parsed_values.count(None) - df[column_label].isnull().sum())/len(parsed_values))
+
+		if frac_parsed >= self.min_threshold:
+			return parsed_values
+		
+		return None
+
 	
 	def _parse_month(self, df, column_label):
 
@@ -187,6 +228,7 @@ class DateFeaturizer:
 		"""
 		Parse column and detect dates
 		"""
+
 		# Do not parse float values
 		if df[column_label].dtype == float:
 			return None
@@ -200,6 +242,12 @@ class DateFeaturizer:
 
 		month_parsed_values = self._parse_month(df, column_label)
 
+		if self._parse_month_range(df, column_label) is not None:
+			# Do not parse month ranges
+			warn("Month range ignored")
+			print(column_label)
+			return None
+
 		if month_parsed_values is not None:
 			# change featurization settings
 			self.create_day = False
@@ -210,7 +258,7 @@ class DateFeaturizer:
 			return month_parsed_values
 		
 		if self._parse_weekday(df, column_label) is not None:
-			print("Weekday ignored")
+			warn("Weekday ignored")
 			return None
 
 		for item in df[column_label]:
