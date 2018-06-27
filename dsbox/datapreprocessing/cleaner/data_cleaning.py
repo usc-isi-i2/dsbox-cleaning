@@ -20,13 +20,13 @@ class DataCleaning:
         ):
 
     
-    	'''
-	    The parameter common_threshold means punctuation density in a column, determined 
-	    by the number of row that contains a specific punctuation to the number of rows.
-	    num-threshold is number density of a column, determined by the number of float or 
-	    integer to the number of rows.A large common_threshold means most of rows contains 
-	    the specific punctuation. A large num_threshold means number dominates that column.
-	    '''
+        '''
+        The parameter common_threshold means punctuation density in a column, determined 
+        by the number of row that contains a specific punctuation to the number of rows.
+        num-threshold is number density of a column, determined by the number of float or 
+        integer to the number of rows.A large common_threshold means most of rows contains 
+        the specific punctuation. A large num_threshold means number dominates that column.
+        '''
 
         self.num_threshold = num_threshold
         self.common_threshold = common_threshold
@@ -216,7 +216,7 @@ class DataCleaning:
                 re_list += one_split + '|'
         re_list.strip('|')
         for row in rows:
-            new_row = [x for x in re.split(re_list, row) if x]
+            new_row = [x for x in re.split(re_list, str(row)) if x]
             max_column_num = max(max_column_num, len(new_row))
             new_rows.append(new_row)
 
