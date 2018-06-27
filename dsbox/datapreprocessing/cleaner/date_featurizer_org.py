@@ -298,7 +298,7 @@ class DateFeaturizer:
 
 	def sample_dataframe(self, sampled_df):
 		date_cols = []
-		for column_label in self.df.columns.values:
+		for column_label in sampled_df.columns.values:
 			if self._parse_column(sampled_df,column_label) is not None:
 				date_cols.append(column_label)
 		return date_cols
