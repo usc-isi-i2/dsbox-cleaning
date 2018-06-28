@@ -304,8 +304,14 @@ class DateFeaturizer:
 			.to_csv(input_filename+"_sample.csv")
 	
 	def featurize_dataframe(self):
+		"""
+		Detect and featurize together
+		"""
+		# Create sample of 50 rows
 		sample = self.df.sample(n=50)
 
+		# Detect date columns
 		date_cols = self.detect_date_columns(sample)
 
+		# Featurize date columns
 		return self.featurize_date_columns(date_cols)

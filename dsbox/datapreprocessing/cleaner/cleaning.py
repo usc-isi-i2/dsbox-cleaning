@@ -2,7 +2,7 @@ import time
 import logging
 
 from date_featurizer_org import DateFeaturizer
-from data_cleaning import DataCleaning
+from data_cleaning import NumAlphaSplitter,PhoneParser,PunctuationSplitter
 
 class Cleaner:
 
@@ -15,13 +15,10 @@ class Cleaner:
 
     def clean_dataframe(self):
 
-        # Create a sample of 50 rows
-        sample = self.df.sample(n=50)
-
         start = time.time()
         # Parse dates and featurize
         try:
-            out = self._date_featurizer.featurize_dataframe(sampled_df=sample)
+            out = self._date_featurizer.featurize_dataframe()
             self.df = out['df']
             self._ignore_date_cols = out['date_columns'] # columns to ignore
         except Exception as e:
@@ -35,8 +32,14 @@ class Cleaner:
 
         start = time.time()
         try:
-            punc_splitter = DataCleaning(self.df, self._ignore_date_cols, options=0)
-            self.df = punc_splitter.return_func()
+            punc_splitter_detection = PunctuationSplitter(self.df, doing_list=self._ignore_date_cols,
+                    options=0, num_threshold=0.1, common_threshold=0.9)
+            doing_list = punc_splitter_detection.return_results()
+
+            punc_splitter = PunctuationSplitter(self.df, doing_list,
+                    options=1, num_threshold=0.1, common_threshold=0.9)
+            self.df = punc_splitter.return_results()
+
         except Exception as e:
             logging.error("Punctuation splitter failed")
             logging.error(str(e))
@@ -46,8 +49,16 @@ class Cleaner:
 
         start = time.time()
         try:
-            num_alpha_splitter = DataCleaning(self.df, self._ignore_date_cols, options=1)
-            self.df = num_alpha_splitter.return_func()
+            na_splitter_detection = NumAlphaSplitter(self.df, doing_list=self._ignore_date_cols, options=0,
+                                   num_threshold=0.1,
+                                   num_alpha_threshold=0.8)
+            doing_list = na_splitter_detection.return_results()
+
+            na_splitter = NumAlphaSplitter(self.df, doing_list=doing_list, options=1,
+                                   num_threshold=0.1,
+                                   num_alpha_threshold=0.8)
+            self.df = na_splitter.return_results()
+
         except:
             logging.error("num-apha splitter failed")
             logging.error(str(e))
@@ -57,8 +68,11 @@ class Cleaner:
 
         start = time.time()
         try:
-            phone_parser = DataCleaning(self.df, self._ignore_date_cols, options=2)
-            self.df = phone_parser.return_func()
+            phone_parser_detection = PhoneParser(self.df, doing_list=self._ignore_date_cols, options=0)
+            doing_list = phone_parser_detection.return_results()
+            phone_parser = PhoneParser(self.df, doing_list=doing_list, options=1)
+            self.df = phone_parser.return_results()
+
         except:
             logging.error("phone parser failed")
             logging.error(str(e))
