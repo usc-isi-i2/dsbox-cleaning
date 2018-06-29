@@ -97,12 +97,12 @@ class IQRScaler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, IQRHy
         self._fitted = False
 
     def fit(self, *, timeout: float = None, iterations: int = None) -> CallResult[None]:
-        numerical_attributes = utils.metadata_list_columns_with_semantic_types(metadata=self._training_data.metadata,
+        numerical_attributes = utils.list_columns_with_semantic_types(metadata=self._training_data.metadata,
                                                                                semantic_types=[
                                                                                    "http://schema.org/Float",
                                                                                    "http://schema.org/Integer"])
 
-        all_attributes = utils.metadata_list_columns_with_semantic_types(metadata=self._training_data.metadata,
+        all_attributes = utils.list_columns_with_semantic_types(metadata=self._training_data.metadata,
                                                                          semantic_types=[
                                                                              "https://metadata.datadrivendiscovery.org/types/Attribute"])
         self._s_cols = list(set(all_attributes).intersection(numerical_attributes))

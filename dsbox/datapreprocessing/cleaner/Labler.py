@@ -67,13 +67,13 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, Hyperpar
         self._fitted = False
 
     def fit(self, *, timeout: float = None, iterations: int = None) -> CallResult[None]:
-        categorical_attributes = utils.metadata_list_columns_with_semantic_types(metadata=self._training_data.metadata,
+        categorical_attributes = utils.list_columns_with_semantic_types(metadata=self._training_data.metadata,
                                                                                semantic_types=[
                                                                                    "https://metadata.datadrivendiscovery.org/types/OrdinalData",
                                                                                    "https://metadata.datadrivendiscovery.org/types/CategoricalData"
                                                                                ])
 
-        all_attributes = utils.metadata_list_columns_with_semantic_types(metadata=self._training_data.metadata,
+        all_attributes = utils.list_columns_with_semantic_types(metadata=self._training_data.metadata,
                                                                          semantic_types=[
                                                                              "https://metadata.datadrivendiscovery.org/types/Attribute"])
 
