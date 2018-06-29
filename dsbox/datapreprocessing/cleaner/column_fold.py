@@ -124,7 +124,7 @@ class FoldColumns(object):
                     parsed_column_as_date = dateparser.parse(column_name, settings={'STRICT_PARSING': True})
                     if parsed_column_as_date:
                         # column_name has been parsed as a valid date, it is a candidate for fold
-                        result.append(i)
+                        result.append(index)
                 except:
                     # something went wrong, doesn't matter what
                     pass
@@ -151,8 +151,8 @@ class FoldColumns(object):
 
         non_foldable_columns = list(set(orig_columns) - set(columns_to_fold))
 
-        for i in df.index.values:
-            row = df.iloc[i]
+        for i in self.df.index.values:
+            row = self.df.iloc[i]
             for column_to_fold in columns_to_fold:
 
                 d1 = {}
