@@ -74,7 +74,7 @@ class FoldColumns(object):
                 return False
         return True
 
-    def detect_columns_to_fold(self):
+    def detect(self):
         """
         call both prefix and date method and return  a combined list
         :return: list of list of columns to fold
@@ -130,14 +130,14 @@ class FoldColumns(object):
                     pass
         return result
 
-    def fold(self):
-        columns_list_to_fold = self.detect_columns_to_fold()
+    def perform(self, columns_list_to_fold):
         df = None
         for columns_to_fold in columns_list_to_fold:
             df = self.fold_columns(columns_to_fold)
         return df if df is not None else self.df
 
-    def fold_columns(self, columns_to_fold):
+    def fold_columns(self, columns_to_fold_all):
+        columns_to_fold = list(set(columns_to_fold_all) - set(self.ignore_list))
         if len(columns_to_fold) == 0:
             # nothing to fold, return the original
             return df
@@ -147,12 +147,14 @@ class FoldColumns(object):
         new_column_name = '{}_{}'.format(self.df.columns[columns_to_fold[0]], new_column_suffix)
         new_rows_list = list()
         orig_columns = list(range(len(self.column_names)))
+        # subtract ignore list from columns_to_fold
 
         non_foldable_columns = list(set(orig_columns) - set(columns_to_fold))
 
         for i in df.index.values:
             row = df.iloc[i]
             for column_to_fold in columns_to_fold:
+
                 d1 = {}
                 for nfc in non_foldable_columns:
                     d1[self.column_names[nfc]] = row[self.column_names[nfc]]
@@ -171,7 +173,7 @@ if __name__ == '__main__':
     # print(check_if_substring('dft', ['sfsdft', 'serers', 'sssss', 'dfe']))
     df = pd.read_csv(input_file)
     # process_column_prefix(df)
-    fc = FoldColumns(df)
-
-    print(fc.fold())
+    fc = FoldColumns(df, ignore_list=[])
+    c_list = fc.detect()
+    print(fc.perform(c_list))
     # f = detect_columns_to_fold(df)
