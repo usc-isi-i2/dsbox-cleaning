@@ -5,187 +5,173 @@ from itertools import chain
 import dateparser
 import json
 
-
-def process(df):
-    """
-    this function will actually fold the dataframe if there are any foldable columns discovered
-    :param df: input dataframe
-    :return: folded df
-    """
-    columns_names = list(df)
-    foldable_columns = columns_to_fold(columns_names)
-    """
-    lets handle both these cases, first we are going to handle the dates part as more often than not its the sure 
-    shot case
-    """
-    if len(foldable_columns['date_as_column_candidates']) > 0:
-        return fold_columns(df, foldable_columns['date_as_column_candidates'], 'date')
-
-    column_name_candidates = foldable_columns['column_name_candidates']
-    for key in list(column_name_candidates):
-        df = fold_columns(df, column_name_candidates[key], key.strip())
-
-    return df
+# add more later if needed
+special_characters = ['-', '_', ' ']
 
 
-def process_column_prefix(df):
-    """
-    Detect foldable columns based on common prefix
-    :param df: input dataframe
-    :return: folded dataframe if applicable otherwise input datafram
-    """
-    columns_names = list(df)
-    foldable_columns = columns_to_fold(columns_names)
+class FoldColumns(object):
+    def __init__(self, df, ignore_list=list()):
+        self.df = df
+        self.column_names = list(df)
+        self.prefix_dict = self.create_prefix_dict(self.column_names)
+        self.ignore_list = ignore_list
 
-    column_name_candidates = foldable_columns['column_name_candidates']
-    for key in list(column_name_candidates):
-        df = fold_columns(df, column_name_candidates[key], key.strip())
+    @staticmethod
+    def has_numbers(str):
+        return any(char.isdigit() for char in str)
 
-    return df
+    @staticmethod
+    def has_numbers_or_special_characters(str):
+        return any(char.isdigit() or char in special_characters for char in str)
 
+    def create_prefix_dict(self, column_names):
+        """
+        This function will create a dictionary with varying length prefixes of all column names
+        :param column_names: the list of input column names
+        :return: a dict: ['a','bc'] -> {'a':[0], 'b': [1], 'bc':[1]}
+        """
+        prefix_dict = {}
+        for c in range(len(column_names)):
+            column_name = column_names[c]
+            # only take into consideration those columns which have a special character or numbers in it
+            if self.has_numbers_or_special_characters(column_name):
+                for i in range(len(column_name) + 1):
+                    prefix = column_name[0:i]
+                    if prefix != '' and not self.has_numbers(prefix) and len(prefix) > 1:
+                        if column_name[0:i] not in prefix_dict:
+                            prefix_dict[column_name[0:i]] = []
+                        prefix_dict[column_name[0:i]].append(c)
 
-def process_column_date(df):
-    """
-    Detect foldable columns if they are valid dates
-    :param df: input data frame
-    :return: folded data frame if applicable otherwise input datafram
-    """
-    columns_names = list(df)
-    foldable_columns = columns_to_fold(columns_names)
+        for key in list(prefix_dict):
+            if len(prefix_dict[key]) <= 1:
+                del prefix_dict[key]
+        return prefix_dict
 
-    if len(foldable_columns['date_as_column_candidates']) > 0:
-        return fold_columns(df, foldable_columns['date_as_column_candidates'], 'date')
-    return df
+    def check_if_seen(self, str1, seen_prefix_dict):
+        """
+        This function returns true if str1 is a subtring of any string in str_list and that string startswith str1
+        :param str1: string to be checked
+        :param str_lst: input list of strings
+        :return: True if str1 is a substring of any of the strings else False
+        """
+        column_indices_seen = []
+        for str in list(seen_prefix_dict):
+            if str.startswith(str1):
+                column_indices_seen.extend(seen_prefix_dict[str])
 
+        if len(column_indices_seen) == 0:
+            return False
 
-def fold_columns(df, columns_to_fold, new_column_name):
-    if len(columns_to_fold) == 0:
-        # nothing to fold, return the original
-        return df
+        if len(list(set(self.prefix_dict[str1]) - set(column_indices_seen))) > 0:
+            self.prefix_dict[str1] = list(set(self.prefix_dict[str1]) - set(column_indices_seen))
+            return False
+        return True
 
-    new_column_name = new_column_name.strip()
-    new_rows_list = list()
-    orig_columns = df.columns.values
+    @staticmethod
+    def check_if_numbers_contiguous(indices_list):
+        for i in range(len(indices_list) - 1):
+            if indices_list[i] != (indices_list[i + 1] - 1):
+                return False
+        return True
 
-    non_foldable_columns = list(set(orig_columns) - set(columns_to_fold))
+    def detect_columns_to_fold(self):
+        """
+        call both prefix and date method and return  a combined list
+        :return: list of list of columns to fold
+        """
+        prefix_lst = self.detect_columns_to_fold_prefix()
+        dates_list = self.detect_columns_to_fold_dates()
+        c_list = []
+        if len(prefix_lst) > 0:
+            c_list.extend(prefix_lst)
 
-    for i in df.index.values:
-        row = df.iloc[i]
-        for column_to_fold in columns_to_fold:
-            d1 = {}
-            for nfc in non_foldable_columns:
-                d1[nfc] = row[nfc]
+        if len(dates_list) > 0:
+            c_list.extend(dates_list)
+        return c_list
 
-            d1[new_column_name] = column_to_fold
-            d1['{}_value'.format(new_column_name)] = row[column_to_fold]
-            new_rows_list.append(d1)
+    def detect_columns_to_fold_prefix(self):
+        sorted_prefix_lst = sorted(self.prefix_dict, key=len, reverse=True)
+        valid_seen_prefixes = dict()
 
-    new_df = pd.DataFrame(new_rows_list)
-    print(new_df)
-    return new_df
+        for prefix in sorted_prefix_lst:
+            if not self.check_if_seen(prefix, valid_seen_prefixes):
+                if self.check_if_numbers_contiguous(self.prefix_dict[prefix]):
+                    valid_seen_prefixes[prefix] = self.prefix_dict[prefix]
 
+        for p in list(self.prefix_dict):
+            if p not in valid_seen_prefixes:
+                del self.prefix_dict[p]
 
-def columns_to_fold(columns_names):
-    result = dict()
-    result['column_name_candidates'] = based_on_same_prefix(columns_names)
-    result['date_as_column_candidates'] = column_names_dates(columns_names)
+        columns_list = []
+        for key in list(self.prefix_dict):
+            columns_list.extend(self.prefix_dict[key])
 
-    return result
+        return [self.prefix_dict[key] for key in list(self.prefix_dict)]
 
+    def detect_columns_to_fold_dates(self):
+        """
+        This function will return a list of column names if they are dates
+        :return: a subset of column_names
+        """
+        result = list()
+        for index in range(len(self.column_names)):
+            column_name = self.column_names[index]
+            # do not want 12 to be parsed as date, minimum length should be 4 (year in YYYY format)
+            if len(column_name) >= 4:
+                try:
+                    # for now strict parsing is true, otherwise it'll parse 'year' as valid date.
+                    # in future, we'll have to specify date formats
+                    parsed_column_as_date = dateparser.parse(column_name, settings={'STRICT_PARSING': True})
+                    if parsed_column_as_date:
+                        # column_name has been parsed as a valid date, it is a candidate for fold
+                        result.append(i)
+                except:
+                    # something went wrong, doesn't matter what
+                    pass
+        return result
 
-def all_equal(iterable):
-    # copied from itertools documentation
-    """ Returns True if all the elements are equal to each other"""
-    g = groupby(iterable)
-    return next(g, True) and not next(g, False)
+    def fold(self):
+        columns_list_to_fold = self.detect_columns_to_fold()
+        df = None
+        for columns_to_fold in columns_list_to_fold:
+            df = self.fold_columns(columns_to_fold)
+        return df if df is not None else self.df
 
+    def fold_columns(self, columns_to_fold):
+        if len(columns_to_fold) == 0:
+            # nothing to fold, return the original
+            return df
+        new_column_suffix = ''
+        for c in columns_to_fold:
+            new_column_suffix += '_' + str(c)
+        new_column_name = '{}_{}'.format(self.df.columns[columns_to_fold[0]], new_column_suffix)
+        new_rows_list = list()
+        orig_columns = list(range(len(self.column_names)))
 
-def powerset(iterable):
-    # copied from itertools documentation
-    "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
-    s = list(iterable)
-    return chain.from_iterable(itertools.combinations(s, r) for r in range(len(s) + 1))
+        non_foldable_columns = list(set(orig_columns) - set(columns_to_fold))
 
+        for i in df.index.values:
+            row = df.iloc[i]
+            for column_to_fold in columns_to_fold:
+                d1 = {}
+                for nfc in non_foldable_columns:
+                    d1[self.column_names[nfc]] = row[self.column_names[nfc]]
 
-def based_on_same_prefix(column_names, threshold=0.5):
-    """
-    This function will return a list of prefixes which are candidates for "folding".
-    It does the following:
-        - separates out column names based on the first character of the column name and created a dictionary with
-            first character as the key
-        - for each entry in the dictionary, create a powerset of the column names and for each subset do the following
-        - find a common prefix as described below
+                d1[new_column_name] = self.column_names[column_to_fold]
+                d1['{}_value'.format(new_column_name)] = row[column_to_fold]
+                new_rows_list.append(d1)
 
-    :param column_names: a list of input column names
-    :param threshold: this is the minimum ratio of the prefix found to the max length of the candidate column names
-    :return: a list of folding candidate column names
-    """
-    if len(column_names) <= 1:
-        return ""
-
-    column_dict = dict()
-    result_columns = dict()
-    for i in range(0, len(column_names)):
-        s_char = column_names[i][0]
-        if s_char not in column_dict:
-            column_dict[s_char] = list()
-        column_dict[s_char].append(column_names[i])
-
-    for r in list(column_dict):
-        if len(column_dict[r]) > 1:
-            column_powerset = powerset(column_dict[r])
-            for column_subset in column_powerset:
-                if len(column_subset) > 0:
-                    result = set()
-                    prefix = ''
-                    common_prefixes = common_prefix(list(column_subset))
-                    for c in common_prefixes:
-                        # c in this case is a tuple, example: ('t', 't')   get the first value
-                        prefix += c[0]
-
-                    if prefix.strip() != '':
-                        candidate_column_names = [x for x in column_names if x.startswith(prefix)]
-                        # ignore the candidates where prefix is the whole column name
-                        if len(candidate_column_names) > 1:
-                            max_length = max([len(x) for x in candidate_column_names])
-                            if float(len(prefix)) / float(max_length) >= threshold:
-                                for c in candidate_column_names:
-                                    result.add(c)
-                        if len(result) > 0:
-                            if prefix not in result_columns:
-                                result_columns[prefix] = list(result)
-    return result_columns
-
-
-def column_names_dates(column_names):
-    """
-    This function will return a list of column names if they are dates
-    :param column_names:
-    :return: a subset of column_names
-    """
-    result = list()
-    for column_name in column_names:
-        # do not want 12 to be parsed as date, minimum length should be 4 (year in YYYY format)
-        if len(column_name) >= 4:
-            try:
-                # for now strict parsing is true, otherwise it'll parse 'year' as valid date.
-                # in future, we'll have to specify date formats
-                parsed_column_as_date = dateparser.parse(column_name, settings={'STRICT_PARSING': True})
-                if parsed_column_as_date:
-                    # column_name has been parsed as a valid date, it is a candidate for fold
-                    result.append(column_name)
-            except:
-                # something went wrong, doesn't matter what
-                pass
-    return result
-
-
-def common_prefix(its):
-    """returns list of tuples of common characters"""
-    yield from itertools.takewhile(all_equal, zip(*its))
+        new_df = pd.DataFrame(new_rows_list)
+        return new_df
 
 
 if __name__ == '__main__':
+    # input_file = '/tmp/sample.csv'
     input_file = 'data_sample/sample1.csv'
+    # print(check_if_substring('dft', ['sfsdft', 'serers', 'sssss', 'dfe']))
     df = pd.read_csv(input_file)
-    process(df)
+    # process_column_prefix(df)
+    fc = FoldColumns(df)
+
+    print(fc.fold())
+    # f = detect_columns_to_fold(df)
