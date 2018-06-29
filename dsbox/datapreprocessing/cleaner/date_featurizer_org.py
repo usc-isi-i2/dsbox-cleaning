@@ -16,6 +16,7 @@ class DateFeaturizer:
 		create_day=True,
 		create_day_of_week=True,
 		create_epoch=True,
+		drop_original_column=True,
 		extractor_settings=None):
 
 		"""
@@ -23,6 +24,7 @@ class DateFeaturizer:
 		min_threshold: [0.0 to 1.0] Fraction of values required to be parsed as dates in order to featurize the
 						column
 		create_<date_resolution>: [Bool] Whether to create the column or not (global)
+		drop_original_column: [Bool] Whether to drop the original column after featurizing or not
 		extractor_settings: [Dict] Extractor settings for the date parser (see dependencies/date_extractor.py)
 		"""
 		self.df = dataframe
@@ -32,12 +34,13 @@ class DateFeaturizer:
 		self.create_day=create_day
 		self.create_day_of_week=create_day_of_week
 		self.create_epoch=create_epoch
+		self.drop_original_column = drop_original_column
 		if extractor_settings is not None:
 			self.extractor_settings=extractor_settings
 		else:
 			self.extractor_settings={}
 
-		self._samples_to_print = []
+		self._samples_to_print = []  # Column names to print as a sample 
 		self.date_extractor = DateExtractor()
 
 		# Original settings saved, do not modify - readonly
@@ -71,23 +74,27 @@ class DateFeaturizer:
 			self.create_month = self._crM
 			self.create_year = self._crY
 		
-		self.df = self.df.drop(self.df.columns[column_indices], axis=1)
+		if self.drop_original_column:
+			self.df = self.df.drop(self.df.columns[column_indices], axis=1)
+
 		return {
 			'df':self.df,
 			'date_columns':self._samples_to_print
 		}
 	
-	def detect_date_columns(self, sampled_df):
+	def detect_date_columns(self, sampled_df, except_list=[]):
 		"""
 		Detects date columns in the sampled_df and returns a list of column indices which have dates
 
 		params:
 		- sampled_df [DataFrame]: a sample of rows from the original dataframe for detecting dates
+		- except_list [List]: list of column indices to be ignored
 		"""
 		date_cols = []
 		for idx in range(len(sampled_df.columns)):
-			if self._parse_column(sampled_df,idx) is not None:
-				date_cols.append(idx)
+			if idx not in except_list:
+				if self._parse_column(sampled_df,idx) is not None:
+					date_cols.append(idx)
 		return date_cols
 
 	def _featurize_column(self, values, idx):
@@ -123,19 +130,19 @@ class DateFeaturizer:
 				epochs.append(epoch)
 		if self.create_year:
 			self.df[column_label+"_year"] = years
-			self._samples_to_print.append(column_label+"_year")
+			self._samples_to_print.append(self.df.columns.get_loc(column_label+"_year")-1)
 		if self.create_month:
 			self.df[column_label+"_month"] = months
-			self._samples_to_print.append(column_label+"_month")
+			self._samples_to_print.append(self.df.columns.get_loc(column_label+"_month")-1)
 		if self.create_day:
 			self.df[column_label+"_day"] = days
-			self._samples_to_print.append(column_label+"_day")
+			self._samples_to_print.append(self.df.columns.get_loc(column_label+"_day")-1)
 		if self.create_day_of_week:
 			self.df[column_label+"_day_of_week"] = dows
-			self._samples_to_print.append(column_label+"_day_of_week")
+			self._samples_to_print.append(self.df.columns.get_loc(column_label+"_day_of_week")-1)
 		if self.create_epoch:
 			self.df[column_label+"_epochs"] = epochs
-			self._samples_to_print.append(column_label+"_epochs")
+			self._samples_to_print.append(self.df.columns.get_loc(column_label+"_epochs")-1)
 
 	def _parse_month_range(self, df, idx):
 		pattern = re.compile(self._month_range_pattern)
@@ -299,7 +306,7 @@ class DateFeaturizer:
 			N = 20
 		else:
 			N = self.df.shape[0]
-		self.df[self._samples_to_print] \
+		self.df.iloc[:,self._samples_to_print] \
 			.sample(n=N) \
 			.to_csv(input_filename+"_sample.csv")
 	
