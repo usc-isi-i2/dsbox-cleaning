@@ -16,7 +16,7 @@ class PhoneParser:
         self.df = df
         self.columns_ignore = columns_ignore
 
-    def detection(self):
+    def detect(self):
         all_indices = range(0, self.df.shape[1])
         require_checking = \
             list(set(all_indices).difference(set(self.columns_ignore)))
@@ -27,7 +27,7 @@ class PhoneParser:
                 extends.append(one_column)
         return extends
 
-    def performing(self, columns_perform):
+    def perform(self, columns_perform):
         extends = {}
         for one_column in columns_perform:
             result = self.phone_parser(self.df.iloc[:, one_column])
@@ -92,7 +92,7 @@ class PunctuationSplitter:
         self.num_threshold = num_threshold
         self.common_threshold = common_threshold
 
-    def detection(self):
+    def detect(self):
         all_indices = range(0, self.df.shape[1])
         require_checking = \
             list(set(all_indices).difference(set(self.columns_ignore)))
@@ -106,7 +106,7 @@ class PunctuationSplitter:
                     extends.append(one_column)
         return extends
 
-    def performing(self, columns_perform):
+    def perform(self, columns_perform):
         extends = {}
         for one_column in columns_perform:
             common_list = self.find_common(self.df.iloc[:, one_column])
@@ -214,7 +214,7 @@ class NumAlphaSplitter:
         self.num_threshold = num_threshold
         self.num_alpha_threshold = num_alpha_threshold
 
-    def detection(self):
+    def detect(self):
         all_indices = range(0, self.df.shape[1])
         require_checking = \
             list(set(all_indices).difference(set(self.columns_ignore)))
@@ -228,7 +228,7 @@ class NumAlphaSplitter:
                     extends.append(one_column)
         return extends
 
-    def performing(self, columns_perform):
+    def perform(self, columns_perform):
         extends = {}
         for one_column in columns_perform:
             result = self.num_alpha_splitter(self.df.iloc[:,
@@ -296,18 +296,18 @@ if __name__ == '__main__':
 
     print(df[:5])
     phone_parser = PhoneParser(df, columns_ignore=[6])
-    phone_list = phone_parser.detection()
-    phone_result = phone_parser.performing(phone_list)
+    phone_list = phone_parser.detect()
+    phone_result = phone_parser.perform(phone_list)
     print(phone_result[:5])
 
-    punc_splitter = PunctuationSplitter(df, columns_ignore=[3, 4, 5], num_threshold=0.1, common_threshold=0.9)
-    punc_list = punc_splitter.detection()
-    punc_result = punc_splitter.performing(punc_list)
+    punc_splitter = PunctuationSplitter(df, columns_ignore=[], num_threshold=0.1, common_threshold=0.9)
+    punc_list = punc_splitter.detect()
+    punc_result = punc_splitter.perform(punc_list)
 
     print(punc_result[:5])
 
-    na_splitter = NumAlphaSplitter(df, columns_ignore=[1, 4, 7], num_threshold=0.1, num_alpha_threshold=0.8)
-    na_list = na_splitter.detection()
-    na_result = na_splitter.performing(na_list)
+    na_splitter = NumAlphaSplitter(df, columns_ignore=[], num_threshold=0.1, num_alpha_threshold=0.8)
+    na_list = na_splitter.detect()
+    na_result = na_splitter.perform(na_list)
 
     print(na_result[:5])

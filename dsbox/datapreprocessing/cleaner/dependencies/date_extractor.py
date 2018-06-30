@@ -9,8 +9,8 @@ import datetime, re, calendar, pytz
 from tzlocal import get_localzone
 from dateutil.relativedelta import relativedelta
 
-from dependencies.date_regex_generator import DateRegexGenerator
-from dependencies.constants import units, singleton_regex, \
+from dsbox.datapreprocessing.cleaner.dependencies.date_regex_generator import DateRegexGenerator
+from dsbox.datapreprocessing.cleaner.dependencies.constants import units, singleton_regex, \
     spacy_rules, directions, num_to_digit, foreign_to_english, language_date_order, \
     day_of_week_to_number, possible_illegal
 
