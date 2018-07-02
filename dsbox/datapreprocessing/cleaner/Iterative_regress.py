@@ -11,6 +11,7 @@ import typing
 from d3m import container
 from d3m.metadata import hyperparams, params
 from d3m.metadata.hyperparams import UniformBool
+import common_primitives.utils as utils
 
 from . import config
 
@@ -135,7 +136,7 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
             return CallResult(None, self._has_finished, self._iterations_done)
 
         if (timeout is None):
-            timeout = math.inf
+            timeout = 2**31-1
         if (iterations is None):
             self._iterations_done = True
             iterations = 30
@@ -236,9 +237,18 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
         # else:
         #     is_eval = True
 
+        # indices for numeric attribute columns only
+        attribute = utils.list_columns_with_semantic_types(
+            data.metadata, ['https://metadata.datadrivendiscovery.org/types/Attribute'])
+        numeric = utils.list_columns_with_semantic_types(
+            data.metadata, ['http://schema.org/Integer', 'http://schema.org/Float'])
+        numeric = [x for x in numeric if x in attribute]
+
         keys = data.keys()
         missing_col_id = []
         data = mvp.df2np(data, missing_col_id, self._verbose)
+
+        missing_col_id = [x for x in missing_col_id if x in numeric]
 
         missing_col_data = data[:, missing_col_id]
         imputed_data = np.zeros([data.shape[0], len(missing_col_id)])

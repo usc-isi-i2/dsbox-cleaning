@@ -10,6 +10,7 @@ import typing
 from d3m import container
 from d3m.metadata import hyperparams, params
 from d3m.metadata.hyperparams import UniformBool
+import common_primitives.utils as utils
 
 from . import config
 
@@ -186,4 +187,35 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
 
 
     def __get_fitted(self):
-        self.mean_values = self._train_x.mean(axis=0).to_dict()
+        attribute = utils.list_columns_with_semantic_types(
+            self._train_x.metadata, ['https://metadata.datadrivendiscovery.org/types/Attribute'])
+
+        # Mean for numerical columns
+        numeric = utils.list_columns_with_semantic_types(
+            self._train_x.metadata, ['http://schema.org/Integer', 'http://schema.org/Float'])
+        numeric = [x for x in numeric if x in attribute]
+        self.mean_values = self._train_x.iloc[:, numeric].mean(axis=0).to_dict()
+        for name in self.mean_values.keys():
+            if pd.isnull(self.mean_values[name]):
+                self.mean_values[name] = 0.0
+
+        # Mode for categorical columns
+        categoric = utils.list_columns_with_semantic_types(
+            self._train_x.metadata, ['https://metadata.datadrivendiscovery.org/types/CategoricalData',
+                                     'http://schema.org/Boolean'])
+        categoric = [x for x in categoric if x in attribute]
+        mode_values = self._train_x.iloc[:, categoric].mode(axis=0).iloc[0].to_dict()
+        for name in mode_values.keys():
+            if pd.isnull(mode_values[name]):
+                # mode is nan
+                rest = self._train_x[name].dropna()
+                if rest.shape[0] == 0:
+                    # every value is nan
+                    mode = 0
+                else:
+                    mode = rest.mode().iloc[0]
+                mode_values[name] = mode
+        self.mean_values.update(mode_values)
+        import pprint
+        print('mean imputation:')
+        pprint.pprint(self.mean_values)

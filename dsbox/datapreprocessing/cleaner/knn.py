@@ -105,7 +105,7 @@ class KNNImputation(TransformerPrimitiveBase[Input, Output, KnnHyperparameter]):
         """
 
         if (timeout is None):
-            timeout = math.inf
+            timeout = 2**31-1
 
         if isinstance(inputs, pd.DataFrame):
             data = inputs.copy()

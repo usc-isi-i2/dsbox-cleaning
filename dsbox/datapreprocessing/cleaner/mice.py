@@ -95,7 +95,7 @@ class MICE(TransformerPrimitiveBase[Input, Output, MiceHyperparameter]):
         """
 
         if (timeout is None):
-            timeout = math.inf
+            timeout = 2**31-1
         if (iterations is None):
             iterations = 100   # default value for mice
 

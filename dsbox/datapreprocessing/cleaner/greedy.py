@@ -11,6 +11,7 @@ import typing
 from d3m import container
 from d3m.metadata import hyperparams, params
 from d3m.metadata.hyperparams import UniformBool
+import common_primitives.utils as utils
 
 from . import config
 
@@ -141,7 +142,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
             return CallResult(None, self._has_finished, self._iterations_done)
 
         if (timeout is None):
-            timeout = math.inf
+            timeout = 2**31-1
 
         # setup the timeout
         with stopit.ThreadingTimeout(timeout) as to_ctx_mrg:
@@ -202,7 +203,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
             raise ValueError("Calling produce before fitting.")
 
         if (timeout is None):
-            timeout = math.inf
+            timeout = 2**31-1
 
         data = inputs.copy()
 
@@ -224,6 +225,8 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
             self._has_finished = True
             self._iterations_done = True
             value = pd.DataFrame(data_clean, index, keys)
+            value = container.DataFrame(value)
+            value.metadata = data.metadata
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
             print("Timed Out...")
             self._is_fitted = False
@@ -265,10 +268,20 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
         running greedy search for imputation combinations
         """
 
+        # indices for numeric attribute columns only
+        attribute = utils.list_columns_with_semantic_types(
+            data.metadata, ['https://metadata.datadrivendiscovery.org/types/Attribute'])
+        numeric = utils.list_columns_with_semantic_types(
+            data.metadata, ['http://schema.org/Integer', 'http://schema.org/Float'])
+        numeric = [x for x in numeric if x in attribute]
+
         col_names = data.keys()
         # 1. convert to np array and get missing value column id
         missing_col_id = []
         data = mvp.df2np(data, missing_col_id, self._verbose)
+
+        missing_col_id = [x for x in missing_col_id if x in numeric]
+
         label = label.values
 
         # init for the permutation
