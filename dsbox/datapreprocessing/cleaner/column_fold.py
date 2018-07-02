@@ -1,20 +1,65 @@
 import pandas as pd
-import itertools
-from itertools import groupby
-from itertools import chain
 import dateparser
-import json
+import d3m
+
+from typing import Dict
+
+from d3m.primitive_interfaces.base import CallResult
+from d3m.metadata import hyperparams, params
+from d3m.primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
+from . import config
 
 # add more later if needed
+
 special_characters = ['-', '_', ' ']
 
+Input = d3m.container.DataFrame
+Output = d3m.container.DataFrame
 
-class FoldColumns(object):
-    def __init__(self, df, ignore_list=list()):
-        self.df = df
-        self.column_names = list(df)
+
+class FoldParams(params.Params):
+    mapping: Dict
+
+
+class FoldHyperparameter(hyperparams.Hyperparams):
+    pass
+
+
+class FoldColumns(UnsupervisedLearnerPrimitiveBase[Input, Output, FoldParams, FoldHyperparameter]):
+
+    # TODO update metadata
+    # metadata = hyperparams.base.PrimitiveMetadata({
+    #     "id": "18f0bb42-6350-3753-8f2d-d1c3da70f279",
+    #     "version": config.VERSION,
+    #     "name": "ISI DSBox Data Encoder",
+    #     "description": "Encode data, such as one-hot encoding for categorical data",
+    #     "python_path": "d3m.primitives.dsbox.Encoder",
+    #     "primitive_family": "DATA_CLEANING",
+    #     "algorithm_types": ["ENCODE_ONE_HOT"],  # !!!! Need to submit algorithm type "Imputation"
+    #     "source": {
+    #         "name": config.D3M_PERFORMER_TEAM,
+    #         "uris": [config.REPOSITORY]
+    #     },
+    #     "keywords": ["preprocessing", "encoding"],
+    #     "installation": [config.INSTALLATION],
+    # })
+
+    def __init__(self, ignore_list=list()):
+        self.df: Input = None
+        self.column_names = list(self.df) if self.df is not None else []
         self.prefix_dict = self.create_prefix_dict(self.column_names)
         self.ignore_list = ignore_list
+        self._mapping: Dict = {}
+        self._fitted = False
+
+    def get_params(self) -> FoldParams:
+        if not self._fitted:
+            raise ValueError("FoldColumns: Fit not performed.")
+        return FoldParams(mapping=self._mapping)
+
+    def set_params(self, *, params: FoldParams) -> None:
+        self._fitted = True
+        self._mapping = params['mapping']
 
     @staticmethod
     def has_numbers(str):
@@ -74,7 +119,7 @@ class FoldColumns(object):
                 return False
         return True
 
-    def detect(self):
+    def fit(self, *, timeout: float = None, iterations: int = None) -> None:
         """
         call both prefix and date method and return  a combined list
         :return: list of list of columns to fold
@@ -87,7 +132,8 @@ class FoldColumns(object):
 
         if len(dates_list) > 0:
             c_list.extend(dates_list)
-        return c_list
+        self._mapping = {'foldable_columns': c_list}
+        self._fitted = True
 
     def detect_columns_to_fold_prefix(self):
         sorted_prefix_lst = sorted(self.prefix_dict, key=len, reverse=True)
@@ -130,11 +176,15 @@ class FoldColumns(object):
                     pass
         return result
 
-    def perform(self, columns_list_to_fold):
+    def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> CallResult[Output]:
+        columns_list_to_fold = self._mapping.get('foldable_columns', [])
+        if len(columns_list_to_fold) == 0:
+            return CallResult(self.df, True, 1)
+
         df = None
         for columns_to_fold in columns_list_to_fold:
             df = self.fold_columns(columns_to_fold)
-        return df if df is not None else self.df
+        return CallResult(df, True, 1) if df is not None else CallResult(self.df, True, 1)
 
     def fold_columns(self, columns_to_fold_all):
         columns_to_fold = list(set(columns_to_fold_all) - set(self.ignore_list))
