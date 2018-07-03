@@ -9,7 +9,6 @@ from dsbox.datapreprocessing.cleaner.dependencies.date_extractor import DateExtr
 import d3m.metadata.base as mbase
 
 
-
 class DateFeaturizerOrg:
 
     def __init__(self, dataframe,
@@ -19,7 +18,7 @@ class DateFeaturizerOrg:
                  create_day=True,
                  create_day_of_week=True,
                  create_epoch=True,
-                 drop_original_column=True,
+                 drop_original_column=False,
                  extractor_settings=None):
 
         """

@@ -1,4 +1,4 @@
-from dependencies.constants import singleton_regex, units
+from dsbox.datapreprocessing.cleaner.dependencies.constants import singleton_regex, units
 
 
 class DateRegexGenerator:
