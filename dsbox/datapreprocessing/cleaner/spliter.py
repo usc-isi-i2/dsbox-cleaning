@@ -4,6 +4,35 @@ import re
 import numpy as np
 import os
 import pandas as pd
+import d3m.metadata.base as mbase
+
+
+def update_type(extends, df_origin):
+    new_df = df_origin
+    indices = list()
+    for key in extends:
+        new_df[key] = extends[key]
+        indices.append(new_df.columns.get_loc(key))
+    for idx in indices:
+        old_metadata = dict(new_df.metadata.query((mbase.ALL_ELEMENTS, idx)))
+
+        old_metadata['semantic_types'] = ("https://metadata.datadrivendiscovery.org/types/Attribute",)
+        numerics = pd.to_numeric(new_df.iloc[:, idx], errors='coerce')
+        length = numerics.shape[0]
+        nans = numerics.isnull().sum()
+
+        if nans/length > 0.9:
+            old_metadata['semantic_types'] += ("http://schema.org/Text",)
+        else:
+            intcheck = (numerics%1) == 0
+            if np.sum(intcheck)/length > 0.9:
+                old_metadata['semantic_types'] += ("http://schema.org/Integer",)
+            else:
+                old_metadata['semantic_types'] += ("http://schema.org/Float",)
+
+        new_df.metadata = new_df.metadata.update((mbase.ALL_ELEMENTS, idx), old_metadata)
+
+    return new_df
 
 
 class PhoneParser:
@@ -33,9 +62,7 @@ class PhoneParser:
             result = self.phone_parser(self.df.iloc[:, one_column])
             extends[self.df.columns[one_column] + '_phone'] = result
 
-        new_df = self.df
-        for key in extends:
-            new_df[key] = extends[key]
+        new_df = update_type(extends, self.df)
 
         return new_df
 
@@ -70,7 +97,7 @@ class PhoneParser:
         return new_rows
 
 
-class PunctuationSplitter:
+class PunctuationParser:
 
     def __init__(
             self,
@@ -118,9 +145,7 @@ class PunctuationSplitter:
                         + str(count)] = one
                 count += 1
 
-        new_df = self.df
-        for key in extends:
-            new_df[key] = extends[key]
+        new_df = update_type(extends, self.df)
 
         return new_df
 
@@ -191,7 +216,7 @@ class PunctuationSplitter:
         return common_list
 
 
-class NumAlphaSplitter:
+class NumAlphaParser:
 
     def __init__(
             self,
@@ -239,9 +264,7 @@ class NumAlphaSplitter:
                         + str(count)] = one
                 count += 1
 
-        new_df = self.df
-        for key in extends:
-            new_df[key] = extends[key]
+        new_df = update_type(extends, self.df)
 
         return new_df
 
@@ -300,13 +323,13 @@ if __name__ == '__main__':
     phone_result = phone_parser.perform(phone_list)
     print(phone_result[:5])
 
-    punc_splitter = PunctuationSplitter(df, columns_ignore=[], num_threshold=0.1, common_threshold=0.9)
+    punc_splitter = PunctuationParser(df, columns_ignore=[], num_threshold=0.1, common_threshold=0.9)
     punc_list = punc_splitter.detect()
     punc_result = punc_splitter.perform(punc_list)
 
     print(punc_result[:5])
 
-    na_splitter = NumAlphaSplitter(df, columns_ignore=[], num_threshold=0.1, num_alpha_threshold=0.8)
+    na_splitter = NumAlphaParser(df, columns_ignore=[], num_threshold=0.1, num_alpha_threshold=0.8)
     na_list = na_splitter.detect()
     na_result = na_splitter.perform(na_list)
 
