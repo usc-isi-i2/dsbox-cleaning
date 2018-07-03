@@ -3,11 +3,14 @@ from datetime import datetime
 import pandas as pd
 from warnings import warn
 import re
+import numpy as np
 
 from dsbox.datapreprocessing.cleaner.dependencies.date_extractor import DateExtractor
+import d3m.metadata.base as mbase
 
 
-class DateFeaturizer:
+
+class DateFeaturizerOrg:
 
     def __init__(self, dataframe,
                  min_threshold=0.9,
@@ -131,18 +134,23 @@ class DateFeaturizer:
                 epochs.append(epoch)
         if self.create_year:
             self.df[column_label + "_year"] = years
+            self.update_types(column_label + "_year")
             self._samples_to_print.append(self.df.columns.get_loc(column_label + "_year") - 1)
         if self.create_month:
             self.df[column_label + "_month"] = months
+            self.update_types(column_label + "_month")
             self._samples_to_print.append(self.df.columns.get_loc(column_label + "_month") - 1)
         if self.create_day:
             self.df[column_label + "_day"] = days
+            self.update_types(column_label + "_day")
             self._samples_to_print.append(self.df.columns.get_loc(column_label + "_day") - 1)
         if self.create_day_of_week:
             self.df[column_label + "_day_of_week"] = dows
+            self.update_types(column_label + "_day_of_week")
             self._samples_to_print.append(self.df.columns.get_loc(column_label + "_day_of_week") - 1)
         if self.create_epoch:
             self.df[column_label + "_epochs"] = epochs
+            self.update_types(column_label + "_epochs")
             self._samples_to_print.append(self.df.columns.get_loc(column_label + "_epochs") - 1)
 
     def _parse_month_range(self, df, idx):
@@ -323,3 +331,23 @@ class DateFeaturizer:
 
         # Featurize date columns
         return self.featurize_date_columns(date_cols)
+
+    def update_types(self, col_name):
+        old_metadata = dict(self.df.metadata.query((mbase.ALL_ELEMENTS, self.df.columns.get_loc(col_name))))
+
+        old_metadata['semantic_types'] = ("https://metadata.datadrivendiscovery.org/types/Attribute",)
+        numerics = pd.to_numeric(self.df[col_name], errors='coerce')
+        length = numerics.shape[0]
+        nans = numerics.isnull().sum()
+
+        if nans / length > 0.9:
+            old_metadata['semantic_types'] += ("http://schema.org/Text",)
+        else:
+            intcheck = (numerics % 1) == 0
+            if np.sum(intcheck) / length > 0.9:
+                old_metadata['semantic_types'] += ("http://schema.org/Integer",)
+            else:
+                old_metadata['semantic_types'] += ("http://schema.org/Float",)
+
+        self.df.metadata = self.df.metadata.update((mbase.ALL_ELEMENTS, self.df.columns.get_loc(col_name)), old_metadata)
+
