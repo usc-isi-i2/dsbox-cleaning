@@ -138,7 +138,8 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
                     mapping["punctuation_columns"] = punctuation_cols
 
             self._mapping = mapping
-            self._fitted = True
+
+        self._fitted = True
 
     def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> CallResult[Output]:
         self._input_data_copy = inputs.copy()
