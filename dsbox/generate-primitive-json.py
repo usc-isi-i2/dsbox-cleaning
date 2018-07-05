@@ -26,7 +26,11 @@ PRIMITIVES = [(p, cleaner_config) for p in [
     'Encoder',
     'UnaryEncoder',
     'IQRScaler',
-    'Labler']
+    'DateFeaturizer',
+    'CleaningFeaturizer',
+    'Labler',
+    'Denormalize'
+            ]
               ]
 
 for p, config in PRIMITIVES:
