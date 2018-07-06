@@ -6,8 +6,7 @@ import pandas  # type: ignore
 from d3m import container, utils
 from d3m.metadata import base as metadata_base, hyperparams
 from d3m.primitive_interfaces import base, transformer
-
-import common_primitives
+from . import config
 
 __all__ = ('DenormalizePrimitive',)
 
@@ -39,28 +38,22 @@ class Denormalize(transformer.TransformerPrimitiveBase[Inputs, Outputs, Denormal
     based on known relations between tabular resources. Any resource which can be joined is joined, and other resources
     are discarded.
     """
-
-    metadata = metadata_base.PrimitiveMetadata(
-        {
-            'id': 'f31f8c1f-d1c5-43e5-a4b2-2ae4a761ef2e',
-            'version': '0.2.0',
-            'name': "Denormalize datasets",
-            'python_path': 'd3m.primitives.datasets.Denormalize',
-            'source': {
-               'name': common_primitives.__author__,
-            },
-            'installation': [{
-               'type': metadata_base.PrimitiveInstallationType.PIP,
-               'package_uri': 'git+https://gitlab.com/datadrivendiscovery/common-primitives.git@{git_commit}#egg=common_primitives'.format(
-                   git_commit=utils.current_git_commit(os.path.dirname(__file__)),
-               ),
-            }],
-            'algorithm_types': [
-                metadata_base.PrimitiveAlgorithmType.DATA_DENORMALIZATION,
-            ],
-            'primitive_family': metadata_base.PrimitiveFamily.DATA_TRANSFORMATION,
+    metadata = hyperparams.base.PrimitiveMetadata({
+        "id": "dsbox-denormalize(from d3m)",
+        "version": config.VERSION,
+        "name": "DSBox denormalize",
+        "description": "Adapted from d3m.common_primitives",
+        "python_path": "d3m.primitives.dsbox.Denormalize",
+        "primitive_family": "NORMALIZATION",
+        "algorithm_types": ["DATA_NORMALIZATION"],
+        "source": {
+            "name": config.D3M_PERFORMER_TEAM,
+            "uris": [config.REPOSITORY]
         },
-    )
+        "keywords": ["NORMALIZATION", "Scaler"],
+        "installation": [config.INSTALLATION]
+    })
+
 
     # TODO: Implement support for M2M relations.
     # TODO: This should work recursively. If any resource being pulled brings more foreign key, they should be resolved as well. Without loops of course.
