@@ -30,6 +30,7 @@ setup(name='dsbox-datacleaning',
               'dsbox.MeanImputation = dsbox.datapreprocessing.cleaner:MeanImputation',
               'dsbox.IQRScaler = dsbox.datapreprocessing.cleaner:IQRScaler',
               'dsbox.Labler = dsbox.datapreprocessing.cleaner:Labler',
+              'dsbox.Denormalize = dsbox.datapreprocessing.cleaner:Denormalize',
           ],
       }
 )

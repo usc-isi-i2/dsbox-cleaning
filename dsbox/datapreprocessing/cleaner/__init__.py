@@ -10,6 +10,7 @@ from .IQRScaler import IQRScaler,IQRHyperparams
 from .Labler import Labler,Hyperparams
 from .cleaning_featurizer import CleaningFeaturizer, CleaningFeaturizerHyperparameter
 from .date_featurizer import DateFeaturizer, DataFeaturizerHyperparameter
+from .denormalize import Denormalize, DenormalizeHyperparams
 # __all__ = ['Encoder', 'GreedyImputation', 'IterativeRegressionImputation',
 # 			'MICE', 'KNNImputation', 'MeanImputation', 'KnnHyperparameter',
 #                         'UEncHyperparameter','EncHyperparameter']
@@ -24,7 +25,8 @@ __all__ = ['Encoder', 'EncHyperparameter',
            'IQRScaler','IQRHyperparams',
            'Labler','Hyperparams',
            'CleaningFeaturizer','CleaningFeaturizerHyperparameter',
-           'DateFeaturizer','DataFeaturizerHyperparameter'
+           'DateFeaturizer','DataFeaturizerHyperparameter',
+           'Denormalize','DenormalizeHyperparams',
 ]
 
 
