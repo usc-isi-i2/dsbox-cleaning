@@ -193,7 +193,7 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
             return CallResult(inputs, self._has_finished, self._iterations_done)
 
         if (timeout is None):
-            timeout = math.inf
+            timeout = 2**31-1
         if (iterations is None):
             self._iterations_done = True
             iterations = 30 # only works for iteratively_regre method
@@ -216,6 +216,8 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
             self._is_fitted = True
             self._has_finished = True
             value = pd.DataFrame(data_clean, index, keys)
+            value = container.DataFrame(value)
+            value.metadata = data.metadata
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
             print ("Timed Out...")
             self._is_fitted = False
@@ -248,6 +250,7 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
         missing_col_id = []
         data = mvp.df2np(data, missing_col_id, self._verbose)
 
+        # Impute numerical attributes only
         missing_col_id = [x for x in missing_col_id if x in numeric]
 
         missing_col_data = data[:, missing_col_id]

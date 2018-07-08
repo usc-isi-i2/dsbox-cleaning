@@ -280,6 +280,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
         missing_col_id = []
         data = mvp.df2np(data, missing_col_id, self._verbose)
 
+        # Imput numerical attribute columns only. Should consider imputing category attribute
         missing_col_id = [x for x in missing_col_id if x in numeric]
 
         label = label.values

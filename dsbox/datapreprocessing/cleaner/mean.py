@@ -1,3 +1,6 @@
+import logging
+import typing
+
 import pandas as pd #  type: ignore
 
 from d3m.primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
@@ -5,7 +8,6 @@ from d3m.primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPr
 from d3m.primitive_interfaces.base import CallResult
 import stopit #  type: ignore
 
-import typing
 
 from d3m import container
 from d3m.metadata import hyperparams, params
@@ -17,9 +19,12 @@ from . import config
 Input = container.DataFrame
 Output = container.DataFrame
 
+_logger = logging.getLogger(__name__)
+
 # store the mean value for each column in training data
 class Params(params.Params):
     mean_values : typing.Dict
+    fitted : bool
 
 class MeanHyperparameter(hyperparams.Hyperparams):
     verbose = UniformBool(default=False,
@@ -73,16 +78,13 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
 
 
     def set_params(self, *, params: Params) -> None:
-        self._is_fitted = len(params['mean_values']) > 0
+        self._is_fitted = params['fitted']
         self._has_finished = self._is_fitted
         self._iterations_done = self._is_fitted
         self.mean_values = params['mean_values']
 
     def get_params(self) -> Params:
-        if self._is_fitted:
-            return Params(mean_values=self.mean_values)
-        else:
-            return Params(mean_values=dict())
+        return Params(mean_values=self.mean_values, fitted=self._is_fitted)
 
     def set_training_data(self, *, inputs: Input) -> None:
         """
@@ -94,7 +96,9 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
             The inputs.
         """
         if (pd.isnull(inputs).sum().sum() == 0):    # no missing value exists
-            if self._verbose: print ("Warning: no missing value in train dataset")
+            if self._verbose:
+                print("Warning: no missing value in train dataset")
+                _logger.info('no missing value in train dataset')
 
         self._train_x = inputs
         self._is_fitted = False
@@ -131,11 +135,14 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
             self._is_fitted = True
             self._iterations_done = True
             self._has_finished = True
-        elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
+        else:
+            import pdb
+            pdb.set_trace()
             self._is_fitted = False
             self._iterations_done = False
             self._has_finished = False
 
+        _logger.debug('Fit is_fitted %s', str(self._is_fitted))
         return CallResult(None, self._has_finished, self._iterations_done)
 
     def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> CallResult[Output]:
@@ -181,10 +188,10 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
             self._iterations_done = True
             value = data_clean
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
+            _logger.warn('Produce timed out')
             self._has_finished = False
             self._iterations_done = False
         return CallResult(value, self._has_finished, self._iterations_done)
-
 
     def __get_fitted(self):
         attribute = utils.list_columns_with_semantic_types(
@@ -194,7 +201,10 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
         numeric = utils.list_columns_with_semantic_types(
             self._train_x.metadata, ['http://schema.org/Integer', 'http://schema.org/Float'])
         numeric = [x for x in numeric if x in attribute]
-        self.mean_values = self._train_x.iloc[:, numeric].mean(axis=0).to_dict()
+
+        _logger.debug('numeric columns %s', str(numeric))
+
+        self.mean_values = self._train_x.iloc[:, numeric].astype(float).mean(axis=0).to_dict()
         for name in self.mean_values.keys():
             if pd.isnull(self.mean_values[name]):
                 self.mean_values[name] = 0.0
@@ -204,6 +214,9 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
             self._train_x.metadata, ['https://metadata.datadrivendiscovery.org/types/CategoricalData',
                                      'http://schema.org/Boolean'])
         categoric = [x for x in categoric if x in attribute]
+
+        _logger.debug('categorical columns %s', str(categoric))
+
         mode_values = self._train_x.iloc[:, categoric].mode(axis=0).iloc[0].to_dict()
         for name in mode_values.keys():
             if pd.isnull(mode_values[name]):
@@ -216,6 +229,12 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
                     mode = rest.mode().iloc[0]
                 mode_values[name] = mode
         self.mean_values.update(mode_values)
-        import pprint
-        print('mean imputation:')
-        pprint.pprint(self.mean_values)
+
+        if self._verbose:
+            import pprint
+            print('mean imputation:')
+            pprint.pprint(self.mean_values)
+
+        _logger.debug('Mean values:')
+        for name, value in self.mean_values.items():
+            _logger.debug('  %s %s', name, str(value))
