@@ -22,6 +22,7 @@ Outputs = container.DataFrame
 class Params(params.Params):
     center_: Optional[ndarray]
     scale_: Optional[ndarray]
+    s_cols: List[object]
 
 
 class IQRHyperparams(hyperparams.Hyperparams):
@@ -117,7 +118,7 @@ class IQRScaler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, IQRHy
         if not self._fitted:
             return CallResult(inputs, True, 1)
         temp = pd.DataFrame(self._model.transform(inputs.iloc[:, self._s_cols]))
-        outputs = self._training_data.copy()
+        outputs = inputs.copy()
         for id_index, od_index in zip(self._s_cols, range(temp.shape[1])):
             outputs.iloc[:, id_index] = temp.iloc[:, od_index]
 
@@ -149,9 +150,11 @@ class IQRScaler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, IQRHy
         return Params(
             coef_=getattr(self._model, 'center_', None),
             intercept_=getattr(self._model, 'scale_', None),
-        )
+            s_cols = self._s_cols
+            )
 
     def set_params(self, *, params: Params) -> None:
         self._model.center_ = params['center_']
         self._model.scale_ = params['scale_']
+        self._s_cols = params['s_cols']
         self._fitted = True
