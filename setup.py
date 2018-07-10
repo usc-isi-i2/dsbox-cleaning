@@ -13,19 +13,19 @@ setup(name='dsbox-datacleaning',
       python_requires='>=3.6',
       install_requires=[
           'scipy>=0.19.0', 'numpy>=1.11.1', 'pandas>=0.20.1', 'langdetect>=1.0.7',
-          'scikit-learn>=0.18.0', 'python-dateutil>=2.5.2', 'six>=1.10.0', 
+          'scikit-learn>=0.18.0', 'python-dateutil>=2.5.2', 'six>=1.10.0',
           'fancyimpute', 'stopit'
       ],
       keywords='d3m_primitive',
       entry_points = {
           'd3m.primitives': [
               'dsbox.CleaningFeaturizer = dsbox.datapreprocessing.cleaner:CleaningFeaturizer',
-              'dsbox.Encoder = dsbox.datapreprocessing.cleaner:Encoder',
+#              'dsbox.Encoder = dsbox.datapreprocessing.cleaner:Encoder',
               'dsbox.UnaryEncoder = dsbox.datapreprocessing.cleaner:UnaryEncoder',
               'dsbox.GreedyImputation = dsbox.datapreprocessing.cleaner:GreedyImputation',
               'dsbox.IterativeRegressionImputation = dsbox.datapreprocessing.cleaner:IterativeRegressionImputation',
-              'dsbox.MiceImputation = dsbox.datapreprocessing.cleaner:MICE',
-              'dsbox.KnnImputation = dsbox.datapreprocessing.cleaner:KNNImputation',
+#              'dsbox.MiceImputation = dsbox.datapreprocessing.cleaner:MICE',
+#              'dsbox.KnnImputation = dsbox.datapreprocessing.cleaner:KNNImputation',
               'dsbox.MeanImputation = dsbox.datapreprocessing.cleaner:MeanImputation',
               'dsbox.IQRScaler = dsbox.datapreprocessing.cleaner:IQRScaler',
               'dsbox.Labler = dsbox.datapreprocessing.cleaner:Labler',
@@ -33,7 +33,3 @@ setup(name='dsbox-datacleaning',
           ],
       }
 )
-
-
-
-

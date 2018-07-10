@@ -17,7 +17,7 @@ from .denormalize import Denormalize, DenormalizeHyperparams
 #                         'UEncHyperparameter','EncHyperparameter']
 
 __all__ = ['Encoder', 'EncHyperparameter',
-           'UEncHyperparameter', 'UEncHyperparameter',
+           'UnaryEncoder', 'UEncHyperparameter',
            'KNNImputation',  'KnnHyperparameter',
            'MeanImputation', 'MeanHyperparameter',
            'MICE', 'MiceHyperparameter',
