@@ -1,3 +1,4 @@
+import logging
 
 from d3m import container
 from d3m.metadata import hyperparams, params
@@ -10,6 +11,8 @@ from dsbox.datapreprocessing.cleaner.date_featurizer_org import DateFeaturizerOr
 from dsbox.datapreprocessing.cleaner.spliter import PhoneParser, PunctuationParser, NumAlphaParser
 
 from . import config
+
+_logger = logging.getLogger(__name__)
 
 Input = container.DataFrame
 Output = container.DataFrame
@@ -144,22 +147,66 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
     def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> CallResult[Output]:
         self._input_data_copy = inputs.copy()
         if self._mapping.get("date_columns"):
+            original_cols = self._get_cols(self._input_data_copy)
             dfo = DateFeaturizerOrg(dataframe=self._input_data_copy)
             df = dfo.featurize_date_columns(self._mapping.get("date_columns"))
+            current_cols = self._get_cols(df["df"])
+
+            _logger.info(
+                "Date Featurizer. 'created_columns': '%(created_columns)s'.",
+                {
+                    'created_columns': str(list(set(current_cols).difference(original_cols))),
+                },
+            )
+
             self._input_data_copy = df["df"]
 
         if self._mapping.get("phone_columns"):
+            original_cols = self._get_cols(self._input_data_copy)
             ps = PhoneParser(df=self._input_data_copy)
-            self._input_data_copy = ps.perform(self._mapping.get("phone_columns"))
+            df = ps.perform(self._mapping.get("phone_columns"))
+            current_cols = self._get_cols(df)
+
+            _logger.info(
+                "Phone Featurizer. 'created_columns': '%(created_columns)s'.",
+                {
+                    'created_columns': str(list(set(current_cols).difference(original_cols))),
+                },
+            )
+
+            self._input_data_copy = df
 
         if self._mapping.get("alpha_numeric_columns"):
+            original_cols = self._get_cols(self._input_data_copy)
             nap = NumAlphaParser(df=self._input_data_copy)
-            self._input_data_copy = nap.perform(self._mapping.get("alpha_numeric_columns"))
+            df = nap.perform(self._mapping.get("alpha_numeric_columns"))
+            current_cols = self._get_cols(df)
+
+            _logger.info(
+                "NumAlpha Featurizer. 'created_columns': '%(created_columns)s'.",
+                {
+                    'created_columns': str(list(set(current_cols).difference(original_cols))),
+                },
+            )
+
+            self._input_data_copy = df
 
         if self._mapping.get("punctuation_columns"):
+            original_cols = self._get_cols(self._input_data_copy)
             ps = PunctuationParser(df=self._input_data_copy)
-            self._input_data_copy = ps.perform(self._mapping.get("punctuation_columns"))
+            df = ps.perform(self._mapping.get("punctuation_columns"))
+            current_cols = self._get_cols(df)
 
+            _logger.info(
+                "Punctuation Featurizer. 'created_columns': '%(created_columns)s'.",
+                {
+                    'created_columns': str(list(set(current_cols).difference(original_cols))),
+                },
+            )
+
+            self._input_data_copy = df
+
+        CallResult(self._input_data_copy, True, 1).value.to_csv("~/Desktop/aaa.csv")
         return CallResult(self._input_data_copy, True, 1)
 
     @staticmethod
@@ -185,3 +232,7 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
     def _get_punctuation_cols(data):
         return utils.list_columns_with_semantic_types(metadata=data.metadata, semantic_types=[
             "https://metadata.datadrivendiscovery.org/types/CanBeSplitByPunctuation"])
+
+    @staticmethod
+    def _get_cols(df):
+        return range(df.shape[1])
