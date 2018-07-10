@@ -84,7 +84,8 @@ class Denormalize(transformer.TransformerPrimitiveBase[Inputs, Outputs, Denormal
         top_level_metadata = dict(inputs.metadata.query(()))
         top_level_metadata['dimension'] = dict(top_level_metadata['dimension'])
         top_level_metadata['dimension']['length'] = 1
-
+        import pdb
+        pdb.set_trace()
         metadata = inputs.metadata.clear(top_level_metadata, source=self).set_for_value(None, source=self)
 
         # Resource is not anymore an entry point.
@@ -127,6 +128,10 @@ class Denormalize(transformer.TransformerPrimitiveBase[Inputs, Outputs, Denormal
         all_rows_metadata['dimension']['length'] = data.shape[1]
         metadata = metadata.update((main_resource_id, metadata_base.ALL_ELEMENTS), all_rows_metadata, for_value=resources, source=self)
 
+        metadata = metadata.remove(selector = ('0',),recursive = True)
+
+        import pdb
+        pdb.set_trace()
         metadata.check(resources)
 
         dataset = container.Dataset(resources, metadata)

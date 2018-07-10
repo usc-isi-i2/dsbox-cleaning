@@ -19,16 +19,14 @@ __all__ = ('Labler',)
 Inputs = container.DataFrame
 Outputs = container.DataFrame
 
-
 class Params(params.Params):
-    classes_: Optional[ndarray]
+    labler_dict: Dict
+    s_cols: List[object]
 
-
-class Hyperparams(hyperparams.Hyperparams):
+class LablerHyperparams(hyperparams.Hyperparams):
     pass
 
-
-class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, Hyperparams]):
+class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHyperparams]):
     """
         A primitive which scales all the Integer & Float variables in the Dataframe.
     """
@@ -39,7 +37,7 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, Hyperpar
         "name": "DSBox feature labeler",
         "description": "A simple primitive that labels all string based categorical columns",
         "python_path": "d3m.primitives.dsbox.Labler",
-        "primitive_family": "NORMALIZATION",
+        "primitive_family": "DATA_CLEANING",
         "algorithm_types": ["DATA_NORMALIZATION"],
         "source": {
             "name": config.D3M_PERFORMER_TEAM,
@@ -51,53 +49,53 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, Hyperpar
 
     })
 
-    def __init__(self, *, hyperparams: Hyperparams) -> None:
+    def __init__(self, *, hyperparams: LablerHyperparams) -> None:
         super().__init__(hyperparams=hyperparams)
         self.hyperparams = hyperparams
-        #self._model = LabelEncoder()
-        #self._fits =[]
         self._training_data = None
         self._fitted = False
         self._s_cols = None
-        self._temp = pd.DataFrame()
-        self._d = defaultdict(LabelEncoder)
+        self._model = defaultdict(LabelEncoder)
+        self._has_finished = False
+        self._iterations_done = False
 
     def set_training_data(self, *, inputs: Inputs) -> None:
         self._training_data = inputs
-        self._fitted = False
 
     def fit(self, *, timeout: float = None, iterations: int = None) -> CallResult[None]:
-        categorical_attributes = utils.list_columns_with_semantic_types(metadata=self._training_data.metadata,
-                                                                               semantic_types=[
-                                                                                   "https://metadata.datadrivendiscovery.org/types/OrdinalData",
-                                                                                   "https://metadata.datadrivendiscovery.org/types/CategoricalData"
-                                                                               ])
+        import pdb
+        pdb.set_trace()
+        categorical_attributes = utils.list_columns_with_semantic_types(
+            metadata=self._training_data.metadata,
+            semantic_types=[
+                "https://metadata.datadrivendiscovery.org/types/OrdinalData",
+                "https://metadata.datadrivendiscovery.org/types/CategoricalData"
+                ]
+            )
 
-        all_attributes = utils.list_columns_with_semantic_types(metadata=self._training_data.metadata,
-                                                                         semantic_types=[
-                                                                             "https://metadata.datadrivendiscovery.org/types/Attribute"])
+        all_attributes = utils.list_columns_with_semantic_types(
+            metadata=self._training_data.metadata,
+            semantic_types=["https://metadata.datadrivendiscovery.org/types/Attribute"]
+            )
 
-        self._s_cols = list(set(all_attributes).intersection(categorical_attributes))
-        print(" %d of categorical attributes " % (len(self._s_cols)))
+        self._s_cols = container.List(set(all_attributes).intersection(categorical_attributes))
+        print("[INFO] %d of categorical attributes found." % (len(self._s_cols)))
 
         if len(self._s_cols) > 0:
-            self._training_data.iloc[:,self._s_cols].apply(lambda x: self._d[x.name].fit(x))
+            self._training_data.iloc[:,self._s_cols].apply(lambda x: self._model[x.name].fit(x))
             self._fitted = True
         else:
             self._fitted = False
 
     def produce(self, *, inputs: Inputs, timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
         if not self._fitted:
-            return CallResult(inputs, True, 1)
-        temp = pd.DataFrame(self._training_data.iloc[:, self._s_cols].apply(lambda x: self._d[x.name].transform(x)))
-        outputs = self._training_data.copy()
+            return CallResult(inputs, self._has_finished, self._iterations_done)
 
+        temp = pd.DataFrame(inputs.iloc[:, self._s_cols].apply(lambda x: self._model[x.name].transform(x)))
+        outputs = inputs.copy()
         for id_index, od_index in zip(self._s_cols, range(temp.shape[1])):
             outputs.iloc[:, id_index] = temp.iloc[:, od_index]
-
         lookup = {"int": ('http://schema.org/Integer', 'https://metadata.datadrivendiscovery.org/types/Attribute')}
-
-        #new_dtype = temp.dtypes
 
         for index in self._s_cols:
             old_metadata = dict(outputs.metadata.query((mbase.ALL_ELEMENTS, index)))
@@ -106,18 +104,37 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, Hyperpar
             outputs.metadata = outputs.metadata.update((mbase.ALL_ELEMENTS, index), old_metadata)
 
         if outputs.shape == inputs.shape:
+            self._has_finished = True
+            self._iterations_done = True
             print("output:",outputs.head(5))
-            return CallResult(d3m_DataFrame(outputs), True, 1)
+            return CallResult(d3m_DataFrame(outputs), self._has_finished, self._iterations_done)
         else:
-            return CallResult(inputs, True, 1)
+            return CallResult(inputs, self._has_finished, self._iterations_done)
 
     def get_params(self) -> Params:
-        if not self._fitted:
-            raise ValueError("Fit not performed.")
-        return Params(
-            classes_=getattr(self._model, 'classes_', None),
-        )
+        labeler_dict = {}
+        if self._model:
+            # extract the dictionary of the models
+            for each_key,each_value in self._model.items():
+                labeler_dict[each_key] = each_value.classes_
+            # return parameters
+            return Params(s_cols = self._s_cols,
+                          labler_dict = labeler_dict
+                        )
+        else:
+            return Params({
+                's_cols':[],
+                'labler_dict':{} 
+                })
 
     def set_params(self, *, params: Params) -> None:
-        self._model.classes_s = params['classes_']
-        self._fitted = True
+        self._s_cols = params['s_cols']
+        if params['labler_dict']:
+            self._model = defaultdict(LabelEncoder)
+            for each_key, each_value in params['labler_dict'].items():
+                each_encoder = LabelEncoder()
+                each_encoder.classes_ = each_value
+                self._model[each_key] = each_encoder
+            self._fitted = True
+        else:
+            self._fitted = False
