@@ -120,6 +120,7 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
 
         if (timeout is None):
             timeout = 2**31-1
+
         if (iterations is None):
             self._iterations_done = True
 
@@ -204,7 +205,10 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
 
         _logger.debug('numeric columns %s', str(numeric))
 
-        self.mean_values = self._train_x.iloc[:, numeric].astype(float).mean(axis=0).to_dict()
+        # Convert selected columns to_numeric, then compute column mean, then convert to_dict
+        self.mean_values = self._train_x.iloc[:, numeric].apply(
+            lambda col: pd.to_numeric(col, errors='coerce')).mean(axis=0).to_dict()
+
         for name in self.mean_values.keys():
             if pd.isnull(self.mean_values[name]):
                 self.mean_values[name] = 0.0

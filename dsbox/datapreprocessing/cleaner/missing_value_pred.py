@@ -51,6 +51,9 @@ def myImputer(data, value="zero", verbose=False):
     else:
         raise ValueError("no such impute strategy: {}".format(value))
 
+    if np.isnan(inputed_value):
+        inputed_value = 0
+
     data_imputed[index] = inputed_value
 
     if verbose: print("imputed missing value: {}".format(inputed_value))
@@ -65,11 +68,9 @@ def imputeData(data, missing_col_id, imputation_strategies, verbose=False):
     value:    string: "mean", "min", "max", "zero", "gaussian"
     """
     data_clean = np.copy(data)
-
     for i in range(len(imputation_strategies)):
         strategy = imputation_strategies[i]
         col_id = missing_col_id[i]
-
         data_clean[:,col_id] = myImputer(data[:,col_id], strategy)
 
 
@@ -140,10 +141,12 @@ def transform(data, target_col, model, verbose=False):
     x_train = data[~mv_mask]
     y_train = target[~mv_mask]
 
-    result = model.predict(x_test)
+    if not model=='mean':
+        result = model.predict(x_test)
+
     # special case in predict:
     # if the model goes wrong: predicts nan value. using mean method instead
-    if (pd.isnull(result).sum() > 0):
+    if (model=='mean' or pd.isnull(result).sum() > 0):
         if verbose: print ("Warning: model gets nan value, using mean instead")
         model = "mean"
         original_data[:,target_col] = myImputer(original_data[:,target_col], model)

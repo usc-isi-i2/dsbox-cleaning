@@ -2,7 +2,7 @@ from .encoder import Encoder, EncHyperparameter
 from .unary_encoder import UnaryEncoder, UEncHyperparameter
 
 from .mean import MeanImputation, MeanHyperparameter
-from .Iterative_regress import IterativeRegressionImputation, IterativeRegressionHyperparameter
+from .iterative_regression import IterativeRegressionImputation, IterativeRegressionHyperparameter
 from .greedy import GreedyImputation, GreedyHyperparameter
 from .mice import MICE, MiceHyperparameter
 from .knn import KNNImputation, KnnHyperparameter

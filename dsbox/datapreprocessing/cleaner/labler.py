@@ -63,8 +63,6 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHy
         self._training_data = inputs
 
     def fit(self, *, timeout: float = None, iterations: int = None) -> CallResult[None]:
-        import pdb
-        pdb.set_trace()
         categorical_attributes = utils.list_columns_with_semantic_types(
             metadata=self._training_data.metadata,
             semantic_types=[
@@ -106,7 +104,7 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHy
         if outputs.shape == inputs.shape:
             self._has_finished = True
             self._iterations_done = True
-            print("output:",outputs.head(5))
+            # print("output:",outputs.head(5))
             return CallResult(d3m_DataFrame(outputs), self._has_finished, self._iterations_done)
         else:
             return CallResult(inputs, self._has_finished, self._iterations_done)
@@ -124,7 +122,7 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHy
         else:
             return Params({
                 's_cols':[],
-                'labler_dict':{} 
+                'labler_dict':{}
                 })
 
     def set_params(self, *, params: Params) -> None:

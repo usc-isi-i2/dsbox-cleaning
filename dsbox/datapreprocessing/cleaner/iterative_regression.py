@@ -252,8 +252,14 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
 
         # Impute numerical attributes only
         missing_col_id = [x for x in missing_col_id if x in numeric]
-
         missing_col_data = data[:, missing_col_id]
+
+        # If all values in a column are missing, set that column to zero
+        all_missing = np.sum(np.isnan(missing_col_data), axis=0)==missing_col_data.shape[0]
+        for col, col_missing in enumerate(all_missing):
+            if col_missing:
+                missing_col_data[:,col] = 0
+
         imputed_data = np.zeros([data.shape[0], len(missing_col_id)])
         imputed_data_lastIter = missing_col_data
         # coeff_matrix = np.zeros([len(missing_col_id), data.shape[1]-1]) #coefficient vector for each missing value column
