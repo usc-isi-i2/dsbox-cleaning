@@ -108,9 +108,6 @@ class Denormalize(transformer.TransformerPrimitiveBase[Inputs, Outputs, Denormal
             else:
                 assert column_metadata['foreign_key']['type'] == 'COLUMN', column_metadata
 
-                import pdb
-                pdb.set_trace()
-
                 if 'column_index' in column_metadata['foreign_key']:
                     data, metadata = self._join_by_index(
                         main_resource_id, inputs, column_index, data, metadata, column_metadata['foreign_key']['resource_id'],
@@ -133,15 +130,15 @@ class Denormalize(transformer.TransformerPrimitiveBase[Inputs, Outputs, Denormal
         all_rows_metadata['dimension']['length'] = data.shape[1]
         metadata = metadata.update((main_resource_id, metadata_base.ALL_ELEMENTS), all_rows_metadata, for_value=resources, source=self)
 
-        import pdb
-        pdb.set_trace()
-        metadata = metadata.remove(selector = ('0',),recursive = True)
-        
+        # !!! changed part: remove unloaded metadata to pass the check function
+        other_keys = [*inputs]
+        other_keys.remove(main_resource_id)
+        for each_key in other_keys:
+            metadata = metadata.remove(selector = (each_key,),recursive = True)
+        # changed finished
         metadata.check(resources)
 
         dataset = container.Dataset(resources, metadata)
-
-        
 
         return base.CallResult(dataset)
 
@@ -206,18 +203,16 @@ class Denormalize(transformer.TransformerPrimitiveBase[Inputs, Outputs, Denormal
             metadata = metadata.update((main_resource_id, metadata_base.ALL_ELEMENTS, data_columns_length + column_index), column_metadata, source=self)
 
         selected_data = pandas.DataFrame(rows)
-        import pdb
-        pdb.set_trace()
         if data is None:
             data = selected_data
         else:
-            #data = pandas.concat([data, selected_data], axis=1, ignore_index=True)
-            data.reset_index().drop(columns=['index'])
+            data = pandas.concat([data, selected_data], axis=1, ignore_index=True)
+            '''
+            data = data.reset_index().drop(columns=['index'])
             selected_data_key = selected_data.columns
             for each_key in selected_data_key:
                 data[each_key] = selected_data[each_key]
-        import pdb
-        pdb.set_trace()
+            '''
         return data, metadata
 
     def _get_column(self, data: pandas.DataFrame, column_index: int) -> pandas.DataFrame:
@@ -225,13 +220,21 @@ class Denormalize(transformer.TransformerPrimitiveBase[Inputs, Outputs, Denormal
 
     def _add_column(self, main_resource_id: str, data: pandas.DataFrame, metadata: metadata_base.DataMetadata, column_data: pandas.DataFrame,
                     column_metadata: typing.Dict) -> typing.Tuple[pandas.DataFrame, metadata_base.DataMetadata]:
+
         assert column_data.shape[1] == 1
 
         if data is None:
             data = column_data
         else:
-            data = pandas.concat((data, column_data), axis=1)
-
+            import pdb
+            pdb.set_trace()
+            data = pandas.concat([data, column_data], axis=1)
+            '''
+            data = data.reset_index().drop(columns=['index'])
+            selected_data_key = column_data.columns
+            for each_key in selected_data_key:
+                data[each_key] = column_data[each_key]
+            '''
         metadata = metadata.update((main_resource_id, metadata_base.ALL_ELEMENTS, data.shape[1] - 1), column_metadata, source=self)
 
         return data, metadata

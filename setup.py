@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='dsbox-datacleaning',
-      version='1.1.0',
+      version='1.3.0',
       description='DSBox data preprocessing tools for cleaning data',
       author='USC ISI',
       url='https://github.com/usc-isi-i2/dsbox-cleaning.git',
