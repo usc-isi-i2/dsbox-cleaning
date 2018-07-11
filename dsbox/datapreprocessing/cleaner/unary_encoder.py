@@ -3,15 +3,17 @@ import numpy as np  # type: ignore
 import copy
 import typing
 
-import d3m
+from d3m import container
 from d3m.primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 from d3m.metadata import hyperparams, params
 from d3m.primitive_interfaces.base import CallResult
+from common_primitives import utils
+from d3m.metadata import base as metadata_base
 
 from . import config
 
-Input = d3m.container.DataFrame
-Output = d3m.container.DataFrame
+Input = container.DataFrame
+Output = container.DataFrame
 
 class Params(params.Params):
     mapping : typing.Dict
@@ -23,16 +25,10 @@ class Params(params.Params):
 
 class UEncHyperparameter(hyperparams.Hyperparams):
     text2int = hyperparams.UniformBool(
-        default=True,
+        default=False,
         description='Whether to convert everything to numerical. For text columns, each row may get converted into a column',
         semantic_types=['http://schema.org/Boolean',
                         'https://metadata.datadrivendiscovery.org/types/ControlParameter'])
-    targetColumns = hyperparams.Hyperparameter[typing.List[int]](
-        default=[],
-        description='List of indices of columns to be encoded',
-        semantic_types=['https://metadata.datadrivendiscovery.org/types/TuningParameter',
-                        'https://metadata.datadrivendiscovery.org/types/TabularColumn']
-    )
 
 ## reference: https://github.com/scikit-learn/scikit-learn/issues/8136
 class Label_encoder(object):
@@ -86,7 +82,12 @@ class Label_encoder(object):
 
 
 class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncHyperparameter]):
-
+    """
+    A primitive which converts the numerical attributes to multi-column attributes.
+    Each new column value would be 1 if the original value is larger than this column's name value
+    Otherwise the new column value would be 0
+    This encoder only operate when the amount of the numerical data is less than 12, otherwise the column would keep unchanged.
+    """
     metadata = hyperparams.base.PrimitiveMetadata({
         "id": "DSBox-unary-encoder",
         "version": config.VERSION,
@@ -121,9 +122,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         super().__init__(hyperparams=hyperparams)
 
         self.hyperparams = hyperparams
-
         self._text2int = hyperparams['text2int']
-        self._target_columns = hyperparams['targetColumns']
         self._textmapping: typing.Dict = dict()
         self._mapping: typing.Dict = dict()
         self._all_columns: typing.Set = set()
@@ -131,7 +130,8 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
 
         self._training_inputs = None
         self._fitted = False
-
+        self._cat_columns = []
+        self._col_index = None
 
     def get_params(self) -> Params:
 
@@ -140,23 +140,21 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
             self._mapping[key] = [np.nan if np.isnan(x) else int(x) for x in self._mapping[key]]
 
         param = Params(mapping=self._mapping, all_columns=self._all_columns, empty_columns=self._empty_columns,
-                       textmapping=self._textmapping, target_columns = self._target_columns)
+                       textmapping=self._textmapping)
         return param
 
 
     def set_params(self, *, params: Params) -> None:
-        self._fitted = True
+        self._textmapping = params['textmapping']
         self._mapping = params['mapping']
         self._all_columns = params['all_columns']
         self._empty_columns = params['empty_columns']
-        self._textmapping = params['textmapping']
-        self._target_columns = params['target_columns']
+        self._fitted = True
 
 
     def set_training_data(self, *, inputs: Input) -> None:
         self._training_inputs = inputs
         self._fitted = False
-        #self._target_columns = targets
 
 
     def fit(self, *, timeout:float = None, iterations: int = None) -> None:
@@ -171,23 +169,58 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         if self._training_inputs is None:
             raise ValueError('Missing training(fitting) data.')
 
-        data_copy = self._training_inputs.copy()
+        data = self._training_inputs.copy()
+        all_attributes = utils.list_columns_with_semantic_types(metadata=data.metadata, semantic_types=[
+            "https://metadata.datadrivendiscovery.org/types/Attribute"])
 
-        self._all_columns = set(data_copy.columns)
+        # Remove columns with all empty values, structural type str
+        numeric = utils.list_columns_with_semantic_types(
+            data.metadata, ['http://schema.org/Integer', 'http://schema.org/Float'])
+        numeric = [x for x in numeric if x in all_attributes]
+        for element in numeric:
+            if data.metadata.query((metadata_base.ALL_ELEMENTS, element)).get('structural_type', ())==str:
+                if pd.isnull(pd.to_numeric(data.iloc[:,element], errors='coerce')).sum() == data.shape[0]:
+                    self._empty_columns.append(element)
+
+        # Remove columns with all empty values, structural numeric
+        is_empty = pd.isnull(data).sum(axis=0) == data.shape[0]
+        for i in all_attributes:
+            if is_empty.iloc[i]:
+                self._empty_columns.append(i)
+        self._empty_columns = list(set(self._empty_columns))
+        self._empty_columns.reverse()
+        data = utils.remove_columns(data, self._empty_columns, source='ISI DSBox Data Encoder')
+        # print('fit', data.shape)
+
+        categorical_attributes = utils.list_columns_with_semantic_types(
+            metadata=data.metadata,
+            semantic_types=[
+                "https://metadata.datadrivendiscovery.org/types/OrdinalData",
+                "https://metadata.datadrivendiscovery.org/types/CategoricalData"
+                ]
+            )
+        all_attributes = utils.list_columns_with_semantic_types(
+            metadata=data.metadata,
+            semantic_types=["https://metadata.datadrivendiscovery.org/types/Attribute"]
+            )
+        self._cat_col_index = list(set(all_attributes).intersection(numeric))
+        self._cat_columns = data.columns[self._cat_col_index].tolist()
+        #import pdb
+        #pdb.set_trace()
+        numerical_values = data.iloc[:, self._cat_col_index].apply(
+            lambda col: pd.to_numeric(col, errors='coerce'))
+
+        self._all_columns = set(data.columns)
 
         # mapping
-        if self._target_columns and max(self._target_columns) > len(data_copy.columns)-1:
-            raise ValueError('Target columns are not subset of columns in training_inputs.(Out of range).')
-
         idict = {}
-        for target_id in self._target_columns:
-            name = data_copy.columns[target_id]
-            col = data_copy[name]
+        for name in self._cat_columns:
+            col = numerical_values[name]
             idict[name] = sorted(col.unique())
         self._mapping = idict
 
         if self._text2int:
-            texts = data_copy.drop(self._mapping.keys(),axis=1)
+            texts = data.drop(self._mapping.keys(),axis=1)
             texts = texts.select_dtypes(include=[object])
             le = Label_encoder()
             le.fit_pd(texts)
@@ -214,21 +247,28 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         #if self._target_columns == []:
         #    return CallResult(inputs, True, 1)
 
+
         if not self._fitted:
             raise ValueError('Encoder model not fitted. Use fit()')
 
+        # Return if there is nothing to encode
+        if len(self._cat_columns)==0:
+            return CallResult(self._input_data_copy, True, 1)
+
         if isinstance(inputs, pd.DataFrame):
-            data_copy = inputs.copy()
+            data = inputs.copy()
         else:
-            data_copy = inputs[0].copy()
+            data = inputs[0].copy()
+        data = utils.remove_columns(data, self._empty_columns, source='ISI DSBox Data Encoder')
 
-        set_columns = set(data_copy.columns)
-
+        set_columns = set(data.columns)
+        
         if set_columns != self._all_columns:
             raise ValueError('Columns(features) fed at produce() differ from fitted data.')
 
-        data_enc = data_copy[list(self._mapping.keys())]
-        data_else = data_copy.drop(self._mapping.keys(),axis=1)
+        data_enc = data.iloc[:, self._cat_col_index].apply(
+            lambda col: pd.to_numeric(col, errors='coerce'))
+        data_else = data.drop(self._cat_columns,axis=1)
 
         res = []
         for column_name in data_enc:
@@ -236,11 +276,15 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
             col.is_copy = False
 
             chg_v = lambda x: min(self._mapping[col.name], key=lambda a:abs(a-x)) if x is not None else x
+             # only encode the values which is not null
             col[col.notnull()] = col[col.notnull()].apply(chg_v)
-            encoded = self.__encode_column(col)
-            res.append(encoded)
-
-        data_else.drop(self._empty_columns, axis=1, inplace=True)
+            # only apply unary encoder when the amount of the numerical data is less than 12
+            if col.unique().shape[0] < 13:
+                encoded = self.__encode_column(col)
+                res.append(encoded)
+            else:
+                res.append(col)
+        #data_else.drop(self._empty_columns, axis=1, inplace=True)
         if self._text2int:
             texts = data_else.select_dtypes([object])
             le = Label_encoder()

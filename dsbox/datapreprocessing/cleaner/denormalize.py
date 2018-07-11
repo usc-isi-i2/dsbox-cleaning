@@ -61,12 +61,15 @@ class Denormalize(transformer.TransformerPrimitiveBase[Inputs, Outputs, Denormal
     # TODO: Implement can_accept.
     # TODO: This should remove only resources which were joined to the main resource, and not all resources. Do we even want to remove other resources at all?
     # TODO: Add all column names together to "other names" metadata for column.
+
     def produce(self, *, inputs: Inputs, timeout: float = None, iterations: int = None) -> base.CallResult[Outputs]:
         # If only one resource is in the dataset, we do not have anything to do.
         if inputs.metadata.query(())['dimension']['length'] == 1:
             return base.CallResult(inputs)
 
         main_resource_id = self.hyperparams['starting_resource']
+
+
 
         if main_resource_id is None:
             for resource_id in inputs.keys():
@@ -84,8 +87,7 @@ class Denormalize(transformer.TransformerPrimitiveBase[Inputs, Outputs, Denormal
         top_level_metadata = dict(inputs.metadata.query(()))
         top_level_metadata['dimension'] = dict(top_level_metadata['dimension'])
         top_level_metadata['dimension']['length'] = 1
-        import pdb
-        pdb.set_trace()
+
         metadata = inputs.metadata.clear(top_level_metadata, source=self).set_for_value(None, source=self)
 
         # Resource is not anymore an entry point.
@@ -105,6 +107,9 @@ class Denormalize(transformer.TransformerPrimitiveBase[Inputs, Outputs, Denormal
                 data, metadata = self._add_column(main_resource_id, data, metadata, self._get_column(main_data, column_index), column_metadata)
             else:
                 assert column_metadata['foreign_key']['type'] == 'COLUMN', column_metadata
+
+                import pdb
+                pdb.set_trace()
 
                 if 'column_index' in column_metadata['foreign_key']:
                     data, metadata = self._join_by_index(
@@ -128,15 +133,21 @@ class Denormalize(transformer.TransformerPrimitiveBase[Inputs, Outputs, Denormal
         all_rows_metadata['dimension']['length'] = data.shape[1]
         metadata = metadata.update((main_resource_id, metadata_base.ALL_ELEMENTS), all_rows_metadata, for_value=resources, source=self)
 
-        metadata = metadata.remove(selector = ('0',),recursive = True)
-
         import pdb
         pdb.set_trace()
+        metadata = metadata.remove(selector = ('0',),recursive = True)
+        
         metadata.check(resources)
 
         dataset = container.Dataset(resources, metadata)
 
+        
+
         return base.CallResult(dataset)
+
+
+        
+
 
     def _join_by_name(self, main_resource_id: str, inputs: Inputs, inputs_column_index: int, data: typing.Optional[pandas.DataFrame],
                       metadata: metadata_base.DataMetadata, foreign_resource_id: str, foreign_column_name: str) -> typing.Tuple[pandas.DataFrame, metadata_base.DataMetadata]:
@@ -162,11 +173,9 @@ class Denormalize(transformer.TransformerPrimitiveBase[Inputs, Outputs, Denormal
         for value_index, value in enumerate(foreign_data.iloc[:, foreign_column_index]):
             # TODO: Check if values are not unique.
             value_to_index[value] = value_index
-
         rows = []
         for value in main_data.iloc[:, inputs_column_index]:
             rows.append([foreign_data.iloc[value_to_index[value], j] for j in range(len(foreign_data.columns))])
-
         if data is None:
             data_columns_length = 0
         else:
@@ -197,12 +206,18 @@ class Denormalize(transformer.TransformerPrimitiveBase[Inputs, Outputs, Denormal
             metadata = metadata.update((main_resource_id, metadata_base.ALL_ELEMENTS, data_columns_length + column_index), column_metadata, source=self)
 
         selected_data = pandas.DataFrame(rows)
-
+        import pdb
+        pdb.set_trace()
         if data is None:
             data = selected_data
         else:
-            data = pandas.concat((data, selected_data), axis=1)
-
+            #data = pandas.concat([data, selected_data], axis=1, ignore_index=True)
+            data.reset_index().drop(columns=['index'])
+            selected_data_key = selected_data.columns
+            for each_key in selected_data_key:
+                data[each_key] = selected_data[each_key]
+        import pdb
+        pdb.set_trace()
         return data, metadata
 
     def _get_column(self, data: pandas.DataFrame, column_index: int) -> pandas.DataFrame:
