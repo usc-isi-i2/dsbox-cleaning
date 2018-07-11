@@ -69,8 +69,6 @@ class Denormalize(transformer.TransformerPrimitiveBase[Inputs, Outputs, Denormal
 
         main_resource_id = self.hyperparams['starting_resource']
 
-
-
         if main_resource_id is None:
             for resource_id in inputs.keys():
                 if 'https://metadata.datadrivendiscovery.org/types/DatasetEntryPoint' in inputs.metadata.query((resource_id,)).get('semantic_types', []):
@@ -87,8 +85,16 @@ class Denormalize(transformer.TransformerPrimitiveBase[Inputs, Outputs, Denormal
         top_level_metadata = dict(inputs.metadata.query(()))
         top_level_metadata['dimension'] = dict(top_level_metadata['dimension'])
         top_level_metadata['dimension']['length'] = 1
-
+        
+        # !!! changed part: remove unloaded metadata to pass the check function
         metadata = inputs.metadata.clear(top_level_metadata, source=self).set_for_value(None, source=self)
+        other_keys = [*inputs]
+        other_keys.remove(main_resource_id)
+        for each_key in other_keys:
+            metadata = metadata.remove(selector = (each_key,),recursive = True)
+        # changed finished
+        
+        #metadata = inputs.metadata.clear(top_level_metadata, source=self).set_for_value(None, source=self)
 
         # Resource is not anymore an entry point.
         entry_point_metadata = dict(inputs.metadata.query((main_resource_id,)))
@@ -130,12 +136,23 @@ class Denormalize(transformer.TransformerPrimitiveBase[Inputs, Outputs, Denormal
         all_rows_metadata['dimension']['length'] = data.shape[1]
         metadata = metadata.update((main_resource_id, metadata_base.ALL_ELEMENTS), all_rows_metadata, for_value=resources, source=self)
 
+        
+        # !!! changed part: load all dataset to resources
+        '''
+        other_keys = [*inputs]
+        other_keys.remove(main_resource_id)
+        for each_key in other_keys:
+            metadata = metadata.remove(selector = (each_key,),recursive = True, source = resources)
+        '''
+        '''
+        # this change only works for d3m v2018.6.5, for v2018.7.10, even the "metadata.remove" will check the resouces and metadata relationship: so we have to load all data to the resources before check/remove
         # !!! changed part: remove unloaded metadata to pass the check function
         other_keys = [*inputs]
         other_keys.remove(main_resource_id)
         for each_key in other_keys:
-            metadata = metadata.remove(selector = (each_key,),recursive = True)
+            metadata = metadata.remove(selector = (each_key,),recursive = True, source = resources)
         # changed finished
+        '''
         metadata.check(resources)
 
         dataset = container.Dataset(resources, metadata)
@@ -226,8 +243,8 @@ class Denormalize(transformer.TransformerPrimitiveBase[Inputs, Outputs, Denormal
         if data is None:
             data = column_data
         else:
-            import pdb
-            pdb.set_trace()
+            #import pdb
+            #pdb.set_trace()
             data = pandas.concat([data, column_data], axis=1)
             '''
             data = data.reset_index().drop(columns=['index'])
