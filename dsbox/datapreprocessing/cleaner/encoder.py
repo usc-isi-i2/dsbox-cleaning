@@ -1,4 +1,4 @@
-import copy
+import logging
 from typing import NamedTuple, Dict, List, Set, Union
 
 import d3m
@@ -15,6 +15,8 @@ from d3m.primitive_interfaces.base import CallResult
 from d3m.primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 
 from . import config
+
+_logger = logging.getLogger(__name__)
 
 Input = d3m.container.DataFrame
 Output = d3m.container.DataFrame
@@ -116,16 +118,10 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
         for i in all_attributes:
             if is_empty.iloc[i]:
                 self._empty_columns.append(i)
-        self._empty_columns = list(set(self._empty_columns))
 
-        # if len(self._empty_columns) > 0:
-        #     print('empty', self._empty_columns)
+        _logger.debug('Removing entirely empty columns: {}'.format(data.columns[self._empty_columns]))
 
-        self._empty_columns.reverse()
-        for i in self._empty_columns:
-            # print('fit dropping column', i, data.columns[i])
-            data = utils.remove_column(data, i, source='ISI DSBox Data Encoder')
-        # print('fit', data.shape)
+        data = utils.remove_columns(data, self._empty_columns, source='ISI DSBox Data Encoder')
 
         categorical_attributes = utils.list_columns_with_semantic_types(metadata=data.metadata,
                                                                         semantic_types=[
@@ -133,8 +129,11 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
                                                                             "https://metadata.datadrivendiscovery.org/types/CategoricalData"])
         all_attributes = utils.list_columns_with_semantic_types(metadata=data.metadata, semantic_types=[
             "https://metadata.datadrivendiscovery.org/types/Attribute"])
+
         self._cat_col_index = list(set(all_attributes).intersection(categorical_attributes))
         self._cat_columns = data.columns[self._cat_col_index].tolist()
+
+        _logger.debug('Encoding columns: {}'.format(self._cat_columns))
 
         mapping = {}
         for column_name in self._cat_columns:
@@ -156,14 +155,14 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
         self._input_data_copy = inputs.copy()
 
         # Remove columns with all empty values
-        for i in self._empty_columns:
-            # print('produce dropping column', i, self._input_data_copy.columns[i])
-            self._input_data_copy = utils.remove_column(self._input_data_copy, i, source='ISI DSBox Data Encoder')
-        # print('produce', self._input_data_copy.shape)
+        _logger.debug('Removing entirely empty columns: {}'.format(self._input_data_copy.columns[self._empty_columns]))
+        self._input_data_copy = utils.remove_columns(self._input_data_copy, self._empty_columns, source='ISI DSBox Data Encoder')
 
         # Return if there is nothing to encode
         if len(self._cat_columns)==0:
             return CallResult(self._input_data_copy, True, 1)
+
+        _logger.debug('Encoding columns: {}'.format(self._cat_columns))
 
         data_encode = self._input_data_copy[list(self._mapping.keys())]
 
@@ -192,9 +191,8 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
         columns_names = self._input_data_copy.columns.tolist()
         drop_indices = [columns_names.index(col)  for col in self._mapping.keys()]
         drop_indices = sorted(drop_indices)
-        drop_indices.reverse()
-        for i in drop_indices:
-            self._input_data_copy = utils.remove_column(self._input_data_copy, i, source='ISI DSBox Data Encoder')
+
+        self._input_data_copy = utils.remove_columns(self._input_data_copy, drop_indices, source='ISI DSBox Data Encoder')
 
         # metadata for columns that are not one hot encoded
         # self._col_index = [self._input_data_copy.columns.get_loc(c) for c in data_rest.columns]

@@ -20,7 +20,7 @@ setup(name='dsbox-datacleaning',
       entry_points = {
           'd3m.primitives': [
               'dsbox.CleaningFeaturizer = dsbox.datapreprocessing.cleaner:CleaningFeaturizer',
-#              'dsbox.Encoder = dsbox.datapreprocessing.cleaner:Encoder',
+              'dsbox.Encoder = dsbox.datapreprocessing.cleaner:Encoder',
               'dsbox.UnaryEncoder = dsbox.datapreprocessing.cleaner:UnaryEncoder',
               'dsbox.GreedyImputation = dsbox.datapreprocessing.cleaner:GreedyImputation',
               'dsbox.IterativeRegressionImputation = dsbox.datapreprocessing.cleaner:IterativeRegressionImputation',
