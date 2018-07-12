@@ -206,7 +206,6 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
 
             self._input_data_copy = df
 
-        CallResult(self._input_data_copy, True, 1).value.to_csv("~/Desktop/aaa.csv")
         return CallResult(self._input_data_copy, True, 1)
 
     @staticmethod
