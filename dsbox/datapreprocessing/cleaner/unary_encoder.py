@@ -188,6 +188,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
                 self._empty_columns.append(i)
         self._empty_columns = list(set(self._empty_columns))
         self._empty_columns.reverse()
+        self._empty_columns = container.List(self._empty_columns)
         data = utils.remove_columns(data, self._empty_columns, source='ISI DSBox Data Encoder')
         # print('fit', data.shape)
 
