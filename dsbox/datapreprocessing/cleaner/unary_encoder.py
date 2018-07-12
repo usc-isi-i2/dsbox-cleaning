@@ -167,7 +167,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
 
         if self._training_inputs is None:
             raise ValueError('Missing training(fitting) data.')
-        self._empty_columns = []
+        self._empty_columns = container.List()
         data = self._training_inputs.copy()
         all_attributes = utils.list_columns_with_semantic_types(metadata=data.metadata, semantic_types=[
             "https://metadata.datadrivendiscovery.org/types/Attribute"])
