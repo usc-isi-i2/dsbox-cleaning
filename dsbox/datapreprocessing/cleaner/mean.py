@@ -1,3 +1,4 @@
+
 import logging
 import typing
 
@@ -24,6 +25,7 @@ _logger = logging.getLogger(__name__)
 # store the mean value for each column in training data
 class Params(params.Params):
     mean_values : typing.Dict
+    type_columns : typing.Dict
     fitted : bool
 
 class MeanHyperparameter(hyperparams.Hyperparams):
@@ -74,6 +76,8 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
         self._is_fitted = False
         self._has_finished = False
         self._iterations_done = False
+        self._numeric_columns: typing.List = []
+        self._categoric_columns: typing.List = []
         self._verbose = hyperparams['verbose'] if hyperparams else False
 
 
@@ -82,9 +86,17 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
         self._has_finished = self._is_fitted
         self._iterations_done = self._is_fitted
         self.mean_values = params['mean_values']
+        self._numeric_columns = params['type_columns']['numeric_columns']
+        self._categoric_columns = params['type_columns']['categoric_columns']
 
     def get_params(self) -> Params:
-        return Params(mean_values=self.mean_values, fitted=self._is_fitted)
+        return Params(
+            mean_values=self.mean_values,
+            type_columns={
+                'numeric_columns' : self._numeric_columns,
+                'categoric_columns' : self._categoric_columns
+            },
+            fitted=self._is_fitted)
 
     def set_training_data(self, *, inputs: Input) -> None:
         """
@@ -137,8 +149,6 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
             self._iterations_done = True
             self._has_finished = True
         else:
-            import pdb
-            pdb.set_trace()
             self._is_fitted = False
             self._iterations_done = False
             self._has_finished = False
@@ -158,10 +168,11 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
         if (not self._is_fitted):
             # todo: specify a NotFittedError, like in sklearn
             raise ValueError("Calling produce before fitting.")
-        if (pd.isnull(inputs).sum().sum() == 0):    # no missing value exists
-            if self._verbose: print ("Warning: no missing value in test dataset")
-            self._has_finished = True
-            return CallResult(inputs, self._has_finished, self._iterations_done)
+
+        # if (pd.isnull(inputs).sum().sum() == 0):    # no missing value exists
+        #     if self._verbose: print ("Warning: no missing value in test dataset")
+        #     self._has_finished = True
+        #     return CallResult(inputs, self._has_finished, self._iterations_done)
 
         if (timeout is None):
             timeout = 2**31-1
@@ -177,6 +188,10 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
 
             # start completing data...
             if self._verbose: print("=========> impute by mean value of the attribute:")
+
+            data.iloc[:, self._numeric_columns] = data.iloc[:, self._numeric_columns].apply(
+                lambda col: pd.to_numeric(col, errors='coerce'))
+
 
             # assume the features of testing data are same with the training data
             # therefore, only use the mean_values to impute, should get a clean dataset
@@ -199,14 +214,15 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
             self._train_x.metadata, ['https://metadata.datadrivendiscovery.org/types/Attribute'])
 
         # Mean for numerical columns
-        numeric = utils.list_columns_with_semantic_types(
-            self._train_x.metadata, ['http://schema.org/Integer', 'http://schema.org/Float'])
-        numeric = [x for x in numeric if x in attribute]
 
-        _logger.debug('numeric columns %s', str(numeric))
+        self._numeric_columns = utils.list_columns_with_semantic_types(
+            self._train_x.metadata, ['http://schema.org/Integer', 'http://schema.org/Float'])
+        self._numeric_columns = [x for x in self._numeric_columns if x in attribute]
+
+        _logger.debug('numeric columns %s', str(self._numeric_columns))
 
         # Convert selected columns to_numeric, then compute column mean, then convert to_dict
-        self.mean_values = self._train_x.iloc[:, numeric].apply(
+        self.mean_values = self._train_x.iloc[:, self._numeric_columns].apply(
             lambda col: pd.to_numeric(col, errors='coerce')).mean(axis=0).to_dict()
 
         for name in self.mean_values.keys():
@@ -214,14 +230,14 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
                 self.mean_values[name] = 0.0
 
         # Mode for categorical columns
-        categoric = utils.list_columns_with_semantic_types(
+        self._categoric_columns = utils.list_columns_with_semantic_types(
             self._train_x.metadata, ['https://metadata.datadrivendiscovery.org/types/CategoricalData',
                                      'http://schema.org/Boolean'])
-        categoric = [x for x in categoric if x in attribute]
+        self._categoric_columns = [x for x in self._categoric_columns if x in attribute]
 
-        _logger.debug('categorical columns %s', str(categoric))
+        _logger.debug('categorical columns %s', str(self._categoric_columns))
 
-        mode_values = self._train_x.iloc[:, categoric].mode(axis=0).iloc[0].to_dict()
+        mode_values = self._train_x.iloc[:, self._categoric_columns].mode(axis=0).iloc[0].to_dict()
         for name in mode_values.keys():
             if pd.isnull(mode_values[name]):
                 # mode is nan
