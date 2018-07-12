@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 from common_primitives import utils
 from d3m.container import DataFrame as d3m_DataFrame
-from d3m.metadata import base as metadata_base
 from d3m.metadata import hyperparams as metadata_hyperparams
 from d3m.metadata import hyperparams, params
 from d3m.metadata.hyperparams import Enumeration, UniformInt, UniformBool
@@ -109,7 +108,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
             data.metadata, ['http://schema.org/Integer', 'http://schema.org/Float'])
         numeric = [x for x in numeric if x in all_attributes]
         for element in numeric:
-            if data.metadata.query((metadata_base.ALL_ELEMENTS, element)).get('structural_type', ())==str:
+            if data.metadata.query((mbase.ALL_ELEMENTS, element)).get('structural_type', ())==str:
                 if pd.isnull(pd.to_numeric(data.iloc[:,element])).sum() == data.shape[0]:
                     self._empty_columns.append(element)
 
