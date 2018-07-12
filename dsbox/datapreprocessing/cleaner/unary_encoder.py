@@ -20,7 +20,6 @@ class Params(params.Params):
     all_columns : typing.Set[str]
     empty_columns : typing.List
     textmapping : typing.Dict
-    target_columns : typing.List[int]
 
 
 class UEncHyperparameter(hyperparams.Hyperparams):
