@@ -85,7 +85,7 @@ class Denormalize(transformer.TransformerPrimitiveBase[Inputs, Outputs, Denormal
         top_level_metadata = dict(inputs.metadata.query(()))
         top_level_metadata['dimension'] = dict(top_level_metadata['dimension'])
         top_level_metadata['dimension']['length'] = 1
-        
+
         # !!! changed part: remove unloaded metadata to pass the check function
         metadata = inputs.metadata.clear(top_level_metadata, source=self).set_for_value(None, source=self)
         other_keys = [*inputs]
@@ -223,13 +223,12 @@ class Denormalize(transformer.TransformerPrimitiveBase[Inputs, Outputs, Denormal
         if data is None:
             data = selected_data
         else:
+            #import pdb
+            #pdb.set_trace()
+            #data = data.reset_index().drop(columns=['index'])
+            selected_data = selected_data.set_index(data.index)
+            #selected_data = selected_data.reset_index().drop(columns=['index'])
             data = pandas.concat([data, selected_data], axis=1, ignore_index=True)
-            '''
-            data = data.reset_index().drop(columns=['index'])
-            selected_data_key = selected_data.columns
-            for each_key in selected_data_key:
-                data[each_key] = selected_data[each_key]
-            '''
         return data, metadata
 
     def _get_column(self, data: pandas.DataFrame, column_index: int) -> pandas.DataFrame:
@@ -245,6 +244,9 @@ class Denormalize(transformer.TransformerPrimitiveBase[Inputs, Outputs, Denormal
         else:
             #import pdb
             #pdb.set_trace()
+            #data = data.reset_index().drop(columns=['index'])
+            column_data = column_data.set_index(data.index)
+            #column_data = column_data.reset_index().drop(columns=['index'])
             data = pandas.concat([data, column_data], axis=1)
             '''
             data = data.reset_index().drop(columns=['index'])

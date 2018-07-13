@@ -6,10 +6,10 @@ import typing
 from d3m import container
 from d3m.primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 from d3m.metadata import hyperparams, params
+from d3m.container import DataFrame as d3m_DataFrame
 from d3m.primitive_interfaces.base import CallResult
 from common_primitives import utils
-from d3m.metadata import base as metadata_base
-
+from d3m.metadata import base as mbase
 from . import config
 
 Input = container.DataFrame
@@ -177,7 +177,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
             data.metadata, ['http://schema.org/Integer', 'http://schema.org/Float'])
         numeric = [x for x in numeric if x in all_attributes]
         for element in numeric:
-            if data.metadata.query((metadata_base.ALL_ELEMENTS, element)).get('structural_type', ())==str:
+            if data.metadata.query((mbase.ALL_ELEMENTS, element)).get('structural_type', ())==str:
                 if pd.isnull(pd.to_numeric(data.iloc[:,element], errors='coerce')).sum() == data.shape[0]:
                     self._empty_columns.append(element)
 
@@ -246,8 +246,6 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         """
         #if self._target_columns == []:
         #    return CallResult(inputs, True, 1)
-
-
         if not self._fitted:
             raise ValueError('Encoder model not fitted. Use fit()')
 
@@ -259,22 +257,18 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
             data = inputs.copy()
         else:
             data = inputs[0].copy()
-        data = utils.remove_columns(data, self._empty_columns, source='ISI DSBox Data Encoder')
-
+        data = utils.remove_columns(data, self._empty_columns, source='ISI DSBox Data Unary Encoder')
         set_columns = set(data.columns)
         
         if set_columns != self._all_columns:
             raise ValueError('Columns(features) fed at produce() differ from fitted data.')
 
-        data_enc = data.iloc[:, self._cat_col_index].apply(
-            lambda col: pd.to_numeric(col, errors='coerce'))
-        data_else = data.drop(self._cat_columns,axis=1)
-
+        # core part: encode the unary columns
+        data_enc = data.iloc[:, self._cat_col_index].apply(lambda col: pd.to_numeric(col, errors='coerce'))
         res = []
         for column_name in data_enc:
             col = data_enc[column_name]
             col.is_copy = False
-
             chg_v = lambda x: min(self._mapping[col.name], key=lambda a:abs(a-x)) if x is not None else x
              # only encode the values which is not null
             col[col.notnull()] = col[col.notnull()].apply(chg_v)
@@ -284,14 +278,23 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
                 res.append(encoded)
             else:
                 res.append(col)
-        #data_else.drop(self._empty_columns, axis=1, inplace=True)
         if self._text2int:
             texts = data_else.select_dtypes([object])
             le = Label_encoder()
             le.set_params(self._textmapping)
             data_else[texts.columns] = le.transform_pd(texts)
+        # transfer the encoded results to dataFrame
+        encoded = d3m_DataFrame(pd.concat(res, axis=1))
 
-        res.append(data_else)
-        result = pd.concat(res, axis=1)
+        # update metadata for existing columns
+        for index in range(len(encoded.columns)):
+            old_metadata = dict(encoded.metadata.query((mbase.ALL_ELEMENTS, index)))
+            old_metadata["structural_type"] = int
+            old_metadata["semantic_types"] = (
+                'http://schema.org/Integer', 'https://metadata.datadrivendiscovery.org/types/Attribute')
+            encoded.metadata = encoded.metadata.update((mbase.ALL_ELEMENTS, index), old_metadata)
+        # after extracting the traget columns, remove these columns from dataFrame
+        data_else = utils.remove_columns(data, self._cat_col_index, source='ISI DSBox Data Unary Encoder')
+        result = utils.horizontal_concat(data_else, encoded)
 
         return CallResult(result, True, 1)
