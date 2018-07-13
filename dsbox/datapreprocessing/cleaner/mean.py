@@ -3,6 +3,7 @@ import logging
 import typing
 
 import pandas as pd #  type: ignore
+import numpy as np
 
 from d3m.primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 
@@ -13,6 +14,7 @@ import stopit #  type: ignore
 from d3m import container
 from d3m.metadata import hyperparams, params
 from d3m.metadata.hyperparams import UniformBool
+import d3m.metadata.base as mbase
 import common_primitives.utils as utils
 
 from . import config
@@ -197,6 +199,20 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
             # therefore, only use the mean_values to impute, should get a clean dataset
             data_clean = data.fillna(value=self.mean_values)
 
+            # Update metadata
+            for col in self._numeric_columns:
+                old_metadata = dict(data_clean.metadata.query((mbase.ALL_ELEMENTS, col)))
+                dtype = data_clean.iloc[:, col].dtype
+                if str(dtype).lower().startswith("int"):
+                    if "http://schema.org/Integer" not in old_metadata['semantic_types']:
+                        old_metadata['semantic_types'] += ("http://schema.org/Integer",)
+                    old_metadata["structural_type"] = type(10)
+                elif str(dtype).lower().startswith("float"):
+                    if "http://schema.org/Float" not in old_metadata['semantic_types']:
+                        old_metadata['semantic_types'] += ("http://schema.org/Float",)
+                    old_metadata["structural_type"] = type(10.2)
+
+                data_clean.metadata = data_clean.metadata.update((mbase.ALL_ELEMENTS, col), old_metadata)
 
         value = None
         if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:

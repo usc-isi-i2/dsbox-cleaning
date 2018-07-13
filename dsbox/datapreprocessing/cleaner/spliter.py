@@ -16,19 +16,20 @@ def update_type(extends, df_origin):
     for idx in indices:
         old_metadata = dict(new_df.metadata.query((mbase.ALL_ELEMENTS, idx)))
 
-        old_metadata['semantic_types'] = ("https://metadata.datadrivendiscovery.org/types/Attribute",)
         numerics = pd.to_numeric(new_df.iloc[:, idx], errors='coerce')
         length = numerics.shape[0]
         nans = numerics.isnull().sum()
 
         if nans/length > 0.9:
-            old_metadata['semantic_types'] += ("http://schema.org/Text",)
+            old_metadata['semantic_types'] = ("http://schema.org/Text",)
         else:
             intcheck = (numerics%1) == 0
             if np.sum(intcheck)/length > 0.9:
-                old_metadata['semantic_types'] += ("http://schema.org/Integer",)
+                old_metadata['semantic_types'] = ("http://schema.org/Integer",)
             else:
-                old_metadata['semantic_types'] += ("http://schema.org/Float",)
+                old_metadata['semantic_types'] = ("http://schema.org/Float",)
+
+        old_metadata['semantic_types'] += ("https://metadata.datadrivendiscovery.org/types/Attribute",)
 
         new_df.metadata = new_df.metadata.update((mbase.ALL_ELEMENTS, idx), old_metadata)
 

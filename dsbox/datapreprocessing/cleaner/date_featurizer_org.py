@@ -334,19 +334,20 @@ class DateFeaturizerOrg:
     def update_types(self, col_name):
         old_metadata = dict(self.df.metadata.query((mbase.ALL_ELEMENTS, self.df.columns.get_loc(col_name))))
 
-        old_metadata['semantic_types'] = ("https://metadata.datadrivendiscovery.org/types/Attribute",)
         numerics = pd.to_numeric(self.df[col_name], errors='coerce')
         length = numerics.shape[0]
         nans = numerics.isnull().sum()
 
         if nans / length > 0.9:
-            old_metadata['semantic_types'] += ("http://schema.org/Text",)
+            old_metadata['semantic_types'] = ("http://schema.org/Text",)
         else:
             intcheck = (numerics % 1) == 0
             if np.sum(intcheck) / length > 0.9:
-                old_metadata['semantic_types'] += ("http://schema.org/Integer",)
+                old_metadata['semantic_types'] = ("http://schema.org/Integer",)
             else:
-                old_metadata['semantic_types'] += ("http://schema.org/Float",)
+                old_metadata['semantic_types'] = ("http://schema.org/Float",)
+
+        old_metadata['semantic_types'] += ("https://metadata.datadrivendiscovery.org/types/Attribute",)
 
         self.df.metadata = self.df.metadata.update((mbase.ALL_ELEMENTS, self.df.columns.get_loc(col_name)), old_metadata)
 

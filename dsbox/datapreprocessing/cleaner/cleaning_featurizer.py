@@ -1,6 +1,9 @@
 import logging
+import pandas as pd
+import numpy as np
 
 from d3m import container
+import d3m.metadata.base as mbase
 from d3m.metadata import hyperparams, params
 from d3m.primitive_interfaces.base import CallResult
 from d3m.primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
@@ -206,6 +209,7 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
 
             self._input_data_copy = df
 
+        self._update_structural_type()
         return CallResult(self._input_data_copy, True, 1)
 
     @staticmethod
@@ -235,3 +239,40 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
     @staticmethod
     def _get_cols(df):
         return range(df.shape[1])
+
+    def _update_structural_type(self):
+        for col in range(self._input_data_copy.shape[1]):
+            old_metadata = dict(self._input_data_copy.metadata.query((mbase.ALL_ELEMENTS, col)))
+            semantic_type = old_metadata.get('semantic_types', None)
+            if not semantic_type:
+                numerics = pd.to_numeric(self._input_data_copy.iloc[:, col], errors='coerce')
+                length = numerics.shape[0]
+                nans = numerics.isnull().sum()
+
+                if nans / length > 0.9:
+                    old_metadata['semantic_types'] = ("http://schema.org/Text",)
+                else:
+                    intcheck = (numerics % 1) == 0
+                    if np.sum(intcheck) / length > 0.9:
+                        old_metadata['semantic_types'] = ("http://schema.org/Integer",)
+                        old_metadata['structural_type'] = type(10)
+                        self._input_data_copy.iloc[:, col] = numerics
+                    else:
+                        old_metadata['semantic_types'] = ("http://schema.org/Float",)
+                        old_metadata['structural_type'] = type(10.2)
+                        self._input_data_copy.iloc[:, col] = numerics
+
+                old_metadata['semantic_types'] += ("https://metadata.datadrivendiscovery.org/types/Attribute",)
+
+            else:
+                if "http://schema.org/Integer" in semantic_type:
+                    self._input_data_copy.iloc[:, col] = pd.to_numeric(self._input_data_copy.iloc[:, col],
+                                                                       errors='coerce')
+                    old_metadata['structural_type'] = type(10)
+                elif "http://schema.org/Float" in semantic_type:
+                    self._input_data_copy.iloc[:, col] = pd.to_numeric(self._input_data_copy.iloc[:, col],
+                                                                       errors='coerce')
+                    old_metadata['structural_type'] = type(10.2)
+
+            self._input_data_copy.metadata = self._input_data_copy.metadata.update((mbase.ALL_ELEMENTS, col),
+                                                                                   old_metadata)
