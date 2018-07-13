@@ -20,9 +20,10 @@ Outputs = container.DataFrame
 
 
 class Params(params.Params):
-    center_: Optional[ndarray]
-    scale_: Optional[ndarray]
-    s_cols: typing.Iterable[typing.Any]
+    center : Optional[ndarray]
+    scale : Optional[ndarray]
+    s_cols : typing.Iterable[typing.Any]
+    fitted : typing.Union[bool, None]
 
 
 class IQRHyperparams(hyperparams.Hyperparams):
@@ -156,19 +157,15 @@ class IQRScaler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, IQRHy
             return CallResult(inputs, True, 1)
 
     def get_params(self) -> Params:
-        if not self._fitted:
-            raise ValueError("Fit not performed.")
         return Params(
-            # coef_=getattr(self._model, 'center_', None),
-            center_=getattr(self._model, 'center_', None),
-            # intercept_=getattr(self._model, 'scale_', None),
-            scale_=getattr(self._model, 'scale_', None),
-            s_cols=self._s_cols
-            # s_cols=getattr(self._model, 's_cols', None)
+            fitted = self._fitted,
+            center = getattr(self._model, 'center_', None),
+            scale = getattr(self._model, 'scale_', None),
+            s_cols = self._s_cols
         )
 
     def set_params(self, *, params: Params) -> None:
-        self._model.center_ = params['center_']
-        self._model.scale_ = params['scale_']
+        self._model.center_ = params['center']
+        self._model.scale_ = params['scale']
         self._s_cols = params['s_cols']
-        self._fitted = True
+        self._fitted = params['fitted']
