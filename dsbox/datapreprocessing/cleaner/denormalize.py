@@ -223,8 +223,8 @@ class Denormalize(transformer.TransformerPrimitiveBase[Inputs, Outputs, Denormal
         if data is None:
             data = selected_data
         else:
-            import pdb
-            pdb.set_trace()
+            #import pdb
+            #pdb.set_trace()
             #data = data.reset_index().drop(columns=['index'])
             selected_data = selected_data.set_index(data.index)
             #selected_data = selected_data.reset_index().drop(columns=['index'])
@@ -242,8 +242,8 @@ class Denormalize(transformer.TransformerPrimitiveBase[Inputs, Outputs, Denormal
         if data is None:
             data = column_data
         else:
-            import pdb
-            pdb.set_trace()
+            #import pdb
+            #pdb.set_trace()
             #data = data.reset_index().drop(columns=['index'])
             column_data = column_data.set_index(data.index)
             #column_data = column_data.reset_index().drop(columns=['index'])
