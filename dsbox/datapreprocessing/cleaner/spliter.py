@@ -20,11 +20,11 @@ def update_type(extends, df_origin):
         length = numerics.shape[0]
         nans = numerics.isnull().sum()
 
-        if nans/length > 0.9:
+        if nans / length > 0.9:
             old_metadata['semantic_types'] = ("http://schema.org/Text",)
         else:
-            intcheck = (numerics%1) == 0
-            if np.sum(intcheck)/length > 0.9:
+            intcheck = (numerics % 1) == 0
+            if np.sum(intcheck) / length > 0.9:
                 old_metadata['semantic_types'] = ("http://schema.org/Integer",)
             else:
                 old_metadata['semantic_types'] = ("http://schema.org/Float",)
@@ -108,10 +108,10 @@ class PunctuationParser:
             common_threshold=0.9,
     ):
         '''
-        The parameter common_threshold means punctuation density in a column, determined 
+        The parameter common_threshold means punctuation density in a column, determined
         by the number of row that contains a specific punctuation to the number of rows.
-        num-threshold is number density of a column, determined by the number of float or 
-        integer to the number of rows.A large common_threshold means most of rows contains 
+        num-threshold is number density of a column, determined by the number of float or
+        integer to the number of rows.A large common_threshold means most of rows contains
         the specific punctuation. A large num_threshold means number dominates that column.
         '''
 
@@ -125,28 +125,41 @@ class PunctuationParser:
         require_checking = \
             list(set(all_indices).difference(set(self.columns_ignore)))
         extends = []
+        split_times = []
+        columns_to_split = []
         for one_column in require_checking:
             isnumber = self.num_check(self.df.iloc[:, one_column])
             if not isnumber:
                 common_list = self.find_common(self.df.iloc[:,
                                                one_column])
                 if len(common_list) > 0:
-                    extends.append(one_column)
+                    result = self.splitter(self.df.iloc[:, one_column],
+                                           common_list)
+
+                    columns_to_split.append(one_column)
+                    split_times.append(len(result))
+        extends.append(columns_to_split)
+        extends.append(split_times)
         return extends
 
     def perform(self, columns_perform):
         extends = {}
-        for one_column in columns_perform:
+        for i, one_column in enumerate(columns_perform[0]):
             common_list = self.find_common(self.df.iloc[:, one_column])
             result = self.splitter(self.df.iloc[:, one_column],
                                    common_list)
+            if len(result) > columns_perform[1][i]:
+                result.pop()
+            elif len(result) < columns_perform[1][i]:
+                for j in range(columns_perform[1][i] - len(result)):
+                    result.append([np.nan] * len(result[0]))
             count = 0
             for one in result:
                 extends[self.df.columns[one_column] + '_punc_'
                         + str(count)] = one
                 count += 1
 
-        new_df = update_type(extends, self.df)
+        new_df = update_type(extends[0], self.df)
 
         return new_df
 
@@ -227,11 +240,11 @@ class NumAlphaParser:
             num_alpha_threshold=0.8,
     ):
         '''
-        The parameter common_threshold means punctuation density in a column, determined 
+        The parameter common_threshold means punctuation density in a column, determined
         by the number of row that contains a specific punctuation to the number of rows.
-        num-num_alpha_threshold is number_alpha density of a column, determined by the 
-        number of pattern num_alpha or alpha_num to the number of rows.A large common_threshold 
-        means most of rows contains the specific punctuation. A large num_threshold means 
+        num-num_alpha_threshold is number_alpha density of a column, determined by the
+        number of pattern num_alpha or alpha_num to the number of rows.A large common_threshold
+        means most of rows contains the specific punctuation. A large num_threshold means
         number dominates that column.
         '''
 
@@ -245,27 +258,38 @@ class NumAlphaParser:
         require_checking = \
             list(set(all_indices).difference(set(self.columns_ignore)))
         extends = []
+        split_times = []
+        columns_to_split = []
         for one_column in require_checking:
             isnumber = self.num_check(self.df.iloc[:, one_column])
             if not isnumber:
                 isnum_alpha = self.is_num_alpha(self.df.iloc[:,
                                                 one_column])
                 if isnum_alpha:
-                    extends.append(one_column)
+                    result = self.num_alpha_splitter(self.df.iloc[:, one_column])
+                    columns_to_split.append(one_column)
+                    split_times.append(len(result))
+        extends.append(columns_to_split)
+        extends.append(split_times)
         return extends
 
     def perform(self, columns_perform):
         extends = {}
-        for one_column in columns_perform:
+        for i, one_column in enumerate(columns_perform[0]):
             result = self.num_alpha_splitter(self.df.iloc[:,
                                              one_column])
+            if len(result) > columns_perform[1][i]:
+                result.pop()
+            elif len(result) < columns_perform[1][i]:
+                for j in range(columns_perform[1][i] - len(result)):
+                    result.append([np.nan] * len(result[0]))
             count = 0
             for one in result:
                 extends[self.df.columns[one_column] + '_na_'
                         + str(count)] = one
                 count += 1
 
-        new_df = update_type(extends, self.df)
+        new_df = update_type(extends[0], self.df)
 
         return new_df
 
@@ -315,7 +339,7 @@ class NumAlphaParser:
 
 
 if __name__ == '__main__':
-    file = '/Users/runqishao/Downloads/Archive_2/LL0_188_eucalyptus/LL0_188_eucalyptus_dataset/tables/learningData.csv'
+    file = '/Users/xkgoodbest/Documents/ISI/LL0/LL0_188_eucalyptus/LL0_188_eucalyptus_dataset/tables/learningData.csv'
     df = pd.read_csv(file)
 
     print(df[:5])
@@ -323,15 +347,18 @@ if __name__ == '__main__':
     phone_list = phone_parser.detect()
     phone_result = phone_parser.perform(phone_list)
     print(phone_result[:5])
+    phone_result.to_csv('phone.csv')
 
     punc_splitter = PunctuationParser(df, columns_ignore=[], num_threshold=0.1, common_threshold=0.9)
     punc_list = punc_splitter.detect()
     punc_result = punc_splitter.perform(punc_list)
 
     print(punc_result[:5])
+    punc_result.to_csv('punc.csv')
 
     na_splitter = NumAlphaParser(df, columns_ignore=[], num_threshold=0.1, num_alpha_threshold=0.8)
     na_list = na_splitter.detect()
     na_result = na_splitter.perform(na_list)
 
     print(na_result[:5])
+    na_result.to_csv('na.csv')
