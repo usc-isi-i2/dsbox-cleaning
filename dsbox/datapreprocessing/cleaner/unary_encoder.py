@@ -131,7 +131,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         self._fitted = False
         self._cat_columns = []
         self._col_index = None
-        self._requirement = {}
+        self._requirement: typing.Dict = dict()
 
     def get_params(self) -> Params:
 
@@ -278,6 +278,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
 
         # core part: encode the unary columns
         data_enc = data.iloc[:, self._cat_col_index].apply(lambda col: pd.to_numeric(col, errors='coerce'))
+        data_else = data.drop(self._mapping.keys(),axis=1)
         res = []
         for column_name in data_enc:
             col = data_enc[column_name]
