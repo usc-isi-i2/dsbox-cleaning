@@ -140,7 +140,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
             self._mapping[key] = [np.nan if np.isnan(x) else int(x) for x in self._mapping[key]]
 
         param = Params(mapping=self._mapping, all_columns=self._all_columns, empty_columns=self._empty_columns,
-                       textmapping=self._textmapping)
+                       textmapping=self._textmapping, requirement = self._requirement)
         return param
 
 
@@ -149,6 +149,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         self._mapping = params['mapping']
         self._all_columns = params['all_columns']
         self._empty_columns = params['empty_columns']
+        self._requirement = params['requirement']
         self._fitted = True
 
 
@@ -309,5 +310,5 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         # after extracting the traget columns, remove these columns from dataFrame
         data_else = utils.remove_columns(data, self._cat_col_index, source='ISI DSBox Data Unary Encoder')
         result = utils.horizontal_concat(data_else, encoded)
-        
+
         return CallResult(result, True, 1)
