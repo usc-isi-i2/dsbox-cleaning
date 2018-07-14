@@ -131,6 +131,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         self._fitted = False
         self._cat_columns = []
         self._col_index = None
+        self._requirement = {}
 
     def get_params(self) -> Params:
 
@@ -139,7 +140,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
             self._mapping[key] = [np.nan if np.isnan(x) else int(x) for x in self._mapping[key]]
 
         param = Params(mapping=self._mapping, all_columns=self._all_columns, empty_columns=self._empty_columns,
-                       textmapping=self._textmapping)
+                       textmapping=self._textmapping, requirement = self._requirement)
         return param
 
 
@@ -148,6 +149,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         self._mapping = params['mapping']
         self._all_columns = params['all_columns']
         self._empty_columns = params['empty_columns']
+        self._requirement = params['requirement']
         self._fitted = True
 
 
@@ -226,6 +228,17 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
             le.fit_pd(texts)
             self._textmapping = le.get_params()
 
+        # determine whether to run unary encoder on the given column or not
+        data_enc = data.iloc[:, self._cat_col_index].apply(lambda col: pd.to_numeric(col, errors='coerce'))
+        for column_name in data_enc:
+            col = data_enc[column_name]
+            col.is_copy = False
+            # only apply unary encoder when the amount of the numerical data is less than 12
+            if col.unique().shape[0] < 13:
+                self._requirement[column_name] = True
+            else:
+                self._requirement[column_name] = False
+                
         self._fitted = True
 
 
@@ -251,7 +264,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
 
         # Return if there is nothing to encode
         if len(self._cat_columns)==0:
-            return CallResult(self._input_data_copy, True, 1)
+            return CallResult(inputs, True, 1)
 
         if isinstance(inputs, pd.DataFrame):
             data = inputs.copy()
@@ -269,15 +282,16 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         for column_name in data_enc:
             col = data_enc[column_name]
             col.is_copy = False
-            chg_v = lambda x: min(self._mapping[col.name], key=lambda a:abs(a-x)) if x is not None else x
-             # only encode the values which is not null
-            col[col.notnull()] = col[col.notnull()].apply(chg_v)
             # only apply unary encoder when the amount of the numerical data is less than 12
-            if col.unique().shape[0] < 13:
+            if self._requirement[column_name]:
+                chg_v = lambda x: min(self._mapping[col.name], key=lambda a:abs(a-x)) if x is not None else x
+                # only encode the values which is not null
+                col[col.notnull()] = col[col.notnull()].apply(chg_v)
                 encoded = self.__encode_column(col)
                 res.append(encoded)
             else:
                 res.append(col)
+
         if self._text2int:
             texts = data_else.select_dtypes([object])
             le = Label_encoder()
