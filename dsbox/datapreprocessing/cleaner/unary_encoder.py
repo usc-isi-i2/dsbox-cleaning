@@ -215,8 +215,8 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
             metadata=data.metadata,
             semantic_types=["https://metadata.datadrivendiscovery.org/types/Attribute"]
             )
-        self._cat_col_index = list(set(all_attributes).intersection(numeric))
-        self._cat_columns = data.columns[self._cat_col_index].tolist()
+        self._cat_col_index = container.List(set(all_attributes).intersection(numeric))
+        self._cat_columns = container.List(data.columns[self._cat_col_index].tolist())
         #import pdb
         #pdb.set_trace()
         numerical_values = data.iloc[:, self._cat_col_index].apply(
