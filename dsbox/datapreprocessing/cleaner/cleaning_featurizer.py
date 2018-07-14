@@ -182,7 +182,11 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
         if self._mapping.get("alpha_numeric_columns"):
             original_cols = self._get_cols(self._input_data_copy)
             nap = NumAlphaParser(df=self._input_data_copy)
-            df = nap.perform(self._mapping.get("alpha_numeric_columns"))
+            detected = nap.detect()
+            alpha_numeric_columns = self._mapping.get("alpha_numeric_columns")
+            l = len(alpha_numeric_columns)
+            detected = [x[:l] for x in detected]
+            df = nap.perform(detected)
             current_cols = self._get_cols(df)
 
             _logger.info(
@@ -197,7 +201,11 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
         if self._mapping.get("punctuation_columns"):
             original_cols = self._get_cols(self._input_data_copy)
             ps = PunctuationParser(df=self._input_data_copy)
-            df = ps.perform(self._mapping.get("punctuation_columns"))
+            detected = ps.detect()
+            punctuation_columns = self._mapping.get("punctuation_columns")
+            l = len(punctuation_columns)
+            detected = [x[:l] for x in detected]
+            df = ps.perform(detected)
             current_cols = self._get_cols(df)
 
             _logger.info(
