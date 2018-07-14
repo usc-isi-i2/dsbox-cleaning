@@ -20,7 +20,9 @@ class Params(params.Params):
     all_columns : typing.Set[str]
     empty_columns : typing.List[object]
     textmapping : typing.Dict
-
+    requirement : typing.Dict
+    cat_columns : typing.List[object]
+    cat_col_index : typing.List[object]
 
 class UEncHyperparameter(hyperparams.Hyperparams):
     text2int = hyperparams.UniformBool(
@@ -126,12 +128,12 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         self._mapping: typing.Dict = dict()
         self._all_columns: typing.Set = set()
         self._empty_columns: typing.List[object] = []
-
+        self._cat_col_index: typing.List[object] = [] 
+        self._cat_columns: typing.List[object] = []
         self._training_inputs = None
         self._fitted = False
-        self._cat_columns = []
         self._col_index = None
-        self._requirement = {}
+        self._requirement: typing.Dict = dict()
 
     def get_params(self) -> Params:
 
@@ -139,8 +141,14 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         for key in self._mapping.keys():
             self._mapping[key] = [np.nan if np.isnan(x) else int(x) for x in self._mapping[key]]
 
-        param = Params(mapping=self._mapping, all_columns=self._all_columns, empty_columns=self._empty_columns,
-                       textmapping=self._textmapping, requirement = self._requirement)
+        param = Params(mapping = self._mapping, 
+                       all_columns = self._all_columns, 
+                       empty_columns = self._empty_columns,
+                       textmapping = self._textmapping, 
+                       requirement = self._requirement, 
+                       cat_columns = self._cat_columns, 
+                       cat_col_index = self._cat_col_index
+                       )
         return param
 
 
@@ -150,6 +158,8 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         self._all_columns = params['all_columns']
         self._empty_columns = params['empty_columns']
         self._requirement = params['requirement']
+        self._cat_columns = params['cat_columns']
+        self._cat_col_index = params['cat_col_index']
         self._fitted = True
 
 
@@ -205,8 +215,8 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
             metadata=data.metadata,
             semantic_types=["https://metadata.datadrivendiscovery.org/types/Attribute"]
             )
-        self._cat_col_index = list(set(all_attributes).intersection(numeric))
-        self._cat_columns = data.columns[self._cat_col_index].tolist()
+        self._cat_col_index = container.List(set(all_attributes).intersection(numeric))
+        self._cat_columns = container.List(data.columns[self._cat_col_index].tolist())
         #import pdb
         #pdb.set_trace()
         numerical_values = data.iloc[:, self._cat_col_index].apply(
@@ -278,6 +288,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
 
         # core part: encode the unary columns
         data_enc = data.iloc[:, self._cat_col_index].apply(lambda col: pd.to_numeric(col, errors='coerce'))
+        data_else = data.drop(self._mapping.keys(),axis=1)
         res = []
         for column_name in data_enc:
             col = data_enc[column_name]
