@@ -159,7 +159,7 @@ class PunctuationParser:
                         + str(count)] = one
                 count += 1
 
-        new_df = update_type(extends[0], self.df)
+        new_df = update_type(extends, self.df)
 
         return new_df
 
@@ -289,7 +289,7 @@ class NumAlphaParser:
                         + str(count)] = one
                 count += 1
 
-        new_df = update_type(extends[0], self.df)
+        new_df = update_type(extends, self.df)
 
         return new_df
 
