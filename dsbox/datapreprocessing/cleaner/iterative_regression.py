@@ -13,6 +13,8 @@ from d3m.metadata import hyperparams, params
 from d3m.metadata.hyperparams import UniformBool
 import common_primitives.utils as utils
 
+import typing
+
 from . import config
 
 Input = container.DataFrame
@@ -21,9 +23,12 @@ Output = container.DataFrame
 # store the regression models for each missing-value column in training data
 
 
-class Params(params.Params):
-    regression_models: typing.Dict
-
+class IR_Params(params.Params):
+    fitted : typing.Union[typing.Any, None]
+    verbose : typing.Union[typing.Any, None]
+    iterations_done : typing.Union[typing.Any, None]
+    has_finished : typing.Union[typing.Any, None]
+    best_imputation : typing.Union[typing.Any, None]
 
 class IterativeRegressionHyperparameter(hyperparams.Hyperparams):
     verbose = UniformBool(default=False,
@@ -31,7 +36,7 @@ class IterativeRegressionHyperparameter(hyperparams.Hyperparams):
                                           'https://metadata.datadrivendiscovery.org/types/ControlParameter'])
 
 
-class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, IterativeRegressionHyperparameter]):
+class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, IR_Params, IterativeRegressionHyperparameter]):
     """
     Impute the missing value by iteratively regress using other attributes.
         It will fit and fill the missing value in the training set, and store the learned models.
@@ -90,16 +95,21 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
         self._iterations_done = True
         self._verbose = hyperparams['verbose'] if hyperparams else False
 
-    def set_params(self, *, params: Params) -> None:
-        self._is_fitted = len(params['regression_models']) > 0
-        self._has_finished = self._is_fitted
-        self._best_imputation = params['regression_models']
+    def set_params(self, *, params: IR_Params) -> None:
+        self._is_fitted = params['fitted']
+        self._verbose = params['verbose']
+        self._iterations_done = params['iterations_done']
+        self._has_finished = params['has_finished']
+        self._best_imputation = params['best_imputation']
 
-    def get_params(self) -> Params:
-        if self._is_fitted:
-            return Params(regression_models=self._best_imputation)
-        else:
-            return Params(regression_models=dict())
+    def get_params(self) -> IR_Params:
+        return IR_Params(
+            fitted = self._is_fitted,
+            verbose = self._verbose,
+            iterations_done = self._iterations_done,
+            has_finished = self._has_finished,
+            best_imputation = self._best_imputation
+            )
 
     def set_training_data(self, *, inputs: Input) -> None:
         """
