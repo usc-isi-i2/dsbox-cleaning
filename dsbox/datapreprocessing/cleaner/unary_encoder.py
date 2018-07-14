@@ -126,10 +126,10 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         self._mapping: typing.Dict = dict()
         self._all_columns: typing.Set = set()
         self._empty_columns: typing.List[object] = []
-
+        self._cat_col_index: typing.List[object] = [] 
+        self._cat_columns: typing.List[object] = []
         self._training_inputs = None
         self._fitted = False
-        self._cat_columns = []
         self._col_index = None
         self._requirement: typing.Dict = dict()
 
@@ -140,7 +140,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
             self._mapping[key] = [np.nan if np.isnan(x) else int(x) for x in self._mapping[key]]
 
         param = Params(mapping=self._mapping, all_columns=self._all_columns, empty_columns=self._empty_columns,
-                       textmapping=self._textmapping, requirement = self._requirement)
+                       textmapping=self._textmapping, requirement = self._requirement, cat_columns = self._cat_columns, cat_col_index = self._cat_col_index)
         return param
 
 
@@ -150,6 +150,8 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         self._all_columns = params['all_columns']
         self._empty_columns = params['empty_columns']
         self._requirement = params['requirement']
+        self._cat_columns = params['cat_columns']
+        self._cat_col_index = params['cat_col_index']
         self._fitted = True
 
 
