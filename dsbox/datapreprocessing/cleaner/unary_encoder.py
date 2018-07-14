@@ -20,7 +20,9 @@ class Params(params.Params):
     all_columns : typing.Set[str]
     empty_columns : typing.List[object]
     textmapping : typing.Dict
-
+    requirement : typing.Dict
+    cat_columns : typing.List[object]
+    cat_col_index : typing.List[object]
 
 class UEncHyperparameter(hyperparams.Hyperparams):
     text2int = hyperparams.UniformBool(
@@ -139,8 +141,14 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         for key in self._mapping.keys():
             self._mapping[key] = [np.nan if np.isnan(x) else int(x) for x in self._mapping[key]]
 
-        param = Params(mapping=self._mapping, all_columns=self._all_columns, empty_columns=self._empty_columns,
-                       textmapping=self._textmapping, requirement = self._requirement, cat_columns = self._cat_columns, cat_col_index = self._cat_col_index)
+        param = Params(mapping = self._mapping, 
+                       all_columns = self._all_columns, 
+                       empty_columns = self._empty_columns,
+                       textmapping = self._textmapping, 
+                       requirement = self._requirement, 
+                       cat_columns = self._cat_columns, 
+                       cat_col_index = self._cat_col_index
+                       )
         return param
 
 
