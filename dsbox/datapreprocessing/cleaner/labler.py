@@ -49,13 +49,13 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHy
 
     })
 
-    def __init__(self, *, hyperparams: LablerHyperparams) -> None:
+        def __init__(self, *, hyperparams: LablerHyperparams) -> None:
         super().__init__(hyperparams=hyperparams)
         self.hyperparams = hyperparams
         self._training_data = None
         self._fitted = False
         self._s_cols = None
-        self._model = defaultdict(LabelEncoder)
+        self._model = {}
         self._has_finished = False
         self._iterations_done = False
 
@@ -80,7 +80,9 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHy
         print("[INFO] %d of categorical attributes found." % (len(self._s_cols)))
 
         if len(self._s_cols) > 0:
-            self._training_data.iloc[:,self._s_cols].apply(lambda x: self._model[x.name].fit(x))
+            temp_model = defaultdict(LabelEncoder)
+            self._training_data.iloc[:,self._s_cols].apply(lambda x: temp_model[x.name].fit(x))
+            self._model = dict(temp_model)
             self._fitted = True
         else:
             self._fitted = False
@@ -88,6 +90,8 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHy
     def produce(self, *, inputs: Inputs, timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
         if not self._fitted:
             return CallResult(inputs, self._has_finished, self._iterations_done)
+
+        assert isinstance(self._model, dict), "self._model type must be dict not defaultdict!"
 
         temp = pd.DataFrame(inputs.iloc[:, self._s_cols].apply(lambda x: self._model[x.name].transform(x)))
         outputs = inputs.copy()
@@ -128,7 +132,7 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHy
     def set_params(self, *, params: Params) -> None:
         self._s_cols = params['s_cols']
         if params['labler_dict']:
-            self._model = defaultdict(LabelEncoder)
+            self._model = {}#defaultdict(LabelEncoder)
             for each_key, each_value in params['labler_dict'].items():
                 each_encoder = LabelEncoder()
                 each_encoder.classes_ = each_value
