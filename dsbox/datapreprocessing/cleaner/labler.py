@@ -49,13 +49,13 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHy
 
     })
 
-    def __init__(self, *, hyperparams: LablerHyperparams) -> None:
+        def __init__(self, *, hyperparams: LablerHyperparams) -> None:
         super().__init__(hyperparams=hyperparams)
         self.hyperparams = hyperparams
         self._training_data = None
         self._fitted = False
         self._s_cols = None
-        self._model = defaultdict(LabelEncoder)
+        self._model = {}
         self._has_finished = False
         self._iterations_done = False
 
@@ -80,7 +80,9 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHy
         print("[INFO] %d of categorical attributes found." % (len(self._s_cols)))
 
         if len(self._s_cols) > 0:
-            self._training_data.iloc[:,self._s_cols].apply(lambda x: self._model[x.name].fit(x))
+            temp_model = defaultdict(LabelEncoder)
+            self._training_data.iloc[:,self._s_cols].apply(lambda x: temp_model[x.name].fit(x))
+            self._model = dict(temp_model)
             self._fitted = True
         else:
             self._fitted = False
@@ -89,11 +91,19 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHy
         if not self._fitted:
             return CallResult(inputs, self._has_finished, self._iterations_done)
 
-        temp = pd.DataFrame(inputs.iloc[:, self._s_cols].apply(lambda x: self._model[x.name].transform(x)))
+        assert isinstance(self._model, dict), "self._model type must be dict not defaultdict!"
+
+        temp = pd.DataFrame(inputs.iloc[:, self._s_cols].apply(
+            lambda x: self._model[x.name].transform(x) if x.name in self._model else None
+        ))
+
         outputs = inputs.copy()
         for id_index, od_index in zip(self._s_cols, range(temp.shape[1])):
             outputs.iloc[:, id_index] = temp.iloc[:, od_index]
-        lookup = {"int": ('http://schema.org/Integer', 'https://metadata.datadrivendiscovery.org/types/Attribute')}
+        lookup = {
+            "int": ('http://schema.org/Integer',
+                    'https://metadata.datadrivendiscovery.org/types/Attribute')
+        }
 
         for index in self._s_cols:
             old_metadata = dict(outputs.metadata.query((mbase.ALL_ELEMENTS, index)))
@@ -101,7 +111,16 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHy
             old_metadata["structural_type"] = type(10)
             outputs.metadata = outputs.metadata.update((mbase.ALL_ELEMENTS, index), old_metadata)
 
-        if outputs.shape == inputs.shape:
+
+        # remove the columns that appeared in produce method but were not in fitted data
+        drop_names = set(outputs.columns[self._s_cols]).difference(set(self._model.keys()))
+        drop_indices = map(lambda a: outputs.columns.get_loc(a), drop_names)
+        drop_indices = sorted(drop_indices)
+        outputs = utils.remove_columns(outputs, drop_indices, source='ISI DSBox Data Labler')
+
+        # sanity check and report the results
+        if outputs.shape[0] == inputs.shape[0] and \
+           outputs.shape[1] == inputs.shape[1] - len(drop_names):
             self._has_finished = True
             self._iterations_done = True
             # print("output:",outputs.head(5))
@@ -128,7 +147,7 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHy
     def set_params(self, *, params: Params) -> None:
         self._s_cols = params['s_cols']
         if params['labler_dict']:
-            self._model = defaultdict(LabelEncoder)
+            self._model = {}#defaultdict(LabelEncoder)
             for each_key, each_value in params['labler_dict'].items():
                 each_encoder = LabelEncoder()
                 each_encoder.classes_ = each_value
