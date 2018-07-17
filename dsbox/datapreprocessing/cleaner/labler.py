@@ -19,12 +19,15 @@ __all__ = ('Labler',)
 Inputs = container.DataFrame
 Outputs = container.DataFrame
 
+
 class Params(params.Params):
     labler_dict: Dict
     s_cols: List[object]
 
+
 class LablerHyperparams(hyperparams.Hyperparams):
     pass
+
 
 class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHyperparams]):
     """
@@ -49,7 +52,7 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHy
 
     })
 
-        def __init__(self, *, hyperparams: LablerHyperparams) -> None:
+    def __init__(self, *, hyperparams: LablerHyperparams) -> None:
         super().__init__(hyperparams=hyperparams)
         self.hyperparams = hyperparams
         self._training_data = None
@@ -111,7 +114,6 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHy
             old_metadata["structural_type"] = type(10)
             outputs.metadata = outputs.metadata.update((mbase.ALL_ELEMENTS, index), old_metadata)
 
-
         # remove the columns that appeared in produce method but were not in fitted data
         drop_names = set(outputs.columns[self._s_cols]).difference(set(self._model.keys()))
         drop_indices = map(lambda a: outputs.columns.get_loc(a), drop_names)
@@ -147,7 +149,8 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHy
     def set_params(self, *, params: Params) -> None:
         self._s_cols = params['s_cols']
         if params['labler_dict']:
-            self._model = {}#defaultdict(LabelEncoder)
+            self._model = {}
+            # defaultdict(LabelEncoder)
             for each_key, each_value in params['labler_dict'].items():
                 each_encoder = LabelEncoder()
                 each_encoder.classes_ = each_value
