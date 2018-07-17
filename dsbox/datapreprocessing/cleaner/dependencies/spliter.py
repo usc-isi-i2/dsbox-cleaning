@@ -58,7 +58,10 @@ class PhoneParser:
         extends = {}
         for one_column in columns_perform["columns_to_perform"]:
             result = PhoneParser.phone_parser(df.iloc[:, one_column])
-            extends[df.columns[one_column] + '_phone'] = result
+            try:
+                extends[str(df.columns[one_column]) + '_phone'] = result
+            except:
+                extends[df.columns[one_column].apply(str) + '_phone'] = result
 
         new_df = update_type(extends, df)
 
@@ -125,7 +128,10 @@ class PunctuationParser:
                     result.append([np.nan] * len(result[0]))
             count = 0
             for one in result:
-                extends[df.columns[one_column] + '_punc_' + str(count)] = one
+                try:
+                    extends[str(df.columns[one_column]) + '_punc_' + str(count)] = one
+                except:
+                    extends[df.columns[one_column].apply(str) + '_punc_' + str(count)] = one
                 count += 1
 
         new_df = update_type(extends, df)
@@ -229,7 +235,10 @@ class NumAlphaParser:
                     result.append([np.nan] * len(result[0]))
             count = 0
             for one in result:
-                extends[df.columns[one_column] + '_na_' + str(count)] = one
+                try:
+                    extends[str(df.columns[one_column]) + '_na_' + str(count)] = one
+                except:
+                    extends[df.columns[one_column].apply(str) + '_na_' + str(count)] = one
                 count += 1
 
         new_df = update_type(extends, df)
