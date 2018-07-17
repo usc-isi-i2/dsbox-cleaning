@@ -93,11 +93,17 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHy
 
         assert isinstance(self._model, dict), "self._model type must be dict not defaultdict!"
 
-        temp = pd.DataFrame(inputs.iloc[:, self._s_cols].apply(lambda x: self._model[x.name].transform(x)))
+        temp = pd.DataFrame(inputs.iloc[:, self._s_cols].apply(
+            lambda x: self._model[x.name].transform(x) if x.name in self._model else None
+        ))
+
         outputs = inputs.copy()
         for id_index, od_index in zip(self._s_cols, range(temp.shape[1])):
             outputs.iloc[:, id_index] = temp.iloc[:, od_index]
-        lookup = {"int": ('http://schema.org/Integer', 'https://metadata.datadrivendiscovery.org/types/Attribute')}
+        lookup = {
+            "int": ('http://schema.org/Integer',
+                    'https://metadata.datadrivendiscovery.org/types/Attribute')
+        }
 
         for index in self._s_cols:
             old_metadata = dict(outputs.metadata.query((mbase.ALL_ELEMENTS, index)))
@@ -105,7 +111,16 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHy
             old_metadata["structural_type"] = type(10)
             outputs.metadata = outputs.metadata.update((mbase.ALL_ELEMENTS, index), old_metadata)
 
-        if outputs.shape == inputs.shape:
+
+        # remove the columns that appeared in produce method but were not in fitted data
+        drop_names = set(outputs.columns[self._s_cols]).difference(set(self._model.keys()))
+        drop_indices = map(lambda a: outputs.columns.get_loc(a), drop_names)
+        drop_indices = sorted(drop_indices)
+        outputs = utils.remove_columns(outputs, drop_indices, source='ISI DSBox Data Labler')
+
+        # sanity check and report the results
+        if outputs.shape[0] == inputs.shape[0] and \
+           outputs.shape[1] == inputs.shape[1] - len(drop_names):
             self._has_finished = True
             self._iterations_done = True
             # print("output:",outputs.head(5))
