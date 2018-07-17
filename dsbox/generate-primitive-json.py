@@ -28,7 +28,8 @@ PRIMITIVES = [(p, cleaner_config) for p in [
     'IQRScaler',
     'CleaningFeaturizer',
     'Labler',
-    'Denormalize'
+    'Denormalize',
+    'Profiler'
             ]
               ]
 

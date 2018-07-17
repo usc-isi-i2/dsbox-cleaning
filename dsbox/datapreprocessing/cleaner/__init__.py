@@ -10,6 +10,7 @@ from .IQRScaler import IQRScaler,IQRHyperparams
 from .labler import Labler,LablerHyperparams
 from .cleaning_featurizer import CleaningFeaturizer, CleaningFeaturizerHyperparameter
 from .denormalize import Denormalize, DenormalizeHyperparams
+from .data_profile import Profiler, Hyperparams as ProfilerHyperparams
 
 
 # __all__ = ['Encoder', 'GreedyImputation', 'IterativeRegressionImputation',
@@ -27,6 +28,7 @@ __all__ = ['Encoder', 'EncHyperparameter',
            'Labler','LablerHyperparams',
            'CleaningFeaturizer','CleaningFeaturizerHyperparameter',
            'Denormalize','DenormalizeHyperparams',
+           'Profiler', 'ProfilerHyperparams',
 ]
 
 

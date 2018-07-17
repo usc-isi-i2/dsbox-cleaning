@@ -7,11 +7,12 @@ import d3m.metadata.base as mbase
 from d3m.metadata import hyperparams, params
 from d3m.primitive_interfaces.base import CallResult
 from d3m.primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
-from typing import NamedTuple, Dict, List, Set, Union
+from typing import Dict, Union
 
 from common_primitives import utils
-from dsbox.datapreprocessing.cleaner.date_featurizer_org import DateFeaturizerOrg
-from dsbox.datapreprocessing.cleaner.spliter import PhoneParser, PunctuationParser, NumAlphaParser
+from dsbox.datapreprocessing.cleaner.dependencies.date_featurizer_org import DateFeaturizerOrg
+from dsbox.datapreprocessing.cleaner.dependencies.spliter import PhoneParser, PunctuationParser, NumAlphaParser
+from dsbox.datapreprocessing.cleaner.dependencies.helper_funcs import HelperFunction
 
 from . import config
 
@@ -19,6 +20,8 @@ _logger = logging.getLogger(__name__)
 
 Input = container.DataFrame
 Output = container.DataFrame
+
+Sample_rows = 20
 
 Clean_operations = {
     "split_date_column": True,
@@ -130,17 +133,17 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
 
             if self._clean_operations.get("split_phone_number_column"):
                 phone_cols = self._get_phone_cols(data)
-                if phone_cols:
+                if phone_cols.get("columns_to_perform"):
                     mapping["phone_columns"] = phone_cols
 
             if self._clean_operations.get("split_alpha_numeric_column"):
                 alpha_numeric_cols = self._get_alpha_numeric_cols(data)
-                if alpha_numeric_cols:
+                if alpha_numeric_cols.get("columns_to_perform"):
                     mapping["alpha_numeric_columns"] = alpha_numeric_cols
 
             if self._clean_operations.get("split_punctuation_column"):
                 punctuation_cols = self._get_punctuation_cols(data)
-                if punctuation_cols:
+                if punctuation_cols.get("columns_to_perform"):
                     mapping["punctuation_columns"] = punctuation_cols
 
             self._mapping = mapping
@@ -166,8 +169,7 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
 
         if self._mapping.get("phone_columns"):
             original_cols = self._get_cols(self._input_data_copy)
-            ps = PhoneParser(df=self._input_data_copy)
-            df = ps.perform(self._mapping.get("phone_columns"))
+            df = PhoneParser.perform(df=self._input_data_copy, columns_perform=self._mapping.get("phone_columns"))
             current_cols = self._get_cols(df)
 
             _logger.info(
@@ -181,12 +183,7 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
 
         if self._mapping.get("alpha_numeric_columns"):
             original_cols = self._get_cols(self._input_data_copy)
-            nap = NumAlphaParser(df=self._input_data_copy)
-            detected = nap.detect()
-            alpha_numeric_columns = self._mapping.get("alpha_numeric_columns")
-            l = len(alpha_numeric_columns)
-            detected = [x[:l] for x in detected]
-            df = nap.perform(detected)
+            df = NumAlphaParser.perform(df=self._input_data_copy, columns_perform=self._mapping.get("alpha_numeric_columns"))
             current_cols = self._get_cols(df)
 
             _logger.info(
@@ -200,12 +197,7 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
 
         if self._mapping.get("punctuation_columns"):
             original_cols = self._get_cols(self._input_data_copy)
-            ps = PunctuationParser(df=self._input_data_copy)
-            detected = ps.detect()
-            punctuation_columns = self._mapping.get("punctuation_columns")
-            l = len(punctuation_columns)
-            detected = [x[:l] for x in detected]
-            df = ps.perform(detected)
+            df = PunctuationParser.perform(df=self._input_data_copy, columns_perform=self._mapping.get("punctuation_columns"))
             current_cols = self._get_cols(df)
 
             _logger.info(
@@ -231,18 +223,15 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
 
     @staticmethod
     def _get_phone_cols(data):
-        return utils.list_columns_with_semantic_types(metadata=data.metadata, semantic_types=[
-            "https://metadata.datadrivendiscovery.org/types/AmericanPhoneNumber"])
+        return PhoneParser.detect(df=data.iloc[:Sample_rows, :])
 
     @staticmethod
     def _get_alpha_numeric_cols(data):
-        return utils.list_columns_with_semantic_types(metadata=data.metadata, semantic_types=[
-            "https://metadata.datadrivendiscovery.org/types/CanBeSplitByAlphanumeric"])
+        return NumAlphaParser.detect(df=data.iloc[:Sample_rows, :])
 
     @staticmethod
     def _get_punctuation_cols(data):
-        return utils.list_columns_with_semantic_types(metadata=data.metadata, semantic_types=[
-            "https://metadata.datadrivendiscovery.org/types/CanBeSplitByPunctuation"])
+        return PunctuationParser.detect(df=data.iloc[:Sample_rows, :])
 
     @staticmethod
     def _get_cols(df):
@@ -258,7 +247,11 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
                 nans = numerics.isnull().sum()
 
                 if nans / length > 0.9:
-                    old_metadata['semantic_types'] = ("http://schema.org/Text",)
+                    if HelperFunction.is_categorical(self._input_data_copy.iloc[:, col]):
+                        old_metadata['semantic_types'] = (
+                        "https://metadata.datadrivendiscovery.org/types/CategoricalData",)
+                    else:
+                        old_metadata['semantic_types'] = ("http://schema.org/Text",)
                 else:
                     intcheck = (numerics % 1) == 0
                     if np.sum(intcheck) / length > 0.9:

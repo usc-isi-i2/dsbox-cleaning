@@ -30,6 +30,7 @@ setup(name='dsbox-datacleaning',
               'dsbox.IQRScaler = dsbox.datapreprocessing.cleaner:IQRScaler',
               'dsbox.Labler = dsbox.datapreprocessing.cleaner:Labler',
               'dsbox.Denormalize = dsbox.datapreprocessing.cleaner:Denormalize',
+              'dsbox.Profiler = dsbox.datapreprocessing.cleaner:Profiler',
           ],
       }
 )

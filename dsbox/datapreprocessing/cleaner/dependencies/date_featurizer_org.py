@@ -6,6 +6,7 @@ import re
 import numpy as np
 
 from dsbox.datapreprocessing.cleaner.dependencies.date_extractor import DateExtractor
+from dsbox.datapreprocessing.cleaner.dependencies.helper_funcs import HelperFunction
 import d3m.metadata.base as mbase
 
 
@@ -339,7 +340,10 @@ class DateFeaturizerOrg:
         nans = numerics.isnull().sum()
 
         if nans / length > 0.9:
-            old_metadata['semantic_types'] = ("http://schema.org/Text",)
+            if HelperFunction.is_categorical(self.df[col_name]):
+                old_metadata['semantic_types'] = ("https://metadata.datadrivendiscovery.org/types/CategoricalData",)
+            else:
+                old_metadata['semantic_types'] = ("http://schema.org/Text",)
         else:
             intcheck = (numerics % 1) == 0
             if np.sum(intcheck) / length > 0.9:
