@@ -156,7 +156,10 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
                 return CallResult(inputs)
 
         # calling the utility to detect integer and float datatype columns
-        inputs = dtype_detector.detector(inputs)
+        try:
+            inputs = dtype_detector.detector(inputs)
+        except:
+            pass
 
         if inputs.shape[0] > 50:
             self._sample_df = inputs.dropna().iloc[0:50, :]
