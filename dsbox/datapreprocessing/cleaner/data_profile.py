@@ -166,7 +166,10 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
         # calling date detector
 
         self._DateFeaturizer = DateFeaturizerOrg(inputs)
-        cols = self._DateFeaturizer.detect_date_columns(self._sample_df)
+        try:
+            cols = self._DateFeaturizer.detect_date_columns(self._sample_df)
+        except:
+            cols = list()
         if cols:
             indices = [inputs.columns.get_loc(c) for c in cols if c in inputs.columns]
             for i in indices:
@@ -203,7 +206,10 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
 
         # calling the PhoneParser detector
 
-        PhoneParser_indices = PhoneParser.detect(df=self._sample_df)
+        try:
+            PhoneParser_indices = PhoneParser.detect(df=self._sample_df)
+        except:
+            PhoneParser_indices = list()
         if PhoneParser_indices.get("columns_to_perform"):
             for i in PhoneParser_indices["columns_to_perform"]:
                 old_metadata = dict(inputs.metadata.query((mbase.ALL_ELEMENTS, i)))
@@ -233,7 +239,10 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
 
         # calling the PunctuationSplitter detector
 
-        PunctuationSplitter_indices = PunctuationParser.detect(df=self._sample_df)
+        try:
+            PunctuationSplitter_indices = PunctuationParser.detect(df=self._sample_df)
+        except:
+            PunctuationSplitter_indices = list()
         if PunctuationSplitter_indices.get("columns_to_perform"):
             for i in PunctuationSplitter_indices["columns_to_perform"]:
                 old_metadata = dict(inputs.metadata.query((mbase.ALL_ELEMENTS, i)))
@@ -260,7 +269,10 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
 
         # calling the NumAlphaSplitter detector
 
-        NumAlphaSplitter_indices = NumAlphaParser.detect(df=self._sample_df)
+        try:
+            NumAlphaSplitter_indices = NumAlphaParser.detect(df=self._sample_df)
+        except:
+            NumAlphaSplitter_indices = list()
 
         if NumAlphaSplitter_indices.get("columns_to_perform"):
             for i in NumAlphaSplitter_indices["columns_to_perform"]:
