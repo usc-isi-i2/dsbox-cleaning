@@ -300,7 +300,7 @@ class DateFeaturizerOrg:
             else:
                 parsed_values.append(None)
         if multiple_values:
-            warn("Warning: multiple dates detected in column: " + idx)
+            warn("Warning: multiple dates detected in column: " + str(idx))
 
         frac_parsed = 1 - ((parsed_values.count(None) - df.iloc[:, idx].isnull().sum()) / len(parsed_values))
 
