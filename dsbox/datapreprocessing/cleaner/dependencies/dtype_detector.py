@@ -14,6 +14,7 @@ from d3m.primitive_interfaces.transformer import TransformerPrimitiveBase
 from dsbox.datapreprocessing.cleaner import config
 import logging
 
+
 def isfloat(value):
     try:
         float(value)
@@ -23,7 +24,6 @@ def isfloat(value):
 
 
 def detector(inputs):
-
     lookup = {"float": ('http://schema.org/Float', 'https://metadata.datadrivendiscovery.org/types/Attribute'),
               "int": ('http://schema.org/Integer', 'https://metadata.datadrivendiscovery.org/types/Attribute'),
               "Categorical": ('https://metadata.datadrivendiscovery.org/types/CategoricalData',
@@ -41,29 +41,35 @@ def detector(inputs):
         ## if there is already a data type, see if that is equal to what we identified, else update
         ## corner case : Integer type, could be a categorical Arrtribute
         # detetct integers and update metadata
-        
-        if True in dtype.index:
-            if dtype.loc[True][0] == temp.dropna().shape[0]:
-                if old_metadata["semantic_types"] == lookup["int"] or old_metadata["semantic_types"] == lookup[
-                    "Categorical"] or old_metadata["semantic_types"] == lookup["Ordinal"]:
-                    old_metadata["structural_type"] = type(10)
 
-                else:
-                    if 'http://schema.org/Integer' not in old_metadata["semantic_types"]:
-                        old_metadata["semantic_types"] += ('http://schema.org/Integer',)
-                    old_metadata["structural_type"] = type(10)
+        if True in dtype.index:
+            try:
+                if dtype.loc[True][0] == temp.dropna().shape[0]:
+                    if old_metadata["semantic_types"] == lookup["int"] or old_metadata["semantic_types"] == lookup[
+                        "Categorical"] or old_metadata["semantic_types"] == lookup["Ordinal"]:
+                        old_metadata["structural_type"] = type(10)
+
+                    else:
+                        if 'http://schema.org/Integer' not in old_metadata["semantic_types"]:
+                            old_metadata["semantic_types"] += ('http://schema.org/Integer',)
+                        old_metadata["structural_type"] = type(10)
+            except:
+                pass
         # detetct Float and update metadata
         else:
             dtype = pd.DataFrame(temp.dropna().apply(isfloat).value_counts())
             if True in dtype.index:
-                if dtype.loc[True][0] == temp.dropna().shape[0]:
-                    if old_metadata["semantic_types"] == lookup["float"] or old_metadata["semantic_types"] == lookup[
-                    "Categorical"] or old_metadata["semantic_types"] == lookup["Ordinal"]:
-                        old_metadata["structural_type"] = type(10.0)
-                    else:
-                        if 'http://schema.org/Float' not in old_metadata["semantic_types"]:
-                            old_metadata["semantic_types"] += ('http://schema.org/Float',)
-                        old_metadata["structural_type"] = type(10.0)
+                try:
+                    if dtype.loc[True][0] == temp.dropna().shape[0]:
+                        if old_metadata["semantic_types"] == lookup["float"] or old_metadata["semantic_types"] == lookup[
+                            "Categorical"] or old_metadata["semantic_types"] == lookup["Ordinal"]:
+                            old_metadata["structural_type"] = type(10.0)
+                        else:
+                            if 'http://schema.org/Float' not in old_metadata["semantic_types"]:
+                                old_metadata["semantic_types"] += ('http://schema.org/Float',)
+                            old_metadata["structural_type"] = type(10.0)
+                except:
+                    pass
 
         # _logger.info(
         #     "Integer and float detector. 'column_index': '%(column_index)d', 'old_metadata': '%(old_metadata)s', 'new_metadata': '%(new_metadata)s'",
@@ -77,5 +83,3 @@ def detector(inputs):
         inputs.metadata = inputs.metadata.update((mbase.ALL_ELEMENTS, col), old_metadata)
 
     return inputs
-
-
