@@ -4,15 +4,20 @@ import re
 import numpy as np
 import pandas as pd
 import d3m.metadata.base as mbase
+
+from common_primitives import utils
+from d3m.container import DataFrame as d3m_DataFrame
 from dsbox.datapreprocessing.cleaner.dependencies.helper_funcs import HelperFunction
 
-
 def update_type(extends, df_origin):
-    new_df = df_origin
+    extends_df = d3m_DataFrame.from_dict(extends)
+    extends_df.index = df_origin.index.copy()
+    new_df = utils.append_columns(df_origin, extends_df)
+
     indices = list()
     for key in extends:
-        new_df[key] = extends[key]
         indices.append(new_df.columns.get_loc(key))
+
     for idx in indices:
         old_metadata = dict(new_df.metadata.query((mbase.ALL_ELEMENTS, idx)))
 
