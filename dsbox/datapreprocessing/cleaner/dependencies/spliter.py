@@ -130,7 +130,9 @@ class PunctuationParser:
                 result = result[:columns_perform["split_to"][i]]
             elif len(result) < columns_perform["split_to"][i]:
                 for j in range(columns_perform["split_to"][i] - len(result)):
-                    result.append([np.nan] * len(result[0]))
+                    
+                    extra_column = np.reshape(np.asarray([np.nan] * len(result[0])),(1,len(result[0])))
+                    result = np.append(result, extra_column, axis=0)
             count = 0
             for one in result:
                 try:
