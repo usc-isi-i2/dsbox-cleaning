@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import pytypes
 import logging
+import traceback
 
 from d3m import container, types
 from d3m.metadata import hyperparams
@@ -168,7 +169,8 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
         self._DateFeaturizer = DateFeaturizerOrg(inputs)
         try:
             cols = self._DateFeaturizer.detect_date_columns(self._sample_df)
-        except:
+        except Exception as e:
+            _logger.error(traceback.print_exc(e))
             cols = list()
         if cols:
             indices = [inputs.columns.get_loc(c) for c in cols if c in inputs.columns]
@@ -208,7 +210,8 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
 
         try:
             PhoneParser_indices = PhoneParser.detect(df=self._sample_df)
-        except:
+        except Exception as e:
+            _logger.error(traceback.print_exc(e))
             PhoneParser_indices = list()
         if PhoneParser_indices.get("columns_to_perform"):
             for i in PhoneParser_indices["columns_to_perform"]:
@@ -241,7 +244,8 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
 
         try:
             PunctuationSplitter_indices = PunctuationParser.detect(df=self._sample_df)
-        except:
+        except Exception as e:
+            _logger.error(traceback.print_exc(e))
             PunctuationSplitter_indices = list()
         if PunctuationSplitter_indices.get("columns_to_perform"):
             for i in PunctuationSplitter_indices["columns_to_perform"]:
@@ -271,7 +275,8 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
 
         try:
             NumAlphaSplitter_indices = NumAlphaParser.detect(df=self._sample_df)
-        except:
+        except Exception as e:
+            _logger.error(traceback.print_exc(e))
             NumAlphaSplitter_indices = list()
 
         if NumAlphaSplitter_indices.get("columns_to_perform"):

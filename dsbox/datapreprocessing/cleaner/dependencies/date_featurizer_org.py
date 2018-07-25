@@ -24,11 +24,13 @@ class DateFeaturizerOrg:
 
         """
         dataframe: df to featurize
-        min_threshold: [0.0 to 1.0] Fraction of values required to be parsed as dates in order to featurize the
+        min_threshold: [0.0 to 1.0] Fraction of values required to be parsed as dates in order to
+        featurize the
                         column
         create_<date_resolution>: [Bool] Whether to create the column or not (global)
         drop_original_column: [Bool] Whether to drop the original column after featurizing or not
-        extractor_settings: [Dict] Extractor settings for the date parser (see dependencies/date_extractor.py)
+        extractor_settings: [Dict] Extractor settings for the date parser (see
+        dependencies/date_extractor.py)
         """
         self.df = dataframe
         self.min_threshold = min_threshold
@@ -56,9 +58,10 @@ class DateFeaturizerOrg:
         # Month range parser settings
         self._month_range_pattern = r'^\w{3,9}\-\w{3,9}$'
         self._month_range_delim = '-'
-        self._month_abbv = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Sep', 'Oct', 'Nov', 'Dec']
-        self._month_full = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September',
-                            'October', 'November', 'December']
+        self._month_abbv = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Sep',
+                            'Oct', 'Nov', 'Dec']
+        self._month_full = ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+                            'August', 'September', 'October', 'November', 'December']
 
     def featurize_date_columns(self, column_indices):
         """
@@ -147,7 +150,8 @@ class DateFeaturizerOrg:
         if self.create_day_of_week:
             self.df[column_label + "_day_of_week"] = dows
             self.update_types(column_label + "_day_of_week")
-            self._samples_to_print.append(self.df.columns.get_loc(column_label + "_day_of_week") - 1)
+            self._samples_to_print.append(
+                self.df.columns.get_loc(column_label + "_day_of_week") - 1)
         if self.create_epoch:
             self.df[column_label + "_epochs"] = epochs
             self.update_types(column_label + "_epochs")
@@ -175,7 +179,8 @@ class DateFeaturizerOrg:
             else:
                 parsed_values.append(None)
 
-        frac_parsed = 1 - ((parsed_values.count(None) - df.iloc[:, idx].isnull().sum()) / len(parsed_values))
+        frac_parsed = 1 - ((parsed_values.count(None) - df.iloc[:, idx].isnull().sum())
+                           / len(parsed_values))
 
         if frac_parsed >= self.min_threshold:
             return parsed_values
@@ -198,7 +203,8 @@ class DateFeaturizerOrg:
             else:
                 parsed_values.append(item)
 
-        frac_parsed = 1 - ((parsed_values.count(None) - df.iloc[:, idx].isnull().sum()) / len(parsed_values))
+        frac_parsed = 1 - ((parsed_values.count(None) - df.iloc[:, idx].isnull().sum())
+                           / len(parsed_values))
 
         if frac_parsed >= self.min_threshold:
             return parsed_values
@@ -215,7 +221,8 @@ class DateFeaturizerOrg:
                 else:
                     parsed_values.append(item)
 
-            frac_parsed = 1 - ((parsed_values.count(None) - df.iloc[:, idx].isnull().sum()) / len(parsed_values))
+            frac_parsed = 1 - ((parsed_values.count(None) - df.iloc[:, idx].isnull().sum())
+                               / len(parsed_values))
 
             if frac_parsed >= self.min_threshold:
                 return parsed_values
@@ -240,7 +247,8 @@ class DateFeaturizerOrg:
             else:
                 parsed_values.append(item)
 
-        frac_parsed = 1 - ((parsed_values.count(None) - df.iloc[:, idx].isnull().sum()) / len(parsed_values))
+        frac_parsed = 1 - ((parsed_values.count(None) - df.iloc[:, idx].isnull().sum())
+                           / len(parsed_values))
 
         if frac_parsed >= self.min_threshold:
             return parsed_values
@@ -262,8 +270,11 @@ class DateFeaturizerOrg:
         multiple_values = False
 
         custom_settings = dict(self.extractor_settings)
-        custom_settings['additional_formats'] = ['D-%d/%m/%y', '%m00%y', "%Y%m%d", "%a %B %d %H:%M:%S EDT %Y",
-                                                 "%a %B %d %H:%M:%S %Z %Y"]
+        custom_settings['additional_formats'] = map(lambda s: r'[^\d.]' + s + r'[^\d.]',
+                                                    [r'D-%d/%m/%y', r'%m00%y', r"%Y%m%d",
+                                                     r"%a %B %d %H:%M:%S EDT %Y",
+                                                     r"%a %B %d %H:%M:%S %Z %Y"])
+        # lambda s: r'[^\d.]'+s+r'[^\d.]'
         custom_settings['use_default_formats'] = False
 
         month_parsed_values = self._parse_month(df, idx)
@@ -302,7 +313,8 @@ class DateFeaturizerOrg:
         if multiple_values:
             warn("Warning: multiple dates detected in column: " + str(idx))
 
-        frac_parsed = 1 - ((parsed_values.count(None) - df.iloc[:, idx].isnull().sum()) / len(parsed_values))
+        frac_parsed = 1 - ((parsed_values.count(None) - df.iloc[:, idx].isnull().sum())
+                           / len(parsed_values))
 
         if frac_parsed >= self.min_threshold:
             return parsed_values
@@ -333,7 +345,8 @@ class DateFeaturizerOrg:
         return self.featurize_date_columns(date_cols)
 
     def update_types(self, col_name):
-        old_metadata = dict(self.df.metadata.query((mbase.ALL_ELEMENTS, self.df.columns.get_loc(col_name))))
+        old_metadata = dict(
+            self.df.metadata.query((mbase.ALL_ELEMENTS, self.df.columns.get_loc(col_name))))
 
         numerics = pd.to_numeric(self.df[col_name], errors='coerce')
         length = numerics.shape[0]
@@ -341,7 +354,8 @@ class DateFeaturizerOrg:
 
         if nans / length > 0.9:
             if HelperFunction.is_categorical(self.df[col_name]):
-                old_metadata['semantic_types'] = ("https://metadata.datadrivendiscovery.org/types/CategoricalData",)
+                old_metadata['semantic_types'] = (
+                "https://metadata.datadrivendiscovery.org/types/CategoricalData",)
             else:
                 old_metadata['semantic_types'] = ("http://schema.org/Text",)
         else:
@@ -351,7 +365,8 @@ class DateFeaturizerOrg:
             else:
                 old_metadata['semantic_types'] = ("http://schema.org/Float",)
 
-        old_metadata['semantic_types'] += ("https://metadata.datadrivendiscovery.org/types/Attribute",)
+        old_metadata['semantic_types'] += \
+            ("https://metadata.datadrivendiscovery.org/types/Attribute",)
 
-        self.df.metadata = self.df.metadata.update((mbase.ALL_ELEMENTS, self.df.columns.get_loc(col_name)), old_metadata)
-
+        self.df.metadata = self.df.metadata.update(
+            (mbase.ALL_ELEMENTS, self.df.columns.get_loc(col_name)), old_metadata)
