@@ -191,7 +191,14 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
         drop_indices = [columns_names.index(col)  for col in self._mapping.keys()]
         drop_indices = sorted(drop_indices)
 
-        self._input_data_copy = utils.remove_columns(self._input_data_copy, drop_indices, source='ISI DSBox Data Encoder')
+        import pdb
+        pdb.set_trace()
+        copy_first = False
+        if len(self._cat_columns) == len(self._input_data_copy.columns.tolist()):
+            _logger.debug('Encoding columns are all of the input data columns!')
+            copy_first = True
+        else:
+            self._input_data_copy = utils.remove_columns(self._input_data_copy, drop_indices, source='ISI DSBox Data Encoder')
 
         # metadata for columns that are not one hot encoded
         # self._col_index = [self._input_data_copy.columns.get_loc(c) for c in data_rest.columns]
@@ -212,6 +219,10 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
             encoded.metadata = encoded.metadata.update((mbase.ALL_ELEMENTS, index), old_metadata)
         ## merge/concat both the dataframes
         output = utils.horizontal_concat(self._input_data_copy, encoded)
+
+        # if we are in copy_first mode, we remove the columns later over here
+        if copy_first:
+            output = utils.remove_columns(output, drop_indices, source='ISI DSBox Data Encoder')
         return CallResult(output, True, 1)
 
     def get_params(self) -> EncParams:
