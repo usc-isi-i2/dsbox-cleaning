@@ -15,6 +15,7 @@ from dsbox.datapreprocessing.cleaner import config
 import logging
 import traceback
 
+
 def isfloat(value):
     try:
         float(value)
@@ -44,7 +45,7 @@ def detector(inputs):
 
         if True in dtype.index:
             try:
-                if dtype.loc[True].tolist()[0] == temp.dropna().shape[0]:
+                if dtype.loc[True][0] == temp.dropna().shape[0]:
                     if old_metadata["semantic_types"] == lookup["int"] or old_metadata["semantic_types"] == lookup[
                         "Categorical"] or old_metadata["semantic_types"] == lookup["Ordinal"]:
                         old_metadata["structural_type"] = type(10)
@@ -53,22 +54,52 @@ def detector(inputs):
                         if 'http://schema.org/Integer' not in old_metadata["semantic_types"]:
                             old_metadata["semantic_types"] += ('http://schema.org/Integer',)
                         old_metadata["structural_type"] = type(10)
+            except KeyError:
+                try:
+                    if dtype.loc[True].tolist()[0] == temp.dropna().shape[0]:
+                        if old_metadata["semantic_types"] == lookup["int"] or old_metadata["semantic_types"] == lookup[
+                            "Categorical"] or old_metadata["semantic_types"] == lookup["Ordinal"]:
+                            old_metadata["structural_type"] = type(10)
+
+                        else:
+                            if 'http://schema.org/Integer' not in old_metadata["semantic_types"]:
+                                old_metadata["semantic_types"] += ('http://schema.org/Integer',)
+                            old_metadata["structural_type"] = type(10)
+                except Exception as e:
+                    _logger.error(traceback.print_exc(e))
+                    pass
             except Exception as e:
                 _logger.error(traceback.print_exc(e))
                 pass
+
         # detetct Float and update metadata
         else:
             dtype = pd.DataFrame(temp.dropna().apply(isfloat).value_counts())
             if True in dtype.index:
                 try:
-                    if dtype.loc[True].tolist()[0] == temp.dropna().shape[0]:
-                        if old_metadata["semantic_types"] == lookup["float"] or old_metadata["semantic_types"] == lookup[
-                            "Categorical"] or old_metadata["semantic_types"] == lookup["Ordinal"]:
+                    if dtype.loc[True][0] == temp.dropna().shape[0]:
+                        if old_metadata["semantic_types"] == lookup["float"] or old_metadata["semantic_types"] == \
+                                lookup[
+                                    "Categorical"] or old_metadata["semantic_types"] == lookup["Ordinal"]:
                             old_metadata["structural_type"] = type(10.0)
                         else:
                             if 'http://schema.org/Float' not in old_metadata["semantic_types"]:
                                 old_metadata["semantic_types"] += ('http://schema.org/Float',)
                             old_metadata["structural_type"] = type(10.0)
+                except KeyError:
+                    try:
+                        if dtype.loc[True].tolist()[0] == temp.dropna().shape[0]:
+                            if old_metadata["semantic_types"] == lookup["float"] or old_metadata["semantic_types"] == \
+                                    lookup[
+                                        "Categorical"] or old_metadata["semantic_types"] == lookup["Ordinal"]:
+                                old_metadata["structural_type"] = type(10.0)
+                            else:
+                                if 'http://schema.org/Float' not in old_metadata["semantic_types"]:
+                                    old_metadata["semantic_types"] += ('http://schema.org/Float',)
+                                old_metadata["structural_type"] = type(10.0)
+                    except Exception as e:
+                        _logger.error(traceback.print_exc(e))
+                        pass
                 except Exception as e:
                     _logger.error(traceback.print_exc(e))
                     pass
