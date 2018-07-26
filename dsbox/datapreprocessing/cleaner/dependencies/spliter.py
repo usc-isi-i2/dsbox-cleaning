@@ -11,7 +11,8 @@ from dsbox.datapreprocessing.cleaner.dependencies.helper_funcs import HelperFunc
 
 def update_type(extends, df_origin):
     extends_df = d3m_DataFrame.from_dict(extends)
-    extends_df.index = df_origin.index.copy()
+    if extends != {}:
+        extends_df.index = df_origin.index.copy()
     new_df = utils.append_columns(df_origin, extends_df)
 
     indices = list()
