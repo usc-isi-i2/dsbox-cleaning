@@ -13,7 +13,7 @@ from d3m.primitive_interfaces.transformer import TransformerPrimitiveBase
 
 from dsbox.datapreprocessing.cleaner import config
 import logging
-
+import traceback
 
 def isfloat(value):
     try:
@@ -32,7 +32,7 @@ def detector(inputs):
                           'https://metadata.datadrivendiscovery.org/types/Attribute')
               }
 
-    # _logger = logging.getLogger(__name__)
+    _logger = logging.getLogger(__name__)
 
     for col in range(inputs.shape[1]):
         temp = inputs.iloc[:, col]
@@ -53,7 +53,8 @@ def detector(inputs):
                         if 'http://schema.org/Integer' not in old_metadata["semantic_types"]:
                             old_metadata["semantic_types"] += ('http://schema.org/Integer',)
                         old_metadata["structural_type"] = type(10)
-            except:
+            except Exception as e:
+                _logger.error(traceback.print_exc(e))
                 pass
         # detetct Float and update metadata
         else:
@@ -68,7 +69,8 @@ def detector(inputs):
                             if 'http://schema.org/Float' not in old_metadata["semantic_types"]:
                                 old_metadata["semantic_types"] += ('http://schema.org/Float',)
                             old_metadata["structural_type"] = type(10.0)
-                except:
+                except Exception as e:
+                    _logger.error(traceback.print_exc(e))
                     pass
 
         # _logger.info(
