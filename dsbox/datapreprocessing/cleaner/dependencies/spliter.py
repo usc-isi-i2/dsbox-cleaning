@@ -9,7 +9,6 @@ from common_primitives import utils
 from d3m.container import DataFrame as d3m_DataFrame
 from dsbox.datapreprocessing.cleaner.dependencies.helper_funcs import HelperFunction
 
-
 AVG_LENGTH_MAX = 30
 
 
@@ -143,8 +142,7 @@ class PunctuationParser:
                 result = result[:columns_perform["split_to"][i]]
             elif len(result) < columns_perform["split_to"][i]:
                 for j in range(columns_perform["split_to"][i] - len(result)):
-                    
-                    extra_column = np.reshape(np.asarray([np.nan] * len(result[0])),(1,len(result[0])))
+                    extra_column = np.reshape(np.asarray([np.nan] * len(result[0])), (1, len(result[0])))
                     result = np.append(result, extra_column, axis=0)
             count = 0
             for one in result:

@@ -188,7 +188,8 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
                     #     old_metadata["semantic_types"] = (
                     #         'https://metadata.datadrivendiscovery.org/types/CategoricalData',
                     #         'https://metadata.datadrivendiscovery.org/types/Attribute')
-                    if 'https://metadata.datadrivendiscovery.org/types/Time' not in old_metadata.get("semantic_types", []):
+                    if 'https://metadata.datadrivendiscovery.org/types/Time' not in old_metadata.get("semantic_types",
+                                                                                                     []):
                         old_metadata["semantic_types"] += ('https://metadata.datadrivendiscovery.org/types/Time',)
                 if isinstance(self._sample_df.iloc[:, i].head(1).values[0], str):
                     old_metadata["structural_type"] = type("str")
@@ -222,11 +223,11 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
                 if 'https://metadata.datadrivendiscovery.org/types/AmericanPhoneNumber' not in old_metadata.get(
                         "semantic_types", []):
                     old_metadata["semantic_types"] += (
-                    'https://metadata.datadrivendiscovery.org/types/AmericanPhoneNumber',)
+                        'https://metadata.datadrivendiscovery.org/types/AmericanPhoneNumber',)
                 if 'https://metadata.datadrivendiscovery.org/types/UnnormalizedEntity' not in old_metadata.get(
                         "semantic_types", []):
                     old_metadata["semantic_types"] += (
-                    'https://metadata.datadrivendiscovery.org/types/UnnormalizedEntity',)
+                        'https://metadata.datadrivendiscovery.org/types/UnnormalizedEntity',)
 
                 if isinstance(self._sample_df.iloc[:, i].head(1).values[0], str):
                     old_metadata["structural_type"] = type("str")
@@ -258,7 +259,7 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
                 if 'https://metadata.datadrivendiscovery.org/types/CanBeSplitByPunctuation' not in old_metadata.get(
                         "semantic_types", []):
                     old_metadata["semantic_types"] += (
-                    'https://metadata.datadrivendiscovery.org/types/CanBeSplitByPunctuation',)
+                        'https://metadata.datadrivendiscovery.org/types/CanBeSplitByPunctuation',)
 
                 if isinstance(self._sample_df.iloc[:, i].head(1).values[0], str):
                     old_metadata["structural_type"] = type("str")
@@ -291,7 +292,7 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
                 if 'https://metadata.datadrivendiscovery.org/types/CanBeSplitByAlphanumeric' not in old_metadata.get(
                         "semantic_types", []):
                     old_metadata["semantic_types"] += (
-                    'https://metadata.datadrivendiscovery.org/types/CanBeSplitByAlphanumeric',)
+                        'https://metadata.datadrivendiscovery.org/types/CanBeSplitByAlphanumeric',)
 
                 if isinstance(self._sample_df.iloc[:, i].head(1).values[0], str):
                     old_metadata["structural_type"] = type("str")
@@ -374,13 +375,13 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
             df = pd.DataFrame(inputs)
             metadata = self._profile_data(df, metadata, prefix)
         elif isinstance(inputs, container.ndarray):
-            metadata = self._profile_ndarray(df, metadata, prefix)
+            metadata = self._profile_ndarray(inputs, metadata, prefix)
 
         return metadata
 
     def _profile_ndarray(self, array, metadata, prefix):
         # TODO: What to do with ndarrays?
-        return metatada
+        return metadata
 
     def _profile_data(self, data, metadata, prefix):
 

@@ -59,7 +59,6 @@ class HelperFunction:
             except:
                 return False
 
-
     @staticmethod
     def is_Integer_Number(s):
         # return any(char.isdigit() for char in inputString)
@@ -69,7 +68,6 @@ class HelperFunction:
         except:
             return False
 
-
     @staticmethod
     def is_Decimal_Number(s):
         try:
@@ -78,7 +76,6 @@ class HelperFunction:
         except:
             return False
 
-
     @staticmethod
     def is_date(string):
         try:
@@ -86,7 +83,6 @@ class HelperFunction:
             return True
         except ValueError:
             return False
-
 
     @staticmethod
     def getDecimal(s):
@@ -120,4 +116,3 @@ class HelperFunction:
                 cols.append(col_idx)
 
         return cols
-

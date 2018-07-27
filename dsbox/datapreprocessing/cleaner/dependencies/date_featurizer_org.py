@@ -356,7 +356,7 @@ class DateFeaturizerOrg:
         if nans / length > 0.9:
             if HelperFunction.is_categorical(self.df[col_name]):
                 old_metadata['semantic_types'] = (
-                "https://metadata.datadrivendiscovery.org/types/CategoricalData",)
+                    "https://metadata.datadrivendiscovery.org/types/CategoricalData",)
             else:
                 old_metadata['semantic_types'] = ("http://schema.org/Text",)
         else:
