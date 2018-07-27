@@ -52,7 +52,7 @@ def detector(inputs):
 
                     else:
                         if 'http://schema.org/Integer' not in old_metadata["semantic_types"]:
-                            old_metadata["semantic_types"] += ('http://schema.org/Integer',)
+                            old_metadata["semantic_types"] = lookup["int"]
                         old_metadata["structural_type"] = type(10)
             except KeyError:
                 try:
@@ -63,7 +63,7 @@ def detector(inputs):
 
                         else:
                             if 'http://schema.org/Integer' not in old_metadata["semantic_types"]:
-                                old_metadata["semantic_types"] += ('http://schema.org/Integer',)
+                                old_metadata["semantic_types"] = lookup["int"]
                             old_metadata["structural_type"] = type(10)
                 except Exception as e:
                     _logger.error(traceback.print_exc(e))
@@ -84,7 +84,7 @@ def detector(inputs):
                             old_metadata["structural_type"] = type(10.0)
                         else:
                             if 'http://schema.org/Float' not in old_metadata["semantic_types"]:
-                                old_metadata["semantic_types"] += ('http://schema.org/Float',)
+                                old_metadata["semantic_types"] = lookup["float"]
                             old_metadata["structural_type"] = type(10.0)
                 except KeyError:
                     try:
@@ -95,7 +95,7 @@ def detector(inputs):
                                 old_metadata["structural_type"] = type(10.0)
                             else:
                                 if 'http://schema.org/Float' not in old_metadata["semantic_types"]:
-                                    old_metadata["semantic_types"] += ('http://schema.org/Float',)
+                                    old_metadata["semantic_types"] = lookup["float"]
                                 old_metadata["structural_type"] = type(10.0)
                     except Exception as e:
                         _logger.error(traceback.print_exc(e))

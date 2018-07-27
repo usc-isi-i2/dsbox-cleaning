@@ -21,7 +21,7 @@ _logger = logging.getLogger(__name__)
 Input = container.DataFrame
 Output = container.DataFrame
 
-Sample_rows = 20
+Sample_rows = 100
 
 Clean_operations = {
     "split_date_column": True,
@@ -151,6 +151,7 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
         self._fitted = True
 
     def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> CallResult[Output]:
+        inputs.to_csv("/Users/runqishao/Desktop/aaa.csv")
         self._input_data_copy = inputs.copy()
         if self._mapping.get("date_columns"):
             original_cols = self._get_cols(self._input_data_copy)
@@ -209,17 +210,18 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
 
             self._input_data_copy = df
 
+        if self._mapping.get("date_columns"):
+            self._input_data_copy = utils.remove_columns(self._input_data_copy, self._mapping.get("date_columns"))
         self._update_structural_type()
+        CallResult(self._input_data_copy, True, 1).value.to_csv("/Users/runqishao/Desktop/bbb.csv")
         return CallResult(self._input_data_copy, True, 1)
 
     @staticmethod
     def _get_date_cols(data):
-        dates = set(utils.list_columns_with_semantic_types(metadata=data.metadata, semantic_types=[
-            "https://metadata.datadrivendiscovery.org/types/CategoricalData"])).intersection(
-            utils.list_columns_with_semantic_types(metadata=data.metadata, semantic_types=[
-                "https://metadata.datadrivendiscovery.org/types/Time"]))
+        dates = utils.list_columns_with_semantic_types(metadata=data.metadata, semantic_types=[
+                "https://metadata.datadrivendiscovery.org/types/Time"])
 
-        return list(dates)
+        return dates
 
     @staticmethod
     def _get_phone_cols(data):

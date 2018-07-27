@@ -81,9 +81,6 @@ class DateFeaturizerOrg:
             self.create_month = self._crM
             self.create_year = self._crY
 
-        if self.drop_original_column:
-            self.df = self.df.drop(self.df.columns[column_indices], axis=1)
-
         return {
             'df': self.df,
             'date_columns': self._samples_to_print
@@ -97,8 +94,12 @@ class DateFeaturizerOrg:
         - sampled_df [DataFrame]: a sample of rows from the original dataframe for detecting dates
         - except_list [List]: list of column indices to be ignored
         """
+        positive_semantic_types = set(["https://metadata.datadrivendiscovery.org/types/Time",
+                                       "http://schema.org/Text"])
+        cols_to_detect = HelperFunction.cols_to_clean(sampled_df, positive_semantic_types)
+
         date_cols = []
-        for idx in range(len(sampled_df.columns)):
+        for idx in cols_to_detect:
             if idx not in except_list:
                 if self._parse_column(sampled_df, idx) is not None:
                     date_cols.append(idx)

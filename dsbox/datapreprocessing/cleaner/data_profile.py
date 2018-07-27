@@ -21,6 +21,7 @@ from dsbox.datapreprocessing.cleaner.dependencies.helper_funcs import HelperFunc
 from dsbox.datapreprocessing.cleaner.dependencies import category_detection, dtype_detector, \
     feature_compute_hih as fc_hih, feature_compute_lfh as fc_lfh
 from . import config
+
 # from . import date_detector
 
 
@@ -28,7 +29,6 @@ _logger = logging.getLogger(__name__)
 
 Input = container.DataFrame
 Output = container.DataFrame
-
 
 VERBOSE = 0
 
@@ -159,8 +159,13 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
         # calling the utility to detect integer and float datatype columns
         inputs = dtype_detector.detector(inputs)
 
-        if inputs.shape[0] > 50:
-            self._sample_df = inputs.dropna().iloc[0:50, :]
+        # calling the utility to categorical datatype columns
+        metadata = self._produce(inputs, inputs.metadata, [])
+        # I guess there are updating the metdata here
+        inputs.metadata = metadata
+
+        if inputs.shape[0] > 100:
+            self._sample_df = inputs.dropna().iloc[0:100, :]
         else:
             self._sample_df = inputs
 
@@ -178,8 +183,11 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
                 old_metadata = dict(inputs.metadata.query((mbase.ALL_ELEMENTS, i)))
                 temp_value = list(old_metadata["semantic_types"])
                 if len(temp_value) >= 1:
-                    if 'https://metadata.datadrivendiscovery.org/types/CategoricalData' not in old_metadata.get("semantic_types", []):
-                        old_metadata["semantic_types"] += ('https://metadata.datadrivendiscovery.org/types/CategoricalData',)
+                    # if 'https://metadata.datadrivendiscovery.org/types/CategoricalData' not in old_metadata.get(
+                    #         "semantic_types", []):
+                    #     old_metadata["semantic_types"] = (
+                    #         'https://metadata.datadrivendiscovery.org/types/CategoricalData',
+                    #         'https://metadata.datadrivendiscovery.org/types/Attribute')
                     if 'https://metadata.datadrivendiscovery.org/types/Time' not in old_metadata.get("semantic_types", []):
                         old_metadata["semantic_types"] += ('https://metadata.datadrivendiscovery.org/types/Time',)
                 if isinstance(self._sample_df.iloc[:, i].head(1).values[0], str):
@@ -200,27 +208,25 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
 
                 inputs.metadata = inputs.metadata.update((mbase.ALL_ELEMENTS, i), old_metadata)
 
-        # calling the utility to categorical datatype columns
-        metadata = self._produce(inputs, inputs.metadata, [])
-        # I guess there are updating the metdata here
-        inputs.metadata = metadata
-
-
         # calling the PhoneParser detector
 
         try:
             PhoneParser_indices = PhoneParser.detect(df=self._sample_df)
         except Exception as e:
             _logger.error(traceback.print_exc(e))
-            PhoneParser_indices = list()
+            PhoneParser_indices = dict()
         if PhoneParser_indices.get("columns_to_perform"):
             for i in PhoneParser_indices["columns_to_perform"]:
                 old_metadata = dict(inputs.metadata.query((mbase.ALL_ELEMENTS, i)))
                 # print("old metadata", old_metadata)
-                if 'https://metadata.datadrivendiscovery.org/types/AmericanPhoneNumber' not in old_metadata.get("semantic_types", []):
-                    old_metadata["semantic_types"] += ('https://metadata.datadrivendiscovery.org/types/AmericanPhoneNumber',)
-                if 'https://metadata.datadrivendiscovery.org/types/UnnormalizedEntity' not in old_metadata.get("semantic_types", []):
-                    old_metadata["semantic_types"] += ('https://metadata.datadrivendiscovery.org/types/UnnormalizedEntity',)
+                if 'https://metadata.datadrivendiscovery.org/types/AmericanPhoneNumber' not in old_metadata.get(
+                        "semantic_types", []):
+                    old_metadata["semantic_types"] += (
+                    'https://metadata.datadrivendiscovery.org/types/AmericanPhoneNumber',)
+                if 'https://metadata.datadrivendiscovery.org/types/UnnormalizedEntity' not in old_metadata.get(
+                        "semantic_types", []):
+                    old_metadata["semantic_types"] += (
+                    'https://metadata.datadrivendiscovery.org/types/UnnormalizedEntity',)
 
                 if isinstance(self._sample_df.iloc[:, i].head(1).values[0], str):
                     old_metadata["structural_type"] = type("str")
@@ -239,19 +245,20 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
                 )
                 inputs.metadata = inputs.metadata.update((mbase.ALL_ELEMENTS, i), old_metadata)
 
-
         # calling the PunctuationSplitter detector
 
         try:
             PunctuationSplitter_indices = PunctuationParser.detect(df=self._sample_df)
         except Exception as e:
             _logger.error(traceback.print_exc(e))
-            PunctuationSplitter_indices = list()
+            PunctuationSplitter_indices = dict()
         if PunctuationSplitter_indices.get("columns_to_perform"):
             for i in PunctuationSplitter_indices["columns_to_perform"]:
                 old_metadata = dict(inputs.metadata.query((mbase.ALL_ELEMENTS, i)))
-                if 'https://metadata.datadrivendiscovery.org/types/CanBeSplitByPunctuation' not in old_metadata.get("semantic_types", []):
-                    old_metadata["semantic_types"] += ('https://metadata.datadrivendiscovery.org/types/CanBeSplitByPunctuation',)
+                if 'https://metadata.datadrivendiscovery.org/types/CanBeSplitByPunctuation' not in old_metadata.get(
+                        "semantic_types", []):
+                    old_metadata["semantic_types"] += (
+                    'https://metadata.datadrivendiscovery.org/types/CanBeSplitByPunctuation',)
 
                 if isinstance(self._sample_df.iloc[:, i].head(1).values[0], str):
                     old_metadata["structural_type"] = type("str")
@@ -270,20 +277,21 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
                 )
                 inputs.metadata = inputs.metadata.update((mbase.ALL_ELEMENTS, i), old_metadata)
 
-
         # calling the NumAlphaSplitter detector
 
         try:
             NumAlphaSplitter_indices = NumAlphaParser.detect(df=self._sample_df)
         except Exception as e:
             _logger.error(traceback.print_exc(e))
-            NumAlphaSplitter_indices = list()
+            NumAlphaSplitter_indices = dict()
 
         if NumAlphaSplitter_indices.get("columns_to_perform"):
             for i in NumAlphaSplitter_indices["columns_to_perform"]:
                 old_metadata = dict(inputs.metadata.query((mbase.ALL_ELEMENTS, i)))
-                if 'https://metadata.datadrivendiscovery.org/types/CanBeSplitByAlphanumeric' not in old_metadata.get("semantic_types", []):
-                    old_metadata["semantic_types"] += ('https://metadata.datadrivendiscovery.org/types/CanBeSplitByAlphanumeric',)
+                if 'https://metadata.datadrivendiscovery.org/types/CanBeSplitByAlphanumeric' not in old_metadata.get(
+                        "semantic_types", []):
+                    old_metadata["semantic_types"] += (
+                    'https://metadata.datadrivendiscovery.org/types/CanBeSplitByAlphanumeric',)
 
                 if isinstance(self._sample_df.iloc[:, i].head(1).values[0], str):
                     old_metadata["structural_type"] = type("str")

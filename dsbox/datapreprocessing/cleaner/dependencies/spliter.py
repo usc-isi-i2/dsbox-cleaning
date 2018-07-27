@@ -9,6 +9,10 @@ from common_primitives import utils
 from d3m.container import DataFrame as d3m_DataFrame
 from dsbox.datapreprocessing.cleaner.dependencies.helper_funcs import HelperFunction
 
+
+AVG_LENGTH_MAX = 30
+
+
 def update_type(extends, df_origin):
     extends_df = d3m_DataFrame.from_dict(extends)
     if extends != {}:
@@ -50,9 +54,11 @@ class PhoneParser:
 
     @staticmethod
     def detect(df, columns_ignore=list()):
-        all_indices = range(0, df.shape[1])
+        positive_semantic_types = set(["http://schema.org/Text"])
+
+        cols_to_detect = HelperFunction.cols_to_clean(df, positive_semantic_types)
         require_checking = \
-            list(set(all_indices).difference(set(columns_ignore)))
+            list(set(cols_to_detect).difference(set(columns_ignore)))
         extends = {"columns_to_perform": [], "split_to": []}
         for one_column in require_checking:
             if PhoneParser.is_phone(df.iloc[:, one_column]):
@@ -109,16 +115,22 @@ class PunctuationParser:
 
     @staticmethod
     def detect(df, columns_ignore=list()):
-        all_indices = range(0, df.shape[1])
-        require_checking = list(set(all_indices).difference(set(columns_ignore)))
+        positive_semantic_types = set(["http://schema.org/Text"])
+        cols_to_detect = HelperFunction.cols_to_clean(df, positive_semantic_types)
+        require_checking = list(set(cols_to_detect).difference(set(columns_ignore)))
         extends = {"columns_to_perform": [], "split_to": []}
         for one_column in require_checking:
-            if not PunctuationParser.num_check(df.iloc[:, one_column]):
-                common_list = PunctuationParser.find_common(df.iloc[:, one_column])
-                if len(common_list) > 0:
-                    result = PunctuationParser.splitter(df.iloc[:, one_column], common_list)
-                    extends["columns_to_perform"].append(one_column)
-                    extends["split_to"].append(len(result))
+            rows = df.iloc[:, one_column]
+            filtered_rows = [len(str(row)) for row in rows if len(str(row)) > 0]
+            if len(filtered_rows) > 0:
+                avg_len = sum(filtered_rows) / len(filtered_rows)
+                if avg_len < AVG_LENGTH_MAX:
+                    if not PunctuationParser.num_check(df.iloc[:, one_column]):
+                        common_list = PunctuationParser.find_common(df.iloc[:, one_column])
+                        if len(common_list) > 0:
+                            result = PunctuationParser.splitter(df.iloc[:, one_column], common_list)
+                            extends["columns_to_perform"].append(one_column)
+                            extends["split_to"].append(len(result))
         return extends
 
     @staticmethod
@@ -218,16 +230,22 @@ class NumAlphaParser:
 
     @staticmethod
     def detect(df, columns_ignore=list()):
-        all_indices = range(0, df.shape[1])
-        require_checking = list(set(all_indices).difference(set(columns_ignore)))
+        positive_semantic_types = set(["http://schema.org/Text"])
+        cols_to_detect = HelperFunction.cols_to_clean(df, positive_semantic_types)
+        require_checking = list(set(cols_to_detect).difference(set(columns_ignore)))
         extends = {"columns_to_perform": [], "split_to": []}
         for one_column in require_checking:
-            if not NumAlphaParser.num_check(df.iloc[:, one_column]):
-                isnum_alpha = NumAlphaParser.is_num_alpha(df.iloc[:, one_column])
-                if isnum_alpha:
-                    result = NumAlphaParser.num_alpha_splitter(df.iloc[:, one_column])
-                    extends["columns_to_perform"].append(one_column)
-                    extends["split_to"].append(len(result))
+            rows = df.iloc[:, one_column]
+            filtered_rows = [len(str(row)) for row in rows if len(str(row)) > 0]
+            if len(filtered_rows) > 0:
+                avg_len = sum(filtered_rows) / len(filtered_rows)
+                if avg_len < AVG_LENGTH_MAX:
+                    if not NumAlphaParser.num_check(df.iloc[:, one_column]):
+                        isnum_alpha = NumAlphaParser.is_num_alpha(df.iloc[:, one_column])
+                        if isnum_alpha:
+                            result = NumAlphaParser.num_alpha_splitter(df.iloc[:, one_column])
+                            extends["columns_to_perform"].append(one_column)
+                            extends["split_to"].append(len(result))
 
         return extends
 
