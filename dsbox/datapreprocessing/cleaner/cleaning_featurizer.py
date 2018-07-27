@@ -152,10 +152,14 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
 
     def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> CallResult[Output]:
         self._input_data_copy = inputs.copy()
-        if self._mapping.get("date_columns"):
+        cols_to_drop = list()
+
+        date_cols = self._mapping.get("date_columns")
+        if date_cols:
+            cols_to_drop += self._mapping.get("date_columns")
             original_cols = self._get_cols(self._input_data_copy)
             dfo = DateFeaturizerOrg(dataframe=self._input_data_copy)
-            df = dfo.featurize_date_columns(self._mapping.get("date_columns"))
+            df = dfo.featurize_date_columns(date_cols)
             current_cols = self._get_cols(df["df"])
 
             _logger.info(
@@ -167,9 +171,11 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
 
             self._input_data_copy = df["df"]
 
-        if self._mapping.get("phone_columns"):
+        phone_cols = self._mapping.get("phone_columns")
+        if phone_cols:
+            cols_to_drop += phone_cols.get("columns_to_perform", [])
             original_cols = self._get_cols(self._input_data_copy)
-            df = PhoneParser.perform(df=self._input_data_copy, columns_perform=self._mapping.get("phone_columns"))
+            df = PhoneParser.perform(df=self._input_data_copy, columns_perform=phone_cols)
             current_cols = self._get_cols(df)
 
             _logger.info(
@@ -181,9 +187,11 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
 
             self._input_data_copy = df
 
-        if self._mapping.get("alpha_numeric_columns"):
+        an_cols = self._mapping.get("alpha_numeric_columns")
+        if an_cols:
+            cols_to_drop += an_cols.get("columns_to_perform", [])
             original_cols = self._get_cols(self._input_data_copy)
-            df = NumAlphaParser.perform(df=self._input_data_copy, columns_perform=self._mapping.get("alpha_numeric_columns"))
+            df = NumAlphaParser.perform(df=self._input_data_copy, columns_perform=an_cols)
             current_cols = self._get_cols(df)
 
             _logger.info(
@@ -195,9 +203,11 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
 
             self._input_data_copy = df
 
-        if self._mapping.get("punctuation_columns"):
+        punc_cols = self._mapping.get("punctuation_columns")
+        if punc_cols:
+            cols_to_drop += punc_cols.get("columns_to_perform", [])
             original_cols = self._get_cols(self._input_data_copy)
-            df = PunctuationParser.perform(df=self._input_data_copy, columns_perform=self._mapping.get("punctuation_columns"))
+            df = PunctuationParser.perform(df=self._input_data_copy, columns_perform=punc_cols)
             current_cols = self._get_cols(df)
 
             _logger.info(
@@ -209,8 +219,8 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
 
             self._input_data_copy = df
 
-        if self._mapping.get("date_columns"):
-            self._input_data_copy = utils.remove_columns(self._input_data_copy, self._mapping.get("date_columns"))
+        if cols_to_drop:
+            self._input_data_copy = utils.remove_columns(self._input_data_copy, cols_to_drop)
         self._update_structural_type()
         return CallResult(self._input_data_copy, True, 1)
 

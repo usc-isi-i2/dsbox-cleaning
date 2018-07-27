@@ -113,7 +113,9 @@ class HelperFunction:
             semantic_types = list(
                 dict(sampled_df.metadata.query((mbase.ALL_ELEMENTS, col_idx))).get("semantic_types", tuple([])))
 
-            if POSITIVE_SEMANTIC_TYPES.intersection(semantic_types) and not NEGATIVE_SEMANTIC_TYPES.intersection(
+            if "https://metadata.datadrivendiscovery.org/types/FloatVector" in semantic_types:
+                cols.append(col_idx)
+            elif POSITIVE_SEMANTIC_TYPES.intersection(semantic_types) and not NEGATIVE_SEMANTIC_TYPES.intersection(
                     semantic_types):
                 cols.append(col_idx)
 
