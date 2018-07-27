@@ -9,7 +9,7 @@ from common_primitives import utils
 from d3m.container import DataFrame as d3m_DataFrame
 from dsbox.datapreprocessing.cleaner.dependencies.helper_funcs import HelperFunction
 
-AVG_LENGTH_MAX = 30
+AVG_LENGTH_MAX = 18
 
 
 def update_type(extends, df_origin):
