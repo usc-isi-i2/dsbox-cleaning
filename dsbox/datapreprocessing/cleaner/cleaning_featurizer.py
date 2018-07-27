@@ -151,7 +151,6 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
         self._fitted = True
 
     def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> CallResult[Output]:
-        inputs.to_csv("/Users/runqishao/Desktop/aaa.csv")
         self._input_data_copy = inputs.copy()
         if self._mapping.get("date_columns"):
             original_cols = self._get_cols(self._input_data_copy)
@@ -213,7 +212,6 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
         if self._mapping.get("date_columns"):
             self._input_data_copy = utils.remove_columns(self._input_data_copy, self._mapping.get("date_columns"))
         self._update_structural_type()
-        CallResult(self._input_data_copy, True, 1).value.to_csv("/Users/runqishao/Desktop/bbb.csv")
         return CallResult(self._input_data_copy, True, 1)
 
     @staticmethod
