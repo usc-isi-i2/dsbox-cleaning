@@ -132,17 +132,21 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
                     mapping["date_columns"] = date_cols
 
             if self._clean_operations.get("split_phone_number_column"):
-                phone_cols = self._get_phone_cols(data)
+                phone_cols = self._get_phone_cols(data, ignore_list=mapping.get("date_columns", []))
                 if phone_cols.get("columns_to_perform"):
                     mapping["phone_columns"] = phone_cols
 
             if self._clean_operations.get("split_alpha_numeric_column"):
-                alpha_numeric_cols = self._get_alpha_numeric_cols(data)
+                alpha_numeric_cols = self._get_alpha_numeric_cols(data,
+                                                                  ignore_list=mapping.get("date_columns", []) +
+                                                                  mapping.get("phone_columns", {}).get("columns_to_perform", []))
                 if alpha_numeric_cols.get("columns_to_perform"):
                     mapping["alpha_numeric_columns"] = alpha_numeric_cols
 
             if self._clean_operations.get("split_punctuation_column"):
-                punctuation_cols = self._get_punctuation_cols(data)
+                punctuation_cols = self._get_punctuation_cols(data,
+                                                              ignore_list=mapping.get("date_columns", []) +
+                                                              mapping.get("phone_columns", {}).get("columns_to_perform", [])                                                              )
                 if punctuation_cols.get("columns_to_perform"):
                     mapping["punctuation_columns"] = punctuation_cols
 
@@ -232,16 +236,16 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
         return dates
 
     @staticmethod
-    def _get_phone_cols(data):
-        return PhoneParser.detect(df=data.iloc[:Sample_rows, :])
+    def _get_phone_cols(data, ignore_list):
+        return PhoneParser.detect(df=data.iloc[:Sample_rows, :], columns_ignore=ignore_list)
 
     @staticmethod
-    def _get_alpha_numeric_cols(data):
-        return NumAlphaParser.detect(df=data.iloc[:Sample_rows, :])
+    def _get_alpha_numeric_cols(data, ignore_list):
+        return NumAlphaParser.detect(df=data.iloc[:Sample_rows, :], columns_ignore=ignore_list)
 
     @staticmethod
-    def _get_punctuation_cols(data):
-        return PunctuationParser.detect(df=data.iloc[:Sample_rows, :])
+    def _get_punctuation_cols(data, ignore_list):
+        return PunctuationParser.detect(df=data.iloc[:Sample_rows, :], columns_ignore=ignore_list)
 
     @staticmethod
     def _get_cols(df):
