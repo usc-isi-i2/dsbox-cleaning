@@ -38,30 +38,32 @@ class CleaningFeaturizerParams(params.Params):
 class CleaningFeaturizerHyperparameter(hyperparams.Hyperparams):
     features = hyperparams.Hyperparameter[Union[str, None]](
         None,
-        description = 'Select one or more operations to perform: "split_date_column", "split_phone_number_column", "split_alpha_numeric_column", "split_multi_value_column"',
+        description='Select one or more operations to perform: "split_date_column", "split_phone_number_column", "split_alpha_numeric_column", "split_multi_value_column"',
         semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter']
     )
 
     num_threshold = hyperparams.Uniform(
-        default = 0.1,
-        lower = 0.1,
-        upper = 0.5,
-        upper_inclusive = True,
-        description = 'Threshold for number character density of a column',
-        semantic_types = ['http://schema.org/Float', 'https://metadata.datadrivendiscovery.org/types/ControlParameter'])
+        default=0.1,
+        lower=0.1,
+        upper=0.5,
+        upper_inclusive=True,
+        description='Threshold for number character density of a column',
+        semantic_types=['http://schema.org/Float', 'https://metadata.datadrivendiscovery.org/types/ControlParameter'])
     common_threshold = hyperparams.Uniform(
-        default = 0.9,
-        lower = 0.7,
-        upper = 0.9,
-        upper_inclusive = True,
-        description = 'Threshold for rows containing specific punctuation',
-        semantic_types = ['http://schema.org/Float', 'https://metadata.datadrivendiscovery.org/types/ControlParameter'])
+        default=0.9,
+        lower=0.7,
+        upper=0.9,
+        upper_inclusive=True,
+        description='Threshold for rows containing specific punctuation',
+        semantic_types=['http://schema.org/Float', 'https://metadata.datadrivendiscovery.org/types/ControlParameter'])
+
 
 # class Params(params.Params):
 #     components_: typing.Any
 
 
-class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, CleaningFeaturizerParams, CleaningFeaturizerHyperparameter]):
+class CleaningFeaturizer(
+    UnsupervisedLearnerPrimitiveBase[Input, Output, CleaningFeaturizerParams, CleaningFeaturizerHyperparameter]):
     metadata = hyperparams.base.PrimitiveMetadata({
         ### Required
         "id": "dsbox-cleaning-featurizer",
@@ -70,22 +72,22 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
         "description": "Split single column into multile columns based on the semantics of the column. The semantics this primitive can detect include: phone numbers, dates, alpha numeric values, and multi-value columns",
         "python_path": "d3m.primitives.dsbox.CleaningFeaturizer",
         "primitive_family": "DATA_CLEANING",
-        "algorithm_types": [ "DATA_CONVERSION" ],
+        "algorithm_types": ["DATA_CONVERSION"],
         "source": {
             "name": config.D3M_PERFORMER_TEAM,
-            "uris": [ config.REPOSITORY ]
-            },
+            "uris": [config.REPOSITORY]
+        },
         ### Automatically generated
         # "primitive_code"
         # "original_python_path"
         # "schema"
         # "structural_type"
         ### Optional
-        "keywords": [ "cleaning", "date", "phone", "alphanumeric", "punctuation" ],
-        "installation": [ config.INSTALLATION ],
+        "keywords": ["cleaning", "date", "phone", "alphanumeric", "punctuation"],
+        "installation": [config.INSTALLATION],
         "location_uris": [],
         "hyperparms_to_tune": []
-        })
+    })
 
     def __repr__(self):
         return "%s(%r)" % ('Cleaner', self.__dict__)
@@ -139,14 +141,16 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
             if self._clean_operations.get("split_alpha_numeric_column"):
                 alpha_numeric_cols = self._get_alpha_numeric_cols(data,
                                                                   ignore_list=mapping.get("date_columns", []) +
-                                                                  mapping.get("phone_columns", {}).get("columns_to_perform", []))
+                                                                              mapping.get("phone_columns", {}).get(
+                                                                                  "columns_to_perform", []))
                 if alpha_numeric_cols.get("columns_to_perform"):
                     mapping["alpha_numeric_columns"] = alpha_numeric_cols
 
             if self._clean_operations.get("split_punctuation_column"):
                 punctuation_cols = self._get_punctuation_cols(data,
                                                               ignore_list=mapping.get("date_columns", []) +
-                                                              mapping.get("phone_columns", {}).get("columns_to_perform", [])                                                              )
+                                                                          mapping.get("phone_columns", {}).get(
+                                                                              "columns_to_perform", []))
                 if punctuation_cols.get("columns_to_perform"):
                     mapping["punctuation_columns"] = punctuation_cols
 
@@ -231,7 +235,7 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
     @staticmethod
     def _get_date_cols(data):
         dates = utils.list_columns_with_semantic_types(metadata=data.metadata, semantic_types=[
-                "https://metadata.datadrivendiscovery.org/types/Time"])
+            "https://metadata.datadrivendiscovery.org/types/Time"])
 
         return dates
 
@@ -263,7 +267,7 @@ class CleaningFeaturizer(UnsupervisedLearnerPrimitiveBase[Input, Output, Cleanin
                 if nans / length > 0.9:
                     if HelperFunction.is_categorical(self._input_data_copy.iloc[:, col]):
                         old_metadata['semantic_types'] = (
-                        "https://metadata.datadrivendiscovery.org/types/CategoricalData",)
+                            "https://metadata.datadrivendiscovery.org/types/CategoricalData",)
                     else:
                         old_metadata['semantic_types'] = ("http://schema.org/Text",)
                 else:
