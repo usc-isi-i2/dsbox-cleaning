@@ -124,7 +124,9 @@ class IQRScaler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, IQRHy
             -> CallResult[Outputs]:
         if not self._fitted:
             return CallResult(inputs, True, 1)
-        temp = pd.DataFrame(self._model.transform(inputs.iloc[:, self._s_cols]))
+        # If `inputs` has index, then this statement will cause the for loop to introduce blank rows
+        # temp = pd.DataFrame(self._model.transform(inputs.iloc[:, self._s_cols]))
+        temp = pd.DataFrame(self._model.transform(inputs.iloc[:, self._s_cols]), index=inputs.index)
         outputs = inputs.copy()
         for id_index, od_index in zip(self._s_cols, range(temp.shape[1])):
             outputs.iloc[:, id_index] = temp.iloc[:, od_index]
