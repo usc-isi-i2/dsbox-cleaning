@@ -1,7 +1,7 @@
 sudo: required
 language: python
 python:
-- 3.6.2
+- 3.6.6
 install:
   - sudo apt-get update
   # We do this conditionally because it saves us some downloading if the
@@ -14,9 +14,12 @@ install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-  - conda-env create .
+  - conda create --name dsbox-cleaner-env python=3.6
   - source activate dsbox-cleaner-env
-  - pip install -e git+https://gitlab.com/datadrivendiscovery/common-primitives@71164aa9a8f5d849ddec6e8f9d242cea1ad4157e#egg=common-primitives
+  - pip install -e git+https://gitlab.com/datadrivendiscovery/common-primitives@fa865a1babc190055cb2a17cbdcd5b37e6f5e774#egg=common-primitives --progress-bar off
+  - pip install stopit --progress-bar off
+  - pip install fancyimpute --progress-bar off
+  - pip install langdetect --progress-bar off
 
 script:
   - python -W ignore -m unittest discover
