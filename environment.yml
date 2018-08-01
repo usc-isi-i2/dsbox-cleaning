@@ -1,4 +1,4 @@
-name: mv-py3
+name: dsbox-cleaner-env
 dependencies:
 - pip=9.0.1
 - python=3.6.2
