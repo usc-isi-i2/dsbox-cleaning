@@ -109,7 +109,12 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
         inputs : Input
             The inputs.
         """
-        if (pd.isnull(inputs).sum().sum() == 0):    # no missing value exists
+        nan_sum = 0
+        for col_name in inputs:
+            for i in inputs[col_name].index:
+                if inputs[col_name][i] == "" or pd.isnull(inputs[col_name][i]):
+                    nan_sum += 1
+        if nan_sum == 0:    # no missing value exists
             if self._verbose:
                 print("Warning: no missing value in train dataset")
                 _logger.info('no missing value in train dataset')

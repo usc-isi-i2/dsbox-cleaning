@@ -68,7 +68,7 @@ class TestMean(unittest.TestCase):
 
         imputer.set_training_data(inputs=X)
         imputer.fit(timeout=self.enough_time)
-        print(imputer.get_params())
+        # print(imputer.get_params())
         self.assertEqual(imputer._has_finished, True)
         self.assertEqual(imputer._iterations_done, True)
 
@@ -116,7 +116,7 @@ class TestMean(unittest.TestCase):
         imputer2 = MeanImputation(hyperparams=hp)
         imputer2.set_training_data(inputs=result)
         imputer2.fit(timeout=self.enough_time)
-        print(imputer.get_params())
+        # print(imputer.get_params())
 
     def test_notAlign(self):
         """
