@@ -16,9 +16,7 @@ install:
   - conda info -a
   - conda-env create .
   - source activate dsbox-cleaner-env
-  - pip install d3m
   - pip install -e git+https://gitlab.com/datadrivendiscovery/common-primitives@fa865a1babc190055cb2a17cbdcd5b37e6f5e774#egg=common-primitives
-  - pip install -e .
 
 script:
   - python -W ignore -m unittest discover
