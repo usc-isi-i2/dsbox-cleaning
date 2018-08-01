@@ -20,7 +20,6 @@ pip install --process-dependency-links git+https://github.com/usc-isi-i2/dsbox-p
 
 ### Run Tests
 ```sh
-cd unit_tests
 python -m unittest discover
 ```
 
