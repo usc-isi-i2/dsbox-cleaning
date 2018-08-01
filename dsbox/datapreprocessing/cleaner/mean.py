@@ -197,7 +197,11 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
 
             # assume the features of testing data are same with the training data
             # therefore, only use the mean_values to impute, should get a clean dataset
-            data_clean = data.fillna(value=self.mean_values)
+            for col_name in data:
+                for i in data[col_name].index:
+                    if data[col_name][i] == "" or pd.isnull(data[col_name][i]):
+                        data.loc[i, col_name] = self.mean_values[col_name]
+            data_clean = data
 
             # Update metadata
             for col in self._numeric_columns:
