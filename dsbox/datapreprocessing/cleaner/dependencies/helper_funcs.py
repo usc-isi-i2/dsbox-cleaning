@@ -1,6 +1,7 @@
 import re
 from dateutil.parser import parse
 import d3m.metadata.base as mbase
+import pandas as pd
 
 """
 this script contains all the helper functions that apply to a input string
@@ -116,3 +117,11 @@ class HelperFunction:
                 cols.append(col_idx)
 
         return cols
+
+    @staticmethod
+    def custom_is_null(x, column_dtype=object):
+        if column_dtype == object and x == "":
+            return True
+        elif pd.isnull(x):
+            return True
+        return False
