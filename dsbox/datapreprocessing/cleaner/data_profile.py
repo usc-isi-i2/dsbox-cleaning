@@ -342,7 +342,7 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
                                 inputs.iloc[:, col] = numerics
                         else:
                             if "http://schema.org/Float" not in old_metadata['semantic_types']:
-                                old_metadata['semantic_types'] = ("http://schema.org/Float",)
+                                old_metadata['semantic_types'] += ("http://schema.org/Float",)
                                 old_metadata['structural_type'] = type(10.2)
                                 inputs.iloc[:, col] = numerics
 
