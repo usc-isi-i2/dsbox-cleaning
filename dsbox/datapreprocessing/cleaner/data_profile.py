@@ -63,6 +63,14 @@ metafeature_hyperparam = hyperparams.Enumeration(
 
 
 class Hyperparams(hyperparams.Hyperparams):
+    split_on_column_with_avg_len = hyperparams.Uniform(
+        default=30,
+        lower=10,
+        upper=100,
+        upper_inclusive=True,
+        description='Threshold of avg column length for splitting punctuation or alphanumeric',
+        semantic_types=['http://schema.org/Integer', 'https://metadata.datadrivendiscovery.org/types/ControlParameter'])
+
     metafeatures = hyperparams.Set(
         metafeature_hyperparam, default_metafeatures, min_size=1, max_size=len(computable_metafeatures),
         description="Compute metadata descriptions of the dataset",
@@ -122,6 +130,7 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
         super().__init__(hyperparams=hyperparams)
 
         # All other attributes must be private with leading underscore
+        self.hyperparams = hyperparams
         self._punctuation_outlier_weight = 3
         self._numerical_outlier_weight = 3
         self._token_delimiter = " "
@@ -249,7 +258,7 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
         # calling the PunctuationSplitter detector
 
         try:
-            PunctuationSplitter_indices = PunctuationParser.detect(df=self._sample_df)
+            PunctuationSplitter_indices = PunctuationParser.detect(df=self._sample_df, max_avg_length=self.hyperparams['split_on_column_with_avg_len'])
         except Exception as e:
             _logger.error(traceback.print_exc(e))
             PunctuationSplitter_indices = dict()
@@ -281,7 +290,7 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
         # calling the NumAlphaSplitter detector
 
         try:
-            NumAlphaSplitter_indices = NumAlphaParser.detect(df=self._sample_df)
+            NumAlphaSplitter_indices = NumAlphaParser.detect(df=self._sample_df, max_avg_length=self.hyperparams['split_on_column_with_avg_len'],)
         except Exception as e:
             _logger.error(traceback.print_exc(e))
             NumAlphaSplitter_indices = dict()
