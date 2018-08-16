@@ -42,6 +42,14 @@ class CleaningFeaturizerHyperparameter(hyperparams.Hyperparams):
         semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter']
     )
 
+    split_on_column_with_avg_len = hyperparams.Uniform(
+        default=30,
+        lower=10,
+        upper=100,
+        upper_inclusive=True,
+        description='Threshold of avg column length for splitting punctuation or alphanumeric',
+        semantic_types=['http://schema.org/Integer', 'https://metadata.datadrivendiscovery.org/types/ControlParameter'])
+
     num_threshold = hyperparams.Uniform(
         default=0.1,
         lower=0.1,
@@ -87,6 +95,7 @@ class CleaningFeaturizerHyperparameter(hyperparams.Hyperparams):
     )
 # class Params(params.Params):
 #     components_: typing.Any
+
 
 
 class CleaningFeaturizer(
@@ -166,7 +175,7 @@ class CleaningFeaturizer(
                     mapping["phone_columns"] = phone_cols
 
             if self._clean_operations.get("split_alpha_numeric_column"):
-                alpha_numeric_cols = self._get_alpha_numeric_cols(data,
+                alpha_numeric_cols = self._get_alpha_numeric_cols(data, self.hyperparams['split_on_column_with_avg_len'],
                                                                   ignore_list=mapping.get("date_columns", []) +
                                                                               mapping.get("phone_columns", {}).get(
                                                                                   "columns_to_perform", []))
@@ -175,6 +184,7 @@ class CleaningFeaturizer(
 
             if self._clean_operations.get("split_punctuation_column"):
                 punctuation_cols = self._get_punctuation_cols(data,
+                                                              self.hyperparams['split_on_column_with_avg_len'],
                                                               ignore_list=mapping.get("date_columns", []) +
                                                                           mapping.get("phone_columns", {}).get(
                                                                               "columns_to_perform", []))
@@ -255,8 +265,9 @@ class CleaningFeaturizer(
             self._input_data_copy = df
 
         if cols_to_drop:
-            self._input_data_copy = utils.remove_columns(self._input_data_copy, cols_to_drop)
+            self._input_data_copy = utils.remove_columns(self._input_data_copy, list(set(cols_to_drop)))
         self._update_structural_type()
+
         return CallResult(self._input_data_copy, True, 1)
 
 
@@ -303,12 +314,14 @@ class CleaningFeaturizer(
         return PhoneParser.detect(df=data.iloc[:Sample_rows, :], columns_ignore=ignore_list)
 
     @staticmethod
-    def _get_alpha_numeric_cols(data, ignore_list):
-        return NumAlphaParser.detect(df=data.iloc[:Sample_rows, :], columns_ignore=ignore_list)
+    def _get_alpha_numeric_cols(data, max_avg_length, ignore_list):
+        return NumAlphaParser.detect(df=data.iloc[:Sample_rows, :], max_avg_length=max_avg_length,
+                                     columns_ignore=ignore_list)
 
     @staticmethod
-    def _get_punctuation_cols(data, ignore_list):
-        return PunctuationParser.detect(df=data.iloc[:Sample_rows, :], columns_ignore=ignore_list)
+    def _get_punctuation_cols(data, max_avg_length, ignore_list):
+        return PunctuationParser.detect(df=data.iloc[:Sample_rows, :], max_avg_length=max_avg_length,
+                                        columns_ignore=ignore_list)
 
     @staticmethod
     def _get_cols(df):
