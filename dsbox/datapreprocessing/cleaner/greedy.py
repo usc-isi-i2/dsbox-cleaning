@@ -11,6 +11,7 @@ import typing
 from d3m import container
 from d3m.metadata import hyperparams, params
 from d3m.metadata.hyperparams import UniformBool
+import d3m.metadata.base as mbase
 import common_primitives.utils as utils
 
 from . import config
@@ -29,7 +30,34 @@ class GreedyHyperparameter(hyperparams.Hyperparams):
     verbose = UniformBool(default=False,
                           semantic_types=['http://schema.org/Boolean',
                                           'https://metadata.datadrivendiscovery.org/types/ControlParameter'])
-
+    use_columns = hyperparams.Set(
+        elements=hyperparams.Hyperparameter[int](-1),
+        default=(),
+        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+        description="A set of column indices to force primitive to operate on. If any specified column cannot be parsed, it is skipped.",
+    )
+    exclude_columns = hyperparams.Set(
+        elements=hyperparams.Hyperparameter[int](-1),
+        default=(),
+        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+        description="A set of column indices to not operate on. Applicable only if \"use_columns\" is not provided.",
+    )
+    return_result = hyperparams.Enumeration(
+        values=['append', 'replace', 'new'],
+        default='replace',
+        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+        description="Should parsed columns be appended, should they replace original columns, or should only parsed columns be returned? This hyperparam is ignored if use_semantic_types is set to false.",
+    )
+    use_semantic_types = hyperparams.UniformBool(
+        default=False,
+        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+        description="Controls whether semantic_types metadata will be used for filtering columns in input dataframe. Setting this to false makes the code ignore return_result and will produce only the output dataframe"
+    )
+    add_index_columns = hyperparams.UniformBool(
+        default=True,
+        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+        description="Also include primary index columns if input data has them. Applicable only if \"return_result\" is set to \"new\".",
+    )
 
 class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, GreedyHyperparameter]):
     """
@@ -232,6 +260,37 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
             self._has_finished = False
             self._iterations_done = False
         return CallResult(value, self._has_finished, self._iterations_done)
+
+
+    @classmethod
+    def _get_columns_to_fit(cls, inputs: Input, hyperparams: GreedyHyperparameter):
+        if not hyperparams['use_semantic_types']:
+            return inputs, list(range(len(inputs.columns)))
+
+        inputs_metadata = inputs.metadata
+
+        def can_produce_column(column_index: int) -> bool:
+            return cls._can_produce_column(inputs_metadata, column_index, hyperparams)
+
+        columns_to_produce, columns_not_to_produce = common_utils.get_columns_to_use(inputs_metadata,
+                                                                             use_columns=hyperparams['use_columns'],
+                                                                             exclude_columns=hyperparams['exclude_columns'],
+                                                                             can_use_column=can_produce_column)
+        return inputs.iloc[:, columns_to_produce], columns_to_produce
+
+
+    @classmethod
+    def _can_produce_column(cls, inputs_metadata: mbase.DataMetadata, column_index: int, hyperparams: GreedyHyperparameter) -> bool:
+        column_metadata = inputs_metadata.query((mbase.ALL_ELEMENTS, column_index))
+
+        semantic_types = column_metadata.get('semantic_types', [])
+        if len(semantic_types) == 0:
+            cls.logger.warning("No semantic types found in column metadata")
+            return False
+        if "https://metadata.datadrivendiscovery.org/types/Attribute" in semantic_types:
+            return True
+
+        return False
 
     #============================================ fit phase functinos ============================================
     def _set_model_scorer(self, model=None, scorer=None):
