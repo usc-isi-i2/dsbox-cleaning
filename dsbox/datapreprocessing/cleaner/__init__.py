@@ -11,6 +11,7 @@ from .labler import Labler,LablerHyperparams
 from .cleaning_featurizer import CleaningFeaturizer, CleaningFeaturizerHyperparameter
 from .denormalize import Denormalize, DenormalizeHyperparams
 from .data_profile import Profiler, Hyperparams as ProfilerHyperparams
+from .column_fold import FoldColumns, FoldHyperparameter
 
 
 # __all__ = ['Encoder', 'GreedyImputation', 'IterativeRegressionImputation',
@@ -29,6 +30,7 @@ __all__ = ['Encoder', 'EncHyperparameter',
            'CleaningFeaturizer','CleaningFeaturizerHyperparameter',
            'Denormalize','DenormalizeHyperparams',
            'Profiler', 'ProfilerHyperparams',
+           'FoldColumns', 'FoldHyperparameter',
 ]
 
 

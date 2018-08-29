@@ -253,7 +253,7 @@ class FoldColumns(UnsupervisedLearnerPrimitiveBase[Input, Output, FoldParams, Fo
 
         non_foldable_columns = list(set(orig_columns) - set(columns_to_fold))
 
-        for i in self._df.index.values:
+        for i in range(self._df.shape[0]):
             row = self._df.iloc[i]
             for column_to_fold in columns_to_fold:
 
@@ -263,9 +263,10 @@ class FoldColumns(UnsupervisedLearnerPrimitiveBase[Input, Output, FoldParams, Fo
 
                 d1[new_column_name] = self._column_names[column_to_fold]
                 d1['{}_value'.format(new_column_name)] = row[column_to_fold]
+                d1['d3mIndex'] = self._df.index[i]
                 new_rows_list.append(d1)
 
-        new_df = pd.DataFrame(new_rows_list)
+        new_df = pd.DataFrame(new_rows_list).set_index('d3mIndex', drop=True)
         return new_df
 
     @staticmethod
