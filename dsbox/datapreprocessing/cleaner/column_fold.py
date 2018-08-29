@@ -3,6 +3,9 @@ import dateparser
 import numpy as np
 from d3m import container
 import d3m.metadata.base as mbase
+from common_primitives import utils
+from d3m.container import DataFrame as d3m_DataFrame
+from dsbox.datapreprocessing.cleaner.dependencies.helper_funcs import HelperFunction
 
 
 from typing import Dict
@@ -158,7 +161,6 @@ class FoldColumns(UnsupervisedLearnerPrimitiveBase[Input, Output, FoldParams, Fo
 
         if len(dates_list) > 0:
             c_list.extend(dates_list)
-        print(c_list)
 
         self._mapping = {'foldable_columns': c_list}
         self._fitted = True
@@ -212,8 +214,29 @@ class FoldColumns(UnsupervisedLearnerPrimitiveBase[Input, Output, FoldParams, Fo
         df = None
         for columns_to_fold in columns_list_to_fold:
             df = self._fold_columns(columns_to_fold)
-        df.to_csv("/Users/runqishao/Desktop/aaa.csv")
-        return CallResult(df, True, 1) if df is not None else CallResult(self._df, True, 1)
+
+        cols_to_drop = list()
+        for col_idx, col_name in enumerate(self._df.columns):
+            if col_name not in df.columns:
+                cols_to_drop.append(col_idx)
+
+        self._df = utils.remove_columns(self._df, cols_to_drop)
+        new_df = self._df[0:0]
+        for col_name in new_df.columns:
+            new_df.loc[:, col_name] = df.loc[:, col_name]
+
+        extends = {}
+        for col_name in df.columns:
+            if col_name not in new_df.columns:
+                extends[col_name] = df.loc[:, col_name].tolist()
+
+        if extends:
+            extends_df = d3m_DataFrame.from_dict(extends)
+            extends_df.index = new_df.index.copy()
+            new_df = utils.append_columns(new_df, extends_df)
+            new_df = self._update_type(new_df, list(extends.keys()))
+
+        return CallResult(new_df, True, 1) if new_df is not None else CallResult(self._df, True, 1)
 
     def _fold_columns(self, columns_to_fold_all):
         columns_to_fold = list(set(columns_to_fold_all) - set(self._ignore_list))
@@ -244,3 +267,36 @@ class FoldColumns(UnsupervisedLearnerPrimitiveBase[Input, Output, FoldParams, Fo
 
         new_df = pd.DataFrame(new_rows_list)
         return new_df
+
+    @staticmethod
+    def _update_type(df, added_cols):
+
+        indices = list()
+        for key in added_cols:
+            indices.append(df.columns.get_loc(key))
+
+        for idx in indices:
+            old_metadata = dict(df.metadata.query((mbase.ALL_ELEMENTS, idx)))
+
+            numerics = pd.to_numeric(df.iloc[:, idx], errors='coerce')
+            length = numerics.shape[0]
+            nans = numerics.isnull().sum()
+
+            if nans / length > 0.9:
+                if HelperFunction.is_categorical(df.iloc[:, idx]):
+                    old_metadata['semantic_types'] = (
+                        "https://metadata.datadrivendiscovery.org/types/CategoricalData",)
+                else:
+                    old_metadata['semantic_types'] = ("http://schema.org/Text",)
+            else:
+                intcheck = (numerics % 1) == 0
+                if np.sum(intcheck) / length > 0.9:
+                    old_metadata['semantic_types'] = ("http://schema.org/Integer",)
+                else:
+                    old_metadata['semantic_types'] = ("http://schema.org/Float",)
+
+            old_metadata['semantic_types'] += ("https://metadata.datadrivendiscovery.org/types/Attribute",)
+
+            df.metadata = df.metadata.update((mbase.ALL_ELEMENTS, idx), old_metadata)
+
+        return df
