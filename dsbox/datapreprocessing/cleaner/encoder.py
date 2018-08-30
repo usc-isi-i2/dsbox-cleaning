@@ -61,6 +61,7 @@ class EncHyperparameter(hyperparams.Hyperparams):
         description="Also include primary index columns if input data has them. Applicable only if \"return_result\" is set to \"new\".",
     )
 
+
 class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHyperparameter]):
     """
     An one-hot encoder, which
@@ -135,8 +136,8 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
             data.metadata, ['http://schema.org/Integer', 'http://schema.org/Float'])
         numeric = [x for x in numeric if x in all_attributes]
         for element in numeric:
-            if data.metadata.query((mbase.ALL_ELEMENTS, element)).get('structural_type', ())==str:
-                if pd.isnull(pd.to_numeric(data.iloc[:,element])).sum() == data.shape[0]:
+            if data.metadata.query((mbase.ALL_ELEMENTS, element)).get('structural_type', ()) == str:
+                if pd.isnull(pd.to_numeric(data.iloc[:, element])).sum() == data.shape[0]:
                     self._empty_columns.append(element)
 
         # Remove columns with all empty values, structural numeric
@@ -182,10 +183,11 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
 
         # Remove columns with all empty values
         _logger.debug('Removing entirely empty columns: {}'.format(self._input_data_copy.columns[self._empty_columns]))
-        self._input_data_copy = utils.remove_columns(self._input_data_copy, self._empty_columns, source='ISI DSBox Data Encoder')
+        self._input_data_copy = utils.remove_columns(self._input_data_copy, self._empty_columns,
+                                                     source='ISI DSBox Data Encoder')
 
         # Return if there is nothing to encode
-        if len(self._cat_columns)==0:
+        if len(self._cat_columns) == 0:
             return CallResult(self._input_data_copy, True, 1)
 
         _logger.debug('Encoding columns: {}'.format(self._cat_columns))
@@ -215,7 +217,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
         # Drop columns that will be encoded
         # data_rest = self._input_data_copy.drop(self._mapping.keys(), axis=1)
         columns_names = self._input_data_copy.columns.tolist()
-        drop_indices = [columns_names.index(col)  for col in self._mapping.keys()]
+        drop_indices = [columns_names.index(col) for col in self._mapping.keys()]
         drop_indices = sorted(drop_indices)
 
         all_categorical = False
@@ -275,14 +277,16 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
             return cls._can_produce_column(inputs_metadata, column_index, hyperparams)
 
         columns_to_produce, columns_not_to_produce = common_utils.get_columns_to_use(inputs_metadata,
-                                                                             use_columns=hyperparams['use_columns'],
-                                                                             exclude_columns=hyperparams['exclude_columns'],
-                                                                             can_use_column=can_produce_column)
+                                                                                     use_columns=hyperparams[
+                                                                                         'use_columns'],
+                                                                                     exclude_columns=hyperparams[
+                                                                                         'exclude_columns'],
+                                                                                     can_use_column=can_produce_column)
         return inputs.iloc[:, columns_to_produce], columns_to_produce
 
-
     @classmethod
-    def _can_produce_column(cls, inputs_metadata: mbase.DataMetadata, column_index: int, hyperparams: EncHyperparameter) -> bool:
+    def _can_produce_column(cls, inputs_metadata: mbase.DataMetadata, column_index: int,
+                            hyperparams: EncHyperparameter) -> bool:
         column_metadata = inputs_metadata.query((mbase.ALL_ELEMENTS, column_index))
 
         semantic_types = column_metadata.get('semantic_types', [])
@@ -293,4 +297,3 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
             return True
 
         return False
-
