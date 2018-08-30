@@ -1,15 +1,13 @@
-
 import logging
 import typing
 
-import pandas as pd #  type: ignore
+import pandas as pd  # type: ignore
 import numpy as np
 
 from d3m.primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 
 from d3m.primitive_interfaces.base import CallResult
-import stopit #  type: ignore
-
+import stopit  # type: ignore
 
 from d3m import container
 from d3m.metadata import hyperparams, params
@@ -19,7 +17,6 @@ import common_primitives.utils as utils
 
 from . import config
 
-
 import common_primitives.utils as common_utils
 
 Input = container.DataFrame
@@ -27,11 +24,13 @@ Output = container.DataFrame
 
 _logger = logging.getLogger(__name__)
 
+
 # store the mean value for each column in training data
 class Params(params.Params):
-    mean_values : typing.Dict
-    type_columns : typing.Dict
-    fitted : bool
+    mean_values: typing.Dict
+    type_columns: typing.Dict
+    fitted: bool
+
 
 class MeanHyperparameter(hyperparams.Hyperparams):
     verbose = UniformBool(default=False,
@@ -79,24 +78,24 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
         "description": "Impute missing values using the `mean` value of the attribute.",
         "python_path": "d3m.primitives.dsbox.MeanImputation",
         "primitive_family": "DATA_CLEANING",
-        "algorithm_types": [ "IMPUTATION" ],
+        "algorithm_types": ["IMPUTATION"],
         "source": {
             "name": config.D3M_PERFORMER_TEAM,
-            "uris": [ config.REPOSITORY ]
-            },
+            "uris": [config.REPOSITORY]
+        },
         ### Automatically generated
         # "primitive_code"
         # "original_python_path"
         # "schema"
         # "structural_type"
         ### Optional
-        "keywords": [ "preprocessing", "imputation", "mean" ],
-        "installation": [ config.INSTALLATION ],
+        "keywords": ["preprocessing", "imputation", "mean"],
+        "installation": [config.INSTALLATION],
         "location_uris": [],
-        "precondition":  [hyperparams.base.PrimitivePrecondition.NO_CATEGORICAL_VALUES ],
-        "effects": [ hyperparams.base.PrimitiveEffects.NO_MISSING_VALUES ],
+        "precondition": [hyperparams.base.PrimitivePrecondition.NO_CATEGORICAL_VALUES],
+        "effects": [hyperparams.base.PrimitiveEffects.NO_MISSING_VALUES],
         "hyperparms_to_tune": []
-        })
+    })
 
     def __init__(self, *, hyperparams: MeanHyperparameter) -> None:
 
@@ -113,7 +112,6 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
         self._categoric_columns: typing.List = []
         self._verbose = hyperparams['verbose'] if hyperparams else False
 
-
     def set_params(self, *, params: Params) -> None:
         self._is_fitted = params['fitted']
         self._has_finished = self._is_fitted
@@ -126,8 +124,8 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
         return Params(
             mean_values=self.mean_values,
             type_columns={
-                'numeric_columns' : self._numeric_columns,
-                'categoric_columns' : self._categoric_columns
+                'numeric_columns': self._numeric_columns,
+                'categoric_columns': self._categoric_columns
             },
             fitted=self._is_fitted)
 
@@ -142,10 +140,13 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
         """
         nan_sum = 0
         for col in range(inputs.shape[1]):
-            for i in range(inputs.shape[0]):
-                if inputs.iloc[i, col] == "" or pd.isnull(inputs.iloc[i, col]):
-                    nan_sum += 1
-        if nan_sum == 0:    # no missing value exists
+            if str(inputs.dtypes[inputs.columns[col]]) != "object":
+                nan_sum += inputs.iloc[:, col].isnull().sum()
+            else:
+                for i in range(inputs.shape[0]):
+                    if inputs.iloc[i, col] == "" or pd.isnull(inputs.iloc[i, col]):
+                        nan_sum += 1
+        if nan_sum == 0:  # no missing value exists
             if self._verbose:
                 print("Warning: no missing value in train dataset")
                 _logger.info('no missing value in train dataset')
@@ -167,7 +168,7 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
             return CallResult(None, self._has_finished, self._iterations_done)
 
         if (timeout is None):
-            timeout = 2**31-1
+            timeout = 2 ** 31 - 1
 
         if (iterations is None):
             self._iterations_done = True
@@ -177,7 +178,7 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
             assert to_ctx_mrg.state == to_ctx_mrg.EXECUTING
 
             # start fitting
-            if self._verbose : print("=========> mean imputation method:")
+            if self._verbose: print("=========> mean imputation method:")
             self.__get_fitted()
 
         if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
@@ -211,7 +212,7 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
         #     return CallResult(inputs, self._has_finished, self._iterations_done)
 
         if (timeout is None):
-            timeout = 2**31-1
+            timeout = 2 ** 31 - 1
 
         if isinstance(inputs, pd.DataFrame):
             data = inputs.copy()
@@ -228,13 +229,15 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
             data.iloc[:, self._numeric_columns] = data.iloc[:, self._numeric_columns].apply(
                 lambda col: pd.to_numeric(col, errors='coerce'))
 
-
             # assume the features of testing data are same with the training data
             # therefore, only use the mean_values to impute, should get a clean dataset
             for col in range(data.shape[1]):
-                for i in range(data.shape[0]):
-                    if data.iloc[i, col] == "" or pd.isnull(data.iloc[i, col]):
-                        data.iloc[i, col] = self.mean_values[data.columns[col]]
+                if str(inputs.dtypes[inputs.columns[col]]) != "object":
+                    data.iloc[:, col].fillna(self.mean_values[data.columns[col]], inplace=True)
+                else:
+                    for i in range(data.shape[0]):
+                        if data.iloc[i, col] == "" or pd.isnull(data.iloc[i, col]):
+                            data.iloc[i, col] = self.mean_values[data.columns[col]]
             data_clean = data
 
             # Update metadata
@@ -261,8 +264,6 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
             _logger.warn('Produce timed out')
             self._has_finished = False
             self._iterations_done = False
-        import pdb
-        pdb.set_trace()
         return CallResult(value, self._has_finished, self._iterations_done)
 
     @classmethod
@@ -276,13 +277,16 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
             return cls._can_produce_column(inputs_metadata, column_index, hyperparams)
 
         columns_to_produce, columns_not_to_produce = common_utils.get_columns_to_use(inputs_metadata,
-                                                                             use_columns=hyperparams['use_columns'],
-                                                                             exclude_columns=hyperparams['exclude_columns'],
-                                                                             can_use_column=can_produce_column)
+                                                                                     use_columns=hyperparams[
+                                                                                         'use_columns'],
+                                                                                     exclude_columns=hyperparams[
+                                                                                         'exclude_columns'],
+                                                                                     can_use_column=can_produce_column)
         return inputs.iloc[:, columns_to_produce], columns_to_produce
 
     @classmethod
-    def _can_produce_column(cls, inputs_metadata: mbase.DataMetadata, column_index: int, hyperparams: MeanHyperparameter) -> bool:
+    def _can_produce_column(cls, inputs_metadata: mbase.DataMetadata, column_index: int,
+                            hyperparams: MeanHyperparameter) -> bool:
         column_metadata = inputs_metadata.query((mbase.ALL_ELEMENTS, column_index))
 
         semantic_types = column_metadata.get('semantic_types', [])
