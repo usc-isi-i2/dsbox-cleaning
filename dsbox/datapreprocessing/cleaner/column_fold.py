@@ -7,7 +7,6 @@ from common_primitives import utils
 from d3m.container import DataFrame as d3m_DataFrame
 from dsbox.datapreprocessing.cleaner.dependencies.helper_funcs import HelperFunction
 
-
 from typing import Dict
 
 from d3m.primitive_interfaces.base import CallResult
@@ -32,7 +31,6 @@ class FoldHyperparameter(hyperparams.Hyperparams):
 
 
 class FoldColumns(UnsupervisedLearnerPrimitiveBase[Input, Output, FoldParams, FoldHyperparameter]):
-
     # TODO update metadata
     metadata = hyperparams.base.PrimitiveMetadata({
         ### Required
@@ -235,6 +233,11 @@ class FoldColumns(UnsupervisedLearnerPrimitiveBase[Input, Output, FoldParams, Fo
             new_df = utils.append_columns(new_df, extends_df)
             new_df = self._update_type(new_df, list(extends.keys()))
 
+        old_metadata = dict(new_df.metadata.query(()))
+        old_metadata["dimension"] = dict(old_metadata["dimension"])
+        old_metadata["dimension"]["length"] = new_df.shape[0]
+        new_df.metadata = new_df.metadata.update((), old_metadata)
+
         return CallResult(new_df, True, 1) if new_df is not None else CallResult(inputs, True, 1)
 
     def _fold_columns(self, inputs_df, columns_to_fold_all):
@@ -263,7 +266,7 @@ class FoldColumns(UnsupervisedLearnerPrimitiveBase[Input, Output, FoldParams, Fo
                 d1[new_column_name] = self._column_names[column_to_fold]
                 d1['{}_value'.format(new_column_name)] = row[column_to_fold]
 
-        # record d3mIndex version. If you want using pandas default, comment out this block and uncomment next block
+                # record d3mIndex version. If you want using pandas default, comment out this block and uncomment next block
                 d1['d3mIndex_reference'] = inputs_df.index[i]
                 new_rows_list.append(d1)
 
