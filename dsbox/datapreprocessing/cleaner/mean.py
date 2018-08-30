@@ -141,9 +141,9 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
             The inputs.
         """
         nan_sum = 0
-        for col_name in inputs:
-            for i in inputs[col_name].index:
-                if inputs[col_name][i] == "" or pd.isnull(inputs[col_name][i]):
+        for col in range(inputs.shape[1]):
+            for i in range(inputs.shape[0]):
+                if inputs.iloc[i, col] == "" or pd.isnull(inputs.iloc[i, col]):
                     nan_sum += 1
         if nan_sum == 0:    # no missing value exists
             if self._verbose:
@@ -152,8 +152,6 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
 
         self._train_x = inputs
         self._is_fitted = False
-
-
 
     def fit(self, *, timeout: float = None, iterations: int = None) -> CallResult[None]:
         """
@@ -233,10 +231,10 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
 
             # assume the features of testing data are same with the training data
             # therefore, only use the mean_values to impute, should get a clean dataset
-            for col_name in data:
-                for i in data[col_name].index:
-                    if data[col_name][i] == "" or pd.isnull(data[col_name][i]):
-                        data.loc[i, col_name] = self.mean_values[col_name]
+            for col in range(data.shape[1]):
+                for i in range(data.shape[0]):
+                    if data.iloc[i, col] == "" or pd.isnull(data.iloc[i, col]):
+                        data.iloc[i, col] = self.mean_values[data.columns[col]]
             data_clean = data
 
             # Update metadata
@@ -263,8 +261,9 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
             _logger.warn('Produce timed out')
             self._has_finished = False
             self._iterations_done = False
+        import pdb
+        pdb.set_trace()
         return CallResult(value, self._has_finished, self._iterations_done)
-
 
     @classmethod
     def _get_columns_to_fit(cls, inputs: Input, hyperparams: MeanHyperparameter):
@@ -281,7 +280,6 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
                                                                              exclude_columns=hyperparams['exclude_columns'],
                                                                              can_use_column=can_produce_column)
         return inputs.iloc[:, columns_to_produce], columns_to_produce
-
 
     @classmethod
     def _can_produce_column(cls, inputs_metadata: mbase.DataMetadata, column_index: int, hyperparams: MeanHyperparameter) -> bool:
