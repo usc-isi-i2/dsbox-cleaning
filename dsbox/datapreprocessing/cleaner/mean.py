@@ -138,8 +138,10 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
         inputs : Input
             The inputs.
         """
+        attribute = utils.list_columns_with_semantic_types(
+            inputs.metadata, ['https://metadata.datadrivendiscovery.org/types/Attribute'])
         nan_sum = 0
-        for col in range(inputs.shape[1]):
+        for col in attribute:
             if str(inputs.dtypes[inputs.columns[col]]) != "object":
                 nan_sum += inputs.iloc[:, col].isnull().sum()
             else:
@@ -231,7 +233,9 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
 
             # assume the features of testing data are same with the training data
             # therefore, only use the mean_values to impute, should get a clean dataset
-            for col in range(data.shape[1]):
+            attribute = utils.list_columns_with_semantic_types(
+                data.metadata, ['https://metadata.datadrivendiscovery.org/types/Attribute'])
+            for col in attribute:
                 if str(inputs.dtypes[inputs.columns[col]]) != "object":
                     data.iloc[:, col].fillna(self.mean_values[data.columns[col]], inplace=True)
                 else:
