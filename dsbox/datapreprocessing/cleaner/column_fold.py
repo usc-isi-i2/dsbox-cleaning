@@ -159,8 +159,16 @@ class FoldColumns(UnsupervisedLearnerPrimitiveBase[Input, Output, FoldParams, Fo
 
         if len(dates_list) > 0:
             c_list.extend(dates_list)
+        ret_lst = []
+        for fold_group in c_list:
+            semantic_types = set()
+            for col in fold_group:
+                old_metadata = dict(self._df.metadata.query((mbase.ALL_ELEMENTS, col)))
+                semantic_types = semantic_types.union([x for x in old_metadata["semantic_types"] if x != "https://metadata.datadrivendiscovery.org/types/Attribute"])
+            if len(semantic_types) <= 1:
+                ret_lst.append(fold_group)
 
-        self._mapping = {'foldable_columns': c_list}
+        self._mapping = {'foldable_columns': ret_lst}
         self._fitted = True
 
     def _detect_columns_to_fold_prefix(self):
@@ -267,16 +275,16 @@ class FoldColumns(UnsupervisedLearnerPrimitiveBase[Input, Output, FoldParams, Fo
                 d1['{}_value'.format(new_column_name)] = row[column_to_fold]
 
                 # record d3mIndex version. If you want using pandas default, comment out this block and uncomment next block
-                d1['d3mIndex_reference'] = inputs_df.index[i]
-                new_rows_list.append(d1)
-
-        new_df = pd.DataFrame(new_rows_list).set_index('d3mIndex_reference', drop=True)
-        new_df.index.names = ['d3mIndex']
-
-        # # Not record d3mIndex. using pandas default
+        #         d1['d3mIndex_reference'] = inputs_df.index[i]
         #         new_rows_list.append(d1)
         #
-        # new_df = pd.DataFrame(new_rows_list)
+        # new_df = pd.DataFrame(new_rows_list).set_index('d3mIndex_reference', drop=True)
+        # new_df.index.names = ['d3mIndex']
+
+        # Not record d3mIndex. using pandas default
+                new_rows_list.append(d1)
+
+        new_df = pd.DataFrame(new_rows_list)
 
         return new_df
 
@@ -300,12 +308,15 @@ class FoldColumns(UnsupervisedLearnerPrimitiveBase[Input, Output, FoldParams, Fo
                         "https://metadata.datadrivendiscovery.org/types/CategoricalData",)
                 else:
                     old_metadata['semantic_types'] = ("http://schema.org/Text",)
+                    old_metadata['structural_type'] = type("type")
             else:
                 intcheck = (numerics % 1) == 0
                 if np.sum(intcheck) / length > 0.9:
                     old_metadata['semantic_types'] = ("http://schema.org/Integer",)
+                    old_metadata['structural_type'] = type(10)
                 else:
                     old_metadata['semantic_types'] = ("http://schema.org/Float",)
+                    old_metadata['structural_type'] = type(10.1)
 
             old_metadata['semantic_types'] += ("https://metadata.datadrivendiscovery.org/types/Attribute",)
 
