@@ -216,7 +216,7 @@ class FoldColumns(UnsupervisedLearnerPrimitiveBase[Input, Output, FoldParams, Fo
         columns_list_to_fold = self._mapping.get('foldable_columns', [])
         if len(columns_list_to_fold) == 0:
             return CallResult(inputs, True, 1)
-
+        self._column_names = list(inputs) if inputs is not None else []
         df = None
         for columns_to_fold in columns_list_to_fold:
             df = self._fold_columns(inputs, columns_to_fold)
