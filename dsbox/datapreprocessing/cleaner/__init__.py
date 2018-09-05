@@ -12,6 +12,7 @@ from .cleaning_featurizer import CleaningFeaturizer, CleaningFeaturizerHyperpara
 from .denormalize import Denormalize, DenormalizeHyperparams
 from .data_profile import Profiler, Hyperparams as ProfilerHyperparams
 from .column_fold import FoldColumns, FoldHyperparameter
+from .voter import Voter, VoterHyperparameter
 
 
 # __all__ = ['Encoder', 'GreedyImputation', 'IterativeRegressionImputation',
@@ -31,6 +32,7 @@ __all__ = ['Encoder', 'EncHyperparameter',
            'Denormalize','DenormalizeHyperparams',
            'Profiler', 'ProfilerHyperparams',
            'FoldColumns', 'FoldHyperparameter',
+           'Voter', 'VoterHyperparameter',
 ]
 
 
