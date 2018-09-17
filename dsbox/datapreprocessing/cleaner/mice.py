@@ -1,5 +1,5 @@
 import pandas as pd
-from fancyimpute import MICE as mice
+from fancyimpute import mice
 
 from . import missing_value_pred as mvp
 from d3m.primitive_interfaces.transformer import TransformerPrimitiveBase
