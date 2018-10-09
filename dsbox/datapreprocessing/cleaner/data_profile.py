@@ -151,6 +151,7 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
             typing.Union[container.Dataset, container.DataFrame, container.ndarray, container.matrix, container.List]
         """
         # Wrap as container, if needed
+        inputs = inputs.copy()
         if not pytypes.is_of_type(inputs, types.Container):
             if isinstance(inputs, pd.DataFrame):
                 inputs = container.DataFrame(inputs)
@@ -258,7 +259,8 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
         # calling the PunctuationSplitter detector
 
         try:
-            PunctuationSplitter_indices = PunctuationParser.detect(df=self._sample_df, max_avg_length=self.hyperparams['split_on_column_with_avg_len'])
+            PunctuationSplitter_indices = PunctuationParser.detect(df=self._sample_df, max_avg_length=self.hyperparams[
+                'split_on_column_with_avg_len'])
         except Exception as e:
             _logger.error(traceback.print_exc(e))
             PunctuationSplitter_indices = dict()
@@ -290,7 +292,8 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
         # calling the NumAlphaSplitter detector
 
         try:
-            NumAlphaSplitter_indices = NumAlphaParser.detect(df=self._sample_df, max_avg_length=self.hyperparams['split_on_column_with_avg_len'],)
+            NumAlphaSplitter_indices = NumAlphaParser.detect(df=self._sample_df, max_avg_length=self.hyperparams[
+                'split_on_column_with_avg_len'], )
         except Exception as e:
             _logger.error(traceback.print_exc(e))
             NumAlphaSplitter_indices = dict()
