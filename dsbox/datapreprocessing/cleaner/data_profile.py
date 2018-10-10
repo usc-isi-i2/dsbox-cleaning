@@ -167,7 +167,7 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
                 return CallResult(inputs)
 
         # calling the utility to detect integer and float datatype columns
-        inputs = dtype_detector.detector(inputs)
+        # inputs = dtype_detector.detector(inputs)
 
         # calling the utility to categorical datatype columns
         metadata = self._produce(inputs, inputs.metadata, [])
@@ -201,12 +201,12 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
                     if 'https://metadata.datadrivendiscovery.org/types/Time' not in old_metadata.get("semantic_types",
                                                                                                      []):
                         old_metadata["semantic_types"] += ('https://metadata.datadrivendiscovery.org/types/Time',)
-                if isinstance(self._sample_df.iloc[:, i].head(1).values[0], str):
-                    old_metadata["structural_type"] = type("str")
-                elif isinstance(self._sample_df.iloc[:, i].head(1).values[0], int):
-                    old_metadata["structural_type"] = type(10)
-                else:
-                    old_metadata["structural_type"] = type(10.2)
+                # if isinstance(self._sample_df.iloc[:, i].head(1).values[0], str):
+                #     old_metadata["structural_type"] = type("str")
+                # elif isinstance(self._sample_df.iloc[:, i].head(1).values[0], int):
+                #     old_metadata["structural_type"] = type(10)
+                # else:
+                #     old_metadata["structural_type"] = type(10.2)
 
                 _logger.info(
                     "Date detector. 'column_index': '%(column_index)d', 'old_metadata': '%(old_metadata)s', 'new_metadata': '%(new_metadata)s'",
@@ -239,12 +239,12 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
                     old_metadata["semantic_types"] += (
                         'https://metadata.datadrivendiscovery.org/types/UnnormalizedEntity',)
 
-                if isinstance(self._sample_df.iloc[:, i].head(1).values[0], str):
-                    old_metadata["structural_type"] = type("str")
-                elif isinstance(self._sample_df.iloc[:, i].head(1).values[0], int):
-                    old_metadata["structural_type"] = type(10)
-                else:
-                    old_metadata["structural_type"] = type(10.2)
+                # if isinstance(self._sample_df.iloc[:, i].head(1).values[0], str):
+                #     old_metadata["structural_type"] = type("str")
+                # elif isinstance(self._sample_df.iloc[:, i].head(1).values[0], int):
+                #     old_metadata["structural_type"] = type(10)
+                # else:
+                #     old_metadata["structural_type"] = type(10.2)
 
                 _logger.info(
                     "Phone detector. 'column_index': '%(column_index)d', 'old_metadata': '%(old_metadata)s', 'new_metadata': '%(new_metadata)s'",
@@ -272,12 +272,12 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
                     old_metadata["semantic_types"] += (
                         'https://metadata.datadrivendiscovery.org/types/CanBeSplitByPunctuation',)
 
-                if isinstance(self._sample_df.iloc[:, i].head(1).values[0], str):
-                    old_metadata["structural_type"] = type("str")
-                elif isinstance(self._sample_df.iloc[:, i].head(1).values[0], int):
-                    old_metadata["structural_type"] = type(10)
-                else:
-                    old_metadata["structural_type"] = type(10.2)
+                # if isinstance(self._sample_df.iloc[:, i].head(1).values[0], str):
+                #     old_metadata["structural_type"] = type("str")
+                # elif isinstance(self._sample_df.iloc[:, i].head(1).values[0], int):
+                #     old_metadata["structural_type"] = type(10)
+                # else:
+                #     old_metadata["structural_type"] = type(10.2)
 
                 _logger.info(
                     "Punctuation detector. 'column_index': '%(column_index)d', 'old_metadata': '%(old_metadata)s', 'new_metadata': '%(new_metadata)s'",
@@ -306,12 +306,12 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
                     old_metadata["semantic_types"] += (
                         'https://metadata.datadrivendiscovery.org/types/CanBeSplitByAlphanumeric',)
 
-                if isinstance(self._sample_df.iloc[:, i].head(1).values[0], str):
-                    old_metadata["structural_type"] = type("str")
-                elif isinstance(self._sample_df.iloc[:, i].head(1).values[0], int):
-                    old_metadata["structural_type"] = type(10)
-                else:
-                    old_metadata["structural_type"] = type(10.2)
+                # if isinstance(self._sample_df.iloc[:, i].head(1).values[0], str):
+                #     old_metadata["structural_type"] = type("str")
+                # elif isinstance(self._sample_df.iloc[:, i].head(1).values[0], int):
+                #     old_metadata["structural_type"] = type(10)
+                # else:
+                #     old_metadata["structural_type"] = type(10.2)
 
                 _logger.info(
                     "NumAlpha detector. 'column_index': '%(column_index)d', 'old_metadata': '%(old_metadata)s', 'new_metadata': '%(new_metadata)s'",
@@ -350,13 +350,13 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
                         if np.sum(intcheck) / length > 0.9:
                             if "http://schema.org/Integer" not in old_metadata['semantic_types']:
                                 old_metadata['semantic_types'] += ("http://schema.org/Integer",)
-                                old_metadata['structural_type'] = type(10)
-                                inputs.iloc[:, col] = numerics
+                                # old_metadata['structural_type'] = type(10)
+                                # inputs.iloc[:, col] = numerics
                         else:
                             if "http://schema.org/Float" not in old_metadata['semantic_types']:
                                 old_metadata['semantic_types'] += ("http://schema.org/Float",)
-                                old_metadata['structural_type'] = type(10.2)
-                                inputs.iloc[:, col] = numerics
+                                # old_metadata['structural_type'] = type(10.2)
+                                # inputs.iloc[:, col] = numerics
 
             inputs.metadata = inputs.metadata.update((mbase.ALL_ELEMENTS, col), old_metadata)
 
