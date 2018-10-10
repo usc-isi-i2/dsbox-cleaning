@@ -7,7 +7,7 @@ from d3m import container
 import d3m.metadata.base as mbase
 from . import config
 from d3m.primitive_interfaces.featurization import FeaturizationLearnerPrimitiveBase
-from common_primitives import utils
+import common_primitives.utils as common_utils
 from d3m.metadata import hyperparams, params
 from d3m.container import DataFrame as d3m_DataFrame
 from d3m.primitive_interfaces.base import CallResult
@@ -94,7 +94,7 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHy
         self._training_data = inputs
 
     def fit(self, *, timeout: float = None, iterations: int = None) -> CallResult[None]:
-        categorical_attributes = utils.list_columns_with_semantic_types(
+        categorical_attributes = common_utils.list_columns_with_semantic_types(
             metadata=self._training_data.metadata,
             semantic_types=[
                 "https://metadata.datadrivendiscovery.org/types/OrdinalData",
@@ -102,7 +102,7 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHy
                 ]
             )
 
-        all_attributes = utils.list_columns_with_semantic_types(
+        all_attributes = common_utils.list_columns_with_semantic_types(
             metadata=self._training_data.metadata,
             semantic_types=["https://metadata.datadrivendiscovery.org/types/Attribute"]
             )
@@ -146,7 +146,7 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHy
         drop_names = set(outputs.columns[self._s_cols]).difference(set(self._model.keys()))
         drop_indices = map(lambda a: outputs.columns.get_loc(a), drop_names)
         drop_indices = sorted(drop_indices)
-        outputs = utils.remove_columns(outputs, drop_indices, source='ISI DSBox Data Labler')
+        outputs = common_utils.remove_columns(outputs, drop_indices, source='ISI DSBox Data Labler')
 
         # sanity check and report the results
         if outputs.shape[0] == inputs.shape[0] and \

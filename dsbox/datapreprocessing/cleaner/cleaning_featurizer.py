@@ -9,7 +9,7 @@ from d3m.primitive_interfaces.base import CallResult
 from d3m.primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 from typing import Dict, Union
 
-from common_primitives import utils
+import common_primitives.utils as common_utils
 from dsbox.datapreprocessing.cleaner.dependencies.date_featurizer_org import DateFeaturizerOrg
 from dsbox.datapreprocessing.cleaner.dependencies.spliter import PhoneParser, PunctuationParser, NumAlphaParser
 from dsbox.datapreprocessing.cleaner.dependencies.helper_funcs import HelperFunction
@@ -93,9 +93,10 @@ class CleaningFeaturizerHyperparameter(hyperparams.Hyperparams):
         semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
         description="Also include primary index columns if input data has them. Applicable only if \"return_result\" is set to \"new\".",
     )
+
+
 # class Params(params.Params):
 #     components_: typing.Any
-
 
 
 class CleaningFeaturizer(
@@ -175,7 +176,8 @@ class CleaningFeaturizer(
                     mapping["phone_columns"] = phone_cols
 
             if self._clean_operations.get("split_alpha_numeric_column"):
-                alpha_numeric_cols = self._get_alpha_numeric_cols(data, self.hyperparams['split_on_column_with_avg_len'],
+                alpha_numeric_cols = self._get_alpha_numeric_cols(data,
+                                                                  self.hyperparams['split_on_column_with_avg_len'],
                                                                   ignore_list=mapping.get("date_columns", []) +
                                                                               mapping.get("phone_columns", {}).get(
                                                                                   "columns_to_perform", []))
@@ -265,11 +267,10 @@ class CleaningFeaturizer(
             self._input_data_copy = df
 
         if cols_to_drop:
-            self._input_data_copy = utils.remove_columns(self._input_data_copy, list(set(cols_to_drop)))
+            self._input_data_copy = common_utils.remove_columns(self._input_data_copy, list(set(cols_to_drop)))
         self._update_structural_type()
 
         return CallResult(self._input_data_copy, True, 1)
-
 
     @classmethod
     def _get_columns_to_fit(cls, inputs: Input, hyperparams: CleaningFeaturizerHyperparameter):
@@ -282,14 +283,16 @@ class CleaningFeaturizer(
             return cls._can_produce_column(inputs_metadata, column_index, hyperparams)
 
         columns_to_produce, columns_not_to_produce = common_utils.get_columns_to_use(inputs_metadata,
-                                                                             use_columns=hyperparams['use_columns'],
-                                                                             exclude_columns=hyperparams['exclude_columns'],
-                                                                             can_use_column=can_produce_column)
+                                                                                     use_columns=hyperparams[
+                                                                                         'use_columns'],
+                                                                                     exclude_columns=hyperparams[
+                                                                                         'exclude_columns'],
+                                                                                     can_use_column=can_produce_column)
         return inputs.iloc[:, columns_to_produce], columns_to_produce
 
-
     @classmethod
-    def _can_produce_column(cls, inputs_metadata: mbase.DataMetadata, column_index: int, hyperparams: CleaningFeaturizerHyperparameter) -> bool:
+    def _can_produce_column(cls, inputs_metadata: mbase.DataMetadata, column_index: int,
+                            hyperparams: CleaningFeaturizerHyperparameter) -> bool:
         column_metadata = inputs_metadata.query((mbase.ALL_ELEMENTS, column_index))
 
         semantic_types = column_metadata.get('semantic_types', [])
@@ -301,10 +304,9 @@ class CleaningFeaturizer(
 
         return False
 
-
     @staticmethod
     def _get_date_cols(data):
-        dates = utils.list_columns_with_semantic_types(metadata=data.metadata, semantic_types=[
+        dates = common_utils.list_columns_with_semantic_types(metadata=data.metadata, semantic_types=[
             "https://metadata.datadrivendiscovery.org/types/Time"])
 
         return dates
