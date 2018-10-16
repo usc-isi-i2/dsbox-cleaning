@@ -31,6 +31,8 @@ setup(name='dsbox-datacleaning',
               'dsbox.Labler = dsbox.datapreprocessing.cleaner:Labler',
               'dsbox.Denormalize = dsbox.datapreprocessing.cleaner:Denormalize',
               'dsbox.Profiler = dsbox.datapreprocessing.cleaner:Profiler',
+              'dsbox.FoldColumns = dsbox.datapreprocessing.cleaner:FoldColumns',
+              'dsbox.Voter = dsbox.datapreprocessing.cleaner:Voter'
           ],
       }
 )

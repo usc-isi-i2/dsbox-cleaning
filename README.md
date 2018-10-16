@@ -1,3 +1,5 @@
+![travis ci](https://travis-ci.org/usc-isi-i2/dsbox-cleaning.svg?branch=master)
+
 ## Missing value imputer
 This component is for missing value imputation. This module is designed to support:
 
@@ -18,7 +20,6 @@ pip install --process-dependency-links git+https://github.com/usc-isi-i2/dsbox-p
 
 ### Run Tests
 ```sh
-cd unit_tests
 python -m unittest discover
 ```
 

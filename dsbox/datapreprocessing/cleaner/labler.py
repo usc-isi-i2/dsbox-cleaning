@@ -7,7 +7,7 @@ from d3m import container
 import d3m.metadata.base as mbase
 from . import config
 from d3m.primitive_interfaces.featurization import FeaturizationLearnerPrimitiveBase
-from common_primitives import utils
+import common_primitives.utils as common_utils
 from d3m.metadata import hyperparams, params
 from d3m.container import DataFrame as d3m_DataFrame
 from d3m.primitive_interfaces.base import CallResult
@@ -26,7 +26,35 @@ class Params(params.Params):
 
 
 class LablerHyperparams(hyperparams.Hyperparams):
-    pass
+    use_columns = hyperparams.Set(
+        elements=hyperparams.Hyperparameter[int](-1),
+        default=(),
+        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+        description="A set of column indices to force primitive to operate on. If any specified column cannot be parsed, it is skipped.",
+    )
+    exclude_columns = hyperparams.Set(
+        elements=hyperparams.Hyperparameter[int](-1),
+        default=(),
+        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+        description="A set of column indices to not operate on. Applicable only if \"use_columns\" is not provided.",
+    )
+    return_result = hyperparams.Enumeration(
+        values=['append', 'replace', 'new'],
+        default='replace',
+        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+        description="Should parsed columns be appended, should they replace original columns, or should only parsed columns be returned? This hyperparam is ignored if use_semantic_types is set to false.",
+    )
+    use_semantic_types = hyperparams.UniformBool(
+        default=False,
+        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+        description="Controls whether semantic_types metadata will be used for filtering columns in input dataframe. Setting this to false makes the code ignore return_result and will produce only the output dataframe"
+    )
+    add_index_columns = hyperparams.UniformBool(
+        default=True,
+        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+        description="Also include primary index columns if input data has them. Applicable only if \"return_result\" is set to \"new\".",
+    )
+
 
 
 class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHyperparams]):
@@ -66,7 +94,7 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHy
         self._training_data = inputs
 
     def fit(self, *, timeout: float = None, iterations: int = None) -> CallResult[None]:
-        categorical_attributes = utils.list_columns_with_semantic_types(
+        categorical_attributes = common_utils.list_columns_with_semantic_types(
             metadata=self._training_data.metadata,
             semantic_types=[
                 "https://metadata.datadrivendiscovery.org/types/OrdinalData",
@@ -74,7 +102,7 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHy
                 ]
             )
 
-        all_attributes = utils.list_columns_with_semantic_types(
+        all_attributes = common_utils.list_columns_with_semantic_types(
             metadata=self._training_data.metadata,
             semantic_types=["https://metadata.datadrivendiscovery.org/types/Attribute"]
             )
@@ -118,7 +146,7 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHy
         drop_names = set(outputs.columns[self._s_cols]).difference(set(self._model.keys()))
         drop_indices = map(lambda a: outputs.columns.get_loc(a), drop_names)
         drop_indices = sorted(drop_indices)
-        outputs = utils.remove_columns(outputs, drop_indices, source='ISI DSBox Data Labler')
+        outputs = common_utils.remove_columns(outputs, drop_indices, source='ISI DSBox Data Labler')
 
         # sanity check and report the results
         if outputs.shape[0] == inputs.shape[0] and \
@@ -129,6 +157,38 @@ class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHy
             return CallResult(d3m_DataFrame(outputs), self._has_finished, self._iterations_done)
         else:
             return CallResult(inputs, self._has_finished, self._iterations_done)
+
+
+    @classmethod
+    def _get_columns_to_fit(cls, inputs: Inputs, hyperparams: LablerHyperparams):
+        if not hyperparams['use_semantic_types']:
+            return inputs, list(range(len(inputs.columns)))
+
+        inputs_metadata = inputs.metadata
+
+        def can_produce_column(column_index: int) -> bool:
+            return cls._can_produce_column(inputs_metadata, column_index, hyperparams)
+
+        columns_to_produce, columns_not_to_produce = common_utils.get_columns_to_use(inputs_metadata,
+                                                                             use_columns=hyperparams['use_columns'],
+                                                                             exclude_columns=hyperparams['exclude_columns'],
+                                                                             can_use_column=can_produce_column)
+        return inputs.iloc[:, columns_to_produce], columns_to_produce
+
+
+    @classmethod
+    def _can_produce_column(cls, inputs_metadata: mbase.DataMetadata, column_index: int, hyperparams: LablerHyperparams) -> bool:
+        column_metadata = inputs_metadata.query((mbase.ALL_ELEMENTS, column_index))
+
+        semantic_types = column_metadata.get('semantic_types', [])
+        if len(semantic_types) == 0:
+            cls.logger.warning("No semantic types found in column metadata")
+            return False
+        if "https://metadata.datadrivendiscovery.org/types/Attribute" in semantic_types:
+            return True
+
+        return False
+
 
     def get_params(self) -> Params:
         labeler_dict = {}

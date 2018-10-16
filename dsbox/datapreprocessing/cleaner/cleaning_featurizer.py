@@ -9,7 +9,7 @@ from d3m.primitive_interfaces.base import CallResult
 from d3m.primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 from typing import Dict, Union
 
-from common_primitives import utils
+import common_primitives.utils as common_utils
 from dsbox.datapreprocessing.cleaner.dependencies.date_featurizer_org import DateFeaturizerOrg
 from dsbox.datapreprocessing.cleaner.dependencies.spliter import PhoneParser, PunctuationParser, NumAlphaParser
 from dsbox.datapreprocessing.cleaner.dependencies.helper_funcs import HelperFunction
@@ -42,6 +42,14 @@ class CleaningFeaturizerHyperparameter(hyperparams.Hyperparams):
         semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter']
     )
 
+    split_on_column_with_avg_len = hyperparams.Uniform(
+        default=30,
+        lower=10,
+        upper=100,
+        upper_inclusive=True,
+        description='Threshold of avg column length for splitting punctuation or alphanumeric',
+        semantic_types=['http://schema.org/Integer', 'https://metadata.datadrivendiscovery.org/types/ControlParameter'])
+
     num_threshold = hyperparams.Uniform(
         default=0.1,
         lower=0.1,
@@ -56,6 +64,35 @@ class CleaningFeaturizerHyperparameter(hyperparams.Hyperparams):
         upper_inclusive=True,
         description='Threshold for rows containing specific punctuation',
         semantic_types=['http://schema.org/Float', 'https://metadata.datadrivendiscovery.org/types/ControlParameter'])
+
+    use_columns = hyperparams.Set(
+        elements=hyperparams.Hyperparameter[int](-1),
+        default=(),
+        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+        description="A set of column indices to force primitive to operate on. If any specified column cannot be parsed, it is skipped.",
+    )
+    exclude_columns = hyperparams.Set(
+        elements=hyperparams.Hyperparameter[int](-1),
+        default=(),
+        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+        description="A set of column indices to not operate on. Applicable only if \"use_columns\" is not provided.",
+    )
+    return_result = hyperparams.Enumeration(
+        values=['append', 'replace', 'new'],
+        default='replace',
+        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+        description="Should parsed columns be appended, should they replace original columns, or should only parsed columns be returned? This hyperparam is ignored if use_semantic_types is set to false.",
+    )
+    use_semantic_types = hyperparams.UniformBool(
+        default=False,
+        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+        description="Controls whether semantic_types metadata will be used for filtering columns in input dataframe. Setting this to false makes the code ignore return_result and will produce only the output dataframe"
+    )
+    add_index_columns = hyperparams.UniformBool(
+        default=True,
+        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+        description="Also include primary index columns if input data has them. Applicable only if \"return_result\" is set to \"new\".",
+    )
 
 
 # class Params(params.Params):
@@ -140,6 +177,7 @@ class CleaningFeaturizer(
 
             if self._clean_operations.get("split_alpha_numeric_column"):
                 alpha_numeric_cols = self._get_alpha_numeric_cols(data,
+                                                                  self.hyperparams['split_on_column_with_avg_len'],
                                                                   ignore_list=mapping.get("date_columns", []) +
                                                                               mapping.get("phone_columns", {}).get(
                                                                                   "columns_to_perform", []))
@@ -148,6 +186,7 @@ class CleaningFeaturizer(
 
             if self._clean_operations.get("split_punctuation_column"):
                 punctuation_cols = self._get_punctuation_cols(data,
+                                                              self.hyperparams['split_on_column_with_avg_len'],
                                                               ignore_list=mapping.get("date_columns", []) +
                                                                           mapping.get("phone_columns", {}).get(
                                                                               "columns_to_perform", []))
@@ -228,13 +267,46 @@ class CleaningFeaturizer(
             self._input_data_copy = df
 
         if cols_to_drop:
-            self._input_data_copy = utils.remove_columns(self._input_data_copy, cols_to_drop)
+            self._input_data_copy = common_utils.remove_columns(self._input_data_copy, list(set(cols_to_drop)))
         self._update_structural_type()
+
         return CallResult(self._input_data_copy, True, 1)
+
+    @classmethod
+    def _get_columns_to_fit(cls, inputs: Input, hyperparams: CleaningFeaturizerHyperparameter):
+        if not hyperparams['use_semantic_types']:
+            return inputs, list(range(len(inputs.columns)))
+
+        inputs_metadata = inputs.metadata
+
+        def can_produce_column(column_index: int) -> bool:
+            return cls._can_produce_column(inputs_metadata, column_index, hyperparams)
+
+        columns_to_produce, columns_not_to_produce = common_utils.get_columns_to_use(inputs_metadata,
+                                                                                     use_columns=hyperparams[
+                                                                                         'use_columns'],
+                                                                                     exclude_columns=hyperparams[
+                                                                                         'exclude_columns'],
+                                                                                     can_use_column=can_produce_column)
+        return inputs.iloc[:, columns_to_produce], columns_to_produce
+
+    @classmethod
+    def _can_produce_column(cls, inputs_metadata: mbase.DataMetadata, column_index: int,
+                            hyperparams: CleaningFeaturizerHyperparameter) -> bool:
+        column_metadata = inputs_metadata.query((mbase.ALL_ELEMENTS, column_index))
+
+        semantic_types = column_metadata.get('semantic_types', [])
+        if len(semantic_types) == 0:
+            cls.logger.warning("No semantic types found in column metadata")
+            return False
+        if "https://metadata.datadrivendiscovery.org/types/Attribute" in semantic_types:
+            return True
+
+        return False
 
     @staticmethod
     def _get_date_cols(data):
-        dates = utils.list_columns_with_semantic_types(metadata=data.metadata, semantic_types=[
+        dates = common_utils.list_columns_with_semantic_types(metadata=data.metadata, semantic_types=[
             "https://metadata.datadrivendiscovery.org/types/Time"])
 
         return dates
@@ -244,12 +316,14 @@ class CleaningFeaturizer(
         return PhoneParser.detect(df=data.iloc[:Sample_rows, :], columns_ignore=ignore_list)
 
     @staticmethod
-    def _get_alpha_numeric_cols(data, ignore_list):
-        return NumAlphaParser.detect(df=data.iloc[:Sample_rows, :], columns_ignore=ignore_list)
+    def _get_alpha_numeric_cols(data, max_avg_length, ignore_list):
+        return NumAlphaParser.detect(df=data.iloc[:Sample_rows, :], max_avg_length=max_avg_length,
+                                     columns_ignore=ignore_list)
 
     @staticmethod
-    def _get_punctuation_cols(data, ignore_list):
-        return PunctuationParser.detect(df=data.iloc[:Sample_rows, :], columns_ignore=ignore_list)
+    def _get_punctuation_cols(data, max_avg_length, ignore_list):
+        return PunctuationParser.detect(df=data.iloc[:Sample_rows, :], max_avg_length=max_avg_length,
+                                        columns_ignore=ignore_list)
 
     @staticmethod
     def _get_cols(df):

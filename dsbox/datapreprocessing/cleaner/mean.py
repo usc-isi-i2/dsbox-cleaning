@@ -1,15 +1,13 @@
-
 import logging
 import typing
 
-import pandas as pd #  type: ignore
+import pandas as pd  # type: ignore
 import numpy as np
 
 from d3m.primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 
 from d3m.primitive_interfaces.base import CallResult
-import stopit #  type: ignore
-
+import stopit  # type: ignore
 
 from d3m import container
 from d3m.metadata import hyperparams, params
@@ -19,21 +17,53 @@ import common_primitives.utils as utils
 
 from . import config
 
+import common_primitives.utils as common_utils
+
 Input = container.DataFrame
 Output = container.DataFrame
 
 _logger = logging.getLogger(__name__)
 
+
 # store the mean value for each column in training data
 class Params(params.Params):
-    mean_values : typing.Dict
-    type_columns : typing.Dict
-    fitted : bool
+    mean_values: typing.Dict
+    type_columns: typing.Dict
+    fitted: bool
+
 
 class MeanHyperparameter(hyperparams.Hyperparams):
     verbose = UniformBool(default=False,
                           semantic_types=['http://schema.org/Boolean',
                                           'https://metadata.datadrivendiscovery.org/types/ControlParameter'])
+    use_columns = hyperparams.Set(
+        elements=hyperparams.Hyperparameter[int](-1),
+        default=(),
+        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+        description="A set of column indices to force primitive to operate on. If any specified column cannot be parsed, it is skipped.",
+    )
+    exclude_columns = hyperparams.Set(
+        elements=hyperparams.Hyperparameter[int](-1),
+        default=(),
+        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+        description="A set of column indices to not operate on. Applicable only if \"use_columns\" is not provided.",
+    )
+    return_result = hyperparams.Enumeration(
+        values=['append', 'replace', 'new'],
+        default='replace',
+        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+        description="Should parsed columns be appended, should they replace original columns, or should only parsed columns be returned? This hyperparam is ignored if use_semantic_types is set to false.",
+    )
+    use_semantic_types = hyperparams.UniformBool(
+        default=False,
+        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+        description="Controls whether semantic_types metadata will be used for filtering columns in input dataframe. Setting this to false makes the code ignore return_result and will produce only the output dataframe"
+    )
+    add_index_columns = hyperparams.UniformBool(
+        default=True,
+        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+        description="Also include primary index columns if input data has them. Applicable only if \"return_result\" is set to \"new\".",
+    )
 
 
 class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, MeanHyperparameter]):
@@ -48,24 +78,24 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
         "description": "Impute missing values using the `mean` value of the attribute.",
         "python_path": "d3m.primitives.dsbox.MeanImputation",
         "primitive_family": "DATA_CLEANING",
-        "algorithm_types": [ "IMPUTATION" ],
+        "algorithm_types": ["IMPUTATION"],
         "source": {
             "name": config.D3M_PERFORMER_TEAM,
-            "uris": [ config.REPOSITORY ]
-            },
+            "uris": [config.REPOSITORY]
+        },
         ### Automatically generated
         # "primitive_code"
         # "original_python_path"
         # "schema"
         # "structural_type"
         ### Optional
-        "keywords": [ "preprocessing", "imputation", "mean" ],
-        "installation": [ config.INSTALLATION ],
+        "keywords": ["preprocessing", "imputation", "mean"],
+        "installation": [config.INSTALLATION],
         "location_uris": [],
-        "precondition":  [hyperparams.base.PrimitivePrecondition.NO_CATEGORICAL_VALUES ],
-        "effects": [ hyperparams.base.PrimitiveEffects.NO_MISSING_VALUES ],
+        "precondition": [hyperparams.base.PrimitivePrecondition.NO_CATEGORICAL_VALUES],
+        "effects": [hyperparams.base.PrimitiveEffects.NO_MISSING_VALUES],
         "hyperparms_to_tune": []
-        })
+    })
 
     def __init__(self, *, hyperparams: MeanHyperparameter) -> None:
 
@@ -82,7 +112,6 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
         self._categoric_columns: typing.List = []
         self._verbose = hyperparams['verbose'] if hyperparams else False
 
-
     def set_params(self, *, params: Params) -> None:
         self._is_fitted = params['fitted']
         self._has_finished = self._is_fitted
@@ -95,8 +124,8 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
         return Params(
             mean_values=self.mean_values,
             type_columns={
-                'numeric_columns' : self._numeric_columns,
-                'categoric_columns' : self._categoric_columns
+                'numeric_columns': self._numeric_columns,
+                'categoric_columns': self._categoric_columns
             },
             fitted=self._is_fitted)
 
@@ -109,15 +138,23 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
         inputs : Input
             The inputs.
         """
-        if (pd.isnull(inputs).sum().sum() == 0):    # no missing value exists
+        attribute = utils.list_columns_with_semantic_types(
+            inputs.metadata, ['https://metadata.datadrivendiscovery.org/types/Attribute'])
+        nan_sum = 0
+        for col in attribute:
+            if str(inputs.dtypes[inputs.columns[col]]) != "object":
+                nan_sum += inputs.iloc[:, col].isnull().sum()
+            else:
+                for i in range(inputs.shape[0]):
+                    if inputs.iloc[i, col] == "" or pd.isnull(inputs.iloc[i, col]):
+                        nan_sum += 1
+        if nan_sum == 0:  # no missing value exists
             if self._verbose:
                 print("Warning: no missing value in train dataset")
                 _logger.info('no missing value in train dataset')
 
         self._train_x = inputs
         self._is_fitted = False
-
-
 
     def fit(self, *, timeout: float = None, iterations: int = None) -> CallResult[None]:
         """
@@ -133,7 +170,7 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
             return CallResult(None, self._has_finished, self._iterations_done)
 
         if (timeout is None):
-            timeout = 2**31-1
+            timeout = 2 ** 31 - 1
 
         if (iterations is None):
             self._iterations_done = True
@@ -143,7 +180,7 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
             assert to_ctx_mrg.state == to_ctx_mrg.EXECUTING
 
             # start fitting
-            if self._verbose : print("=========> mean imputation method:")
+            if self._verbose: print("=========> mean imputation method:")
             self.__get_fitted()
 
         if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
@@ -177,7 +214,7 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
         #     return CallResult(inputs, self._has_finished, self._iterations_done)
 
         if (timeout is None):
-            timeout = 2**31-1
+            timeout = 2 ** 31 - 1
 
         if isinstance(inputs, pd.DataFrame):
             data = inputs.copy()
@@ -194,10 +231,18 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
             data.iloc[:, self._numeric_columns] = data.iloc[:, self._numeric_columns].apply(
                 lambda col: pd.to_numeric(col, errors='coerce'))
 
-
             # assume the features of testing data are same with the training data
             # therefore, only use the mean_values to impute, should get a clean dataset
-            data_clean = data.fillna(value=self.mean_values)
+            attribute = utils.list_columns_with_semantic_types(
+                data.metadata, ['https://metadata.datadrivendiscovery.org/types/Attribute'])
+            for col in attribute:
+                if str(inputs.dtypes[inputs.columns[col]]) != "object":
+                    data.iloc[:, col].fillna(self.mean_values[data.columns[col]], inplace=True)
+                else:
+                    for i in range(data.shape[0]):
+                        if data.iloc[i, col] == "" or pd.isnull(data.iloc[i, col]):
+                            data.iloc[i, col] = self.mean_values[data.columns[col]]
+            data_clean = data
 
             # Update metadata
             for col in self._numeric_columns:
@@ -224,6 +269,38 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
             self._has_finished = False
             self._iterations_done = False
         return CallResult(value, self._has_finished, self._iterations_done)
+
+    @classmethod
+    def _get_columns_to_fit(cls, inputs: Input, hyperparams: MeanHyperparameter):
+        if not hyperparams['use_semantic_types']:
+            return inputs, list(range(len(inputs.columns)))
+
+        inputs_metadata = inputs.metadata
+
+        def can_produce_column(column_index: int) -> bool:
+            return cls._can_produce_column(inputs_metadata, column_index, hyperparams)
+
+        columns_to_produce, columns_not_to_produce = common_utils.get_columns_to_use(inputs_metadata,
+                                                                                     use_columns=hyperparams[
+                                                                                         'use_columns'],
+                                                                                     exclude_columns=hyperparams[
+                                                                                         'exclude_columns'],
+                                                                                     can_use_column=can_produce_column)
+        return inputs.iloc[:, columns_to_produce], columns_to_produce
+
+    @classmethod
+    def _can_produce_column(cls, inputs_metadata: mbase.DataMetadata, column_index: int,
+                            hyperparams: MeanHyperparameter) -> bool:
+        column_metadata = inputs_metadata.query((mbase.ALL_ELEMENTS, column_index))
+
+        semantic_types = column_metadata.get('semantic_types', [])
+        if len(semantic_types) == 0:
+            cls.logger.warning("No semantic types found in column metadata")
+            return False
+        if "https://metadata.datadrivendiscovery.org/types/Attribute" in semantic_types:
+            return True
+
+        return False
 
     def __get_fitted(self):
         attribute = utils.list_columns_with_semantic_types(

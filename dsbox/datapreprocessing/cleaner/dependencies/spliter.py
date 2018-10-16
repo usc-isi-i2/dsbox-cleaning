@@ -9,8 +9,6 @@ from common_primitives import utils
 from d3m.container import DataFrame as d3m_DataFrame
 from dsbox.datapreprocessing.cleaner.dependencies.helper_funcs import HelperFunction
 
-AVG_LENGTH_MAX = 18
-
 
 def update_type(extends, df_origin):
     extends_df = d3m_DataFrame.from_dict(extends)
@@ -113,7 +111,7 @@ class PhoneParser:
 class PunctuationParser:
 
     @staticmethod
-    def detect(df, columns_ignore=list()):
+    def detect(df, max_avg_length=30, columns_ignore=list()):
         positive_semantic_types = set(["http://schema.org/Text"])
         cols_to_detect = HelperFunction.cols_to_clean(df, positive_semantic_types)
         require_checking = list(set(cols_to_detect).difference(set(columns_ignore)))
@@ -123,7 +121,7 @@ class PunctuationParser:
             filtered_rows = [len(str(row)) for row in rows if len(str(row)) > 0]
             if len(filtered_rows) > 0:
                 avg_len = sum(filtered_rows) / len(filtered_rows)
-                if avg_len < AVG_LENGTH_MAX:
+                if avg_len < max_avg_length:
                     if not PunctuationParser.num_check(df.iloc[:, one_column]):
                         common_list = PunctuationParser.find_common(df.iloc[:, one_column])
                         if len(common_list) > 0:
@@ -227,7 +225,7 @@ class PunctuationParser:
 class NumAlphaParser:
 
     @staticmethod
-    def detect(df, columns_ignore=list()):
+    def detect(df, max_avg_length=30, columns_ignore=list()):
         positive_semantic_types = set(["http://schema.org/Text"])
         cols_to_detect = HelperFunction.cols_to_clean(df, positive_semantic_types)
         require_checking = list(set(cols_to_detect).difference(set(columns_ignore)))
@@ -237,7 +235,7 @@ class NumAlphaParser:
             filtered_rows = [len(str(row)) for row in rows if len(str(row)) > 0]
             if len(filtered_rows) > 0:
                 avg_len = sum(filtered_rows) / len(filtered_rows)
-                if avg_len < AVG_LENGTH_MAX:
+                if avg_len < max_avg_length:
                     if not NumAlphaParser.num_check(df.iloc[:, one_column]):
                         isnum_alpha = NumAlphaParser.is_num_alpha(df.iloc[:, one_column])
                         if isnum_alpha:

@@ -32,6 +32,34 @@ class EncHyperparameter(hyperparams.Hyperparams):
                          description='Limits the maximum number of columns generated from a single categorical column',
                          semantic_types=['http://schema.org/Integer',
                                          'https://metadata.datadrivendiscovery.org/types/TuningParameter'])
+    use_columns = hyperparams.Set(
+        elements=hyperparams.Hyperparameter[int](-1),
+        default=(),
+        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+        description="A set of column indices to force primitive to operate on. If any specified column cannot be parsed, it is skipped.",
+    )
+    exclude_columns = hyperparams.Set(
+        elements=hyperparams.Hyperparameter[int](-1),
+        default=(),
+        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+        description="A set of column indices to not operate on. Applicable only if \"use_columns\" is not provided.",
+    )
+    return_result = hyperparams.Enumeration(
+        values=['append', 'replace', 'new'],
+        default='replace',
+        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+        description="Should parsed columns be appended, should they replace original columns, or should only parsed columns be returned? This hyperparam is ignored if use_semantic_types is set to false.",
+    )
+    use_semantic_types = hyperparams.UniformBool(
+        default=False,
+        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+        description="Controls whether semantic_types metadata will be used for filtering columns in input dataframe. Setting this to false makes the code ignore return_result and will produce only the output dataframe"
+    )
+    add_index_columns = hyperparams.UniformBool(
+        default=True,
+        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+        description="Also include primary index columns if input data has them. Applicable only if \"return_result\" is set to \"new\".",
+    )
 
 
 class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHyperparameter]):
@@ -108,8 +136,8 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
             data.metadata, ['http://schema.org/Integer', 'http://schema.org/Float'])
         numeric = [x for x in numeric if x in all_attributes]
         for element in numeric:
-            if data.metadata.query((mbase.ALL_ELEMENTS, element)).get('structural_type', ())==str:
-                if pd.isnull(pd.to_numeric(data.iloc[:,element])).sum() == data.shape[0]:
+            if data.metadata.query((mbase.ALL_ELEMENTS, element)).get('structural_type', ()) == str:
+                if pd.isnull(pd.to_numeric(data.iloc[:, element])).sum() == data.shape[0]:
                     self._empty_columns.append(element)
 
         # Remove columns with all empty values, structural numeric
@@ -155,10 +183,11 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
 
         # Remove columns with all empty values
         _logger.debug('Removing entirely empty columns: {}'.format(self._input_data_copy.columns[self._empty_columns]))
-        self._input_data_copy = utils.remove_columns(self._input_data_copy, self._empty_columns, source='ISI DSBox Data Encoder')
+        self._input_data_copy = utils.remove_columns(self._input_data_copy, self._empty_columns,
+                                                     source='ISI DSBox Data Encoder')
 
         # Return if there is nothing to encode
-        if len(self._cat_columns)==0:
+        if len(self._cat_columns) == 0:
             return CallResult(self._input_data_copy, True, 1)
 
         _logger.debug('Encoding columns: {}'.format(self._cat_columns))
@@ -188,7 +217,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
         # Drop columns that will be encoded
         # data_rest = self._input_data_copy.drop(self._mapping.keys(), axis=1)
         columns_names = self._input_data_copy.columns.tolist()
-        drop_indices = [columns_names.index(col)  for col in self._mapping.keys()]
+        drop_indices = [columns_names.index(col) for col in self._mapping.keys()]
         drop_indices = sorted(drop_indices)
 
         all_categorical = False
@@ -236,3 +265,35 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
         self._mapping = params['mapping']
         self._cat_columns = params['cat_columns']
         self._empty_columns = params['empty_columns']
+
+    @classmethod
+    def _get_columns_to_fit(cls, inputs: Input, hyperparams: EncHyperparameter):
+        if not hyperparams['use_semantic_types']:
+            return inputs, list(range(len(inputs.columns)))
+
+        inputs_metadata = inputs.metadata
+
+        def can_produce_column(column_index: int) -> bool:
+            return cls._can_produce_column(inputs_metadata, column_index, hyperparams)
+
+        columns_to_produce, columns_not_to_produce = common_utils.get_columns_to_use(inputs_metadata,
+                                                                                     use_columns=hyperparams[
+                                                                                         'use_columns'],
+                                                                                     exclude_columns=hyperparams[
+                                                                                         'exclude_columns'],
+                                                                                     can_use_column=can_produce_column)
+        return inputs.iloc[:, columns_to_produce], columns_to_produce
+
+    @classmethod
+    def _can_produce_column(cls, inputs_metadata: mbase.DataMetadata, column_index: int,
+                            hyperparams: EncHyperparameter) -> bool:
+        column_metadata = inputs_metadata.query((mbase.ALL_ELEMENTS, column_index))
+
+        semantic_types = column_metadata.get('semantic_types', [])
+        if len(semantic_types) == 0:
+            cls.logger.warning("No semantic types found in column metadata")
+            return False
+        if "https://metadata.datadrivendiscovery.org/types/Attribute" in semantic_types:
+            return True
+
+        return False
