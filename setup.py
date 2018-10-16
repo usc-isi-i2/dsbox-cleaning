@@ -2,13 +2,13 @@ from setuptools import setup
 
 setup(name='dsbox-datacleaning',
       version='1.3.0',
-      description='DSBox data preprocessing tools for cleaning data',
+      description='DSBox data processing tools for cleaning data',
       author='USC ISI',
       url='https://github.com/usc-isi-i2/dsbox-cleaning.git',
       maintainer_email='kyao@isi.edu',
       maintainer='Ke-Thia Yao',
       license='MIT',
-      packages=['dsbox', 'dsbox.datapreprocessing', 'dsbox.datapreprocessing.cleaner'],
+      packages=['dsbox', 'dsbox.datapreprocessing', 'dsbox.datapreprocessing.cleaner', 'dsbox.datapostprocessing'],
       zip_safe=False,
       python_requires='>=3.6',
       install_requires=[
@@ -32,7 +32,8 @@ setup(name='dsbox-datacleaning',
               'dsbox.Denormalize = dsbox.datapreprocessing.cleaner:Denormalize',
               'dsbox.Profiler = dsbox.datapreprocessing.cleaner:Profiler',
               'dsbox.FoldColumns = dsbox.datapreprocessing.cleaner:FoldColumns',
-              'dsbox.Voter = dsbox.datapreprocessing.cleaner:Voter'
+              'dsbox.Voter = dsbox.datapreprocessing.cleaner:Voter',
+              'dsbox.HorizontalConcat = dsbox.datapostprocessing:VerticalConcat'
           ],
       }
 )
