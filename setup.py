@@ -33,7 +33,7 @@ setup(name='dsbox-datacleaning',
               'dsbox.Profiler = dsbox.datapreprocessing.cleaner:Profiler',
               'dsbox.FoldColumns = dsbox.datapreprocessing.cleaner:FoldColumns',
               'dsbox.Voter = dsbox.datapreprocessing.cleaner:Voter',
-              'dsbox.HorizontalConcat = dsbox.datapostprocessing:VerticalConcat'
+              'dsbox.VerticalConcat = dsbox.datapostprocessing:VerticalConcat'
           ],
       }
 )
