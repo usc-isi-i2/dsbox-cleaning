@@ -26,7 +26,7 @@ class VerticalConcatHyperparams(hyperparams.Hyperparams):
 
 class VerticalConcat(TransformerPrimitiveBase[Inputs, Outputs, VerticalConcatHyperparams]):
     """
-        A primitive which concat a list of dataframe to a single dataframe horizontally
+        A primitive which concat a list of dataframe to a single dataframe vertically
     """
 
     __author__ = 'USC ISI'
