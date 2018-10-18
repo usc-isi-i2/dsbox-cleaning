@@ -4,7 +4,6 @@ from d3m.metadata import hyperparams, params
 from dsbox.datapreprocessing.cleaner import config
 from d3m.primitive_interfaces.base import CallResult
 import common_primitives.utils as common_utils
-from dsbox.datapostprocessing.vertical_concat import VerticalConcat, VerticalConcatHyperparams
 
 
 __all__ = ('EnsembleVoting',)
