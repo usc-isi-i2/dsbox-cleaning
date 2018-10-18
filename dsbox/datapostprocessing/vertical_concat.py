@@ -3,6 +3,7 @@ from d3m.primitive_interfaces.transformer import TransformerPrimitiveBase
 from d3m.metadata import hyperparams, params
 from dsbox.datapreprocessing.cleaner import config
 from d3m.primitive_interfaces.base import CallResult
+import common_primitives.utils as common_utils
 import pandas as pd
 
 __all__ = ('VerticalConcat',)
@@ -17,10 +18,10 @@ class VerticalConcatHyperparams(hyperparams.Hyperparams):
         semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
         description="Controls whether new df should use original index or not"
     )
-    sort_on_d3mIndex = hyperparams.UniformBool(
+    sort_on_primary_key = hyperparams.UniformBool(
         default=True,
         semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
-        description="Controls whether new df will be sorted based on d3mIndex"
+        description="Controls whether new df will be sorted based on primary key, mostly time it will be d3mIndex"
     )
 
 
@@ -54,8 +55,10 @@ class VerticalConcat(TransformerPrimitiveBase[Inputs, Outputs, VerticalConcatHyp
 
     def produce(self, *, inputs: Inputs, timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
         new_df = pd.concat([x for x in inputs], ignore_index=self.hyperparams["ignore_index"])
-        if self.hyperparams["sort_on_d3mIndex"] and "d3mIndex" in new_df.columns:
-            new_df = new_df.sort_values('d3mIndex')
+        if self.hyperparams["sort_on_primary_key"]:
+            primary_key_col = common_utils.list_columns_with_semantic_types(metadata=new_df.metadata, semantic_types=[
+                "https://metadata.datadrivendiscovery.org/types/PrimaryKey"])
+            new_df = new_df.sort_values([new_df.columns[pos] for pos in primary_key_col])
         return CallResult(self._update_metadata(new_df))
 
     @staticmethod
