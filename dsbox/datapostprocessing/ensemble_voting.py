@@ -1,6 +1,6 @@
 from d3m import container, types
 from d3m.primitive_interfaces.supervised_learning import SupervisedLearnerPrimitiveBase
-from d3m.metadata import hyperparams, params
+from d3m.metadata import hyperparams, params, base as metadata_base
 from dsbox.datapreprocessing.cleaner import config
 from d3m.primitive_interfaces.base import CallResult
 import common_primitives.utils as common_utils
@@ -35,8 +35,8 @@ class EnsembleVoting(SupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, Ens
         "name": "DSBox ensemble voting",
         "description": "A primitive which generate single prediction result for one index if there is many",
         "python_path": "d3m.primitives.dsbox.EnsembleVoting",
-        "primitive_family": "DATA_CLEANING",
-        "algorithm_types": ["DATA_CONVERSION"],
+        "primitive_family": metadata_base.PrimitiveFamily.CLASSIFICATION,
+        "algorithm_types": ["ENSEMBLE_LEARNING"],
         "source": {
             "name": config.D3M_PERFORMER_TEAM,
             "uris": [config.REPOSITORY]
