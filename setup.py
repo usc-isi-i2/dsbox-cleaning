@@ -17,15 +17,15 @@ setup(name='dsbox-datacleaning',
           'fancyimpute', 'stopit'
       ],
       keywords='d3m_primitive',
-      entry_points = {
+      entry_points={
           'd3m.primitives': [
               'dsbox.CleaningFeaturizer = dsbox.datapreprocessing.cleaner:CleaningFeaturizer',
               'dsbox.Encoder = dsbox.datapreprocessing.cleaner:Encoder',
               'dsbox.UnaryEncoder = dsbox.datapreprocessing.cleaner:UnaryEncoder',
               'dsbox.GreedyImputation = dsbox.datapreprocessing.cleaner:GreedyImputation',
               'dsbox.IterativeRegressionImputation = dsbox.datapreprocessing.cleaner:IterativeRegressionImputation',
-#              'dsbox.MiceImputation = dsbox.datapreprocessing.cleaner:MICE',
-#              'dsbox.KnnImputation = dsbox.datapreprocessing.cleaner:KNNImputation',
+              #              'dsbox.MiceImputation = dsbox.datapreprocessing.cleaner:MICE',
+              #              'dsbox.KnnImputation = dsbox.datapreprocessing.cleaner:KNNImputation',
               'dsbox.MeanImputation = dsbox.datapreprocessing.cleaner:MeanImputation',
               'dsbox.IQRScaler = dsbox.datapreprocessing.cleaner:IQRScaler',
               'dsbox.Labler = dsbox.datapreprocessing.cleaner:Labler',
@@ -33,7 +33,8 @@ setup(name='dsbox-datacleaning',
               'dsbox.Profiler = dsbox.datapreprocessing.cleaner:Profiler',
               'dsbox.FoldColumns = dsbox.datapreprocessing.cleaner:FoldColumns',
               'dsbox.Voter = dsbox.datapreprocessing.cleaner:Voter',
-              'dsbox.VerticalConcat = dsbox.datapostprocessing:VerticalConcat'
+              'dsbox.VerticalConcat = dsbox.datapostprocessing:VerticalConcat',
+              'dsbox.EnsembleVoting = dsbox.datapostprocessing:EnsembleVoting'
           ],
       }
-)
+      )
