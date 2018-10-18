@@ -60,8 +60,12 @@ class EnsembleVoting(SupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, Ens
     def set_training_data(self, *, inputs: Inputs, outputs: Outputs) -> None:
         pass
 
-    def fit(self, *, timeout: float = None, iterations: int = None) -> None:
-        pass
+    def fit(self, *, timeout: float = None, iterations: int = None) -> CallResult[None]:
+        if self._fitted:
+            return CallResult(None)
+        self._fitted = True
+
+        return CallResult(None)
 
     def produce(self, *, inputs: Inputs, timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
         df = inputs.copy()
