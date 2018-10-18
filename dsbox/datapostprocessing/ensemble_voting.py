@@ -1,15 +1,18 @@
 from d3m import container, types
-from d3m.primitive_interfaces.transformer import TransformerPrimitiveBase
+from d3m.primitive_interfaces.supervised_learning import SupervisedLearnerPrimitiveBase
 from d3m.metadata import hyperparams, params
 from dsbox.datapreprocessing.cleaner import config
 from d3m.primitive_interfaces.base import CallResult
 import common_primitives.utils as common_utils
 
-
 __all__ = ('EnsembleVoting',)
 
 Inputs = container.DataFrame
 Outputs = container.DataFrame
+
+
+class Params(params.Params):
+    pass
 
 
 class EnsembleVotingHyperparams(hyperparams.Hyperparams):
@@ -21,7 +24,7 @@ class EnsembleVotingHyperparams(hyperparams.Hyperparams):
     )
 
 
-class EnsembleVoting(TransformerPrimitiveBase[Inputs, Outputs, EnsembleVotingHyperparams]):
+class EnsembleVoting(SupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, EnsembleVotingHyperparams]):
     """
         A primitive which generate single prediction result for one index if there is many
     """
@@ -47,6 +50,18 @@ class EnsembleVoting(TransformerPrimitiveBase[Inputs, Outputs, EnsembleVotingHyp
         self.hyperparams = hyperparams
         self._training_data = None
         self._fitted = False
+
+    def set_params(self, *, params: Params) -> None:
+        pass
+
+    def get_params(self) -> Params:
+        pass
+
+    def set_training_data(self, *, inputs: Inputs, outputs: Outputs) -> None:
+        pass
+
+    def fit(self, *, timeout: float = None, iterations: int = None) -> None:
+        pass
 
     def produce(self, *, inputs: Inputs, timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
         df = inputs.copy()
