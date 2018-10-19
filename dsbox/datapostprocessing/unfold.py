@@ -16,7 +16,7 @@ Outputs = container.DataFrame
 class UnfoldHyperparams(hyperparams.Hyperparams):
     unfold_semantic_types = hyperparams.Set(
         elements=hyperparams.Hyperparameter[str]("str"),
-        default=["https://metadata.datadrivendiscovery.org/types/SuggestedTarget", "http://schema.org/Float"],
+        default=["https://metadata.datadrivendiscovery.org/types/PredictedTarget"],
         semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
         description=
         """
