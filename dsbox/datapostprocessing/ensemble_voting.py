@@ -1,5 +1,5 @@
 from d3m import container, types
-from d3m.primitive_interfaces.supervised_learning import SupervisedLearnerPrimitiveBase
+from d3m.primitive_interfaces.transformer import TransformerPrimitiveBase
 from d3m.metadata import hyperparams, params, base as metadata_base
 from dsbox.datapreprocessing.cleaner import config
 from d3m.primitive_interfaces.base import CallResult
@@ -11,10 +11,6 @@ Inputs = container.DataFrame
 Outputs = container.DataFrame
 
 
-class Params(params.Params):
-    pass
-
-
 class EnsembleVotingHyperparams(hyperparams.Hyperparams):
     ensemble_method = hyperparams.Enumeration(
         values=['majority', 'mean', 'max', 'min', 'median', 'random'],
@@ -24,7 +20,7 @@ class EnsembleVotingHyperparams(hyperparams.Hyperparams):
     )
 
 
-class EnsembleVoting(SupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, EnsembleVotingHyperparams]):
+class EnsembleVoting(TransformerPrimitiveBase[Inputs, Outputs, EnsembleVotingHyperparams]):
     """
         A primitive which generate single prediction result for one index if there is many
     """
@@ -35,7 +31,7 @@ class EnsembleVoting(SupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, Ens
         "name": "DSBox ensemble voting",
         "description": "A primitive which generate single prediction result for one index if there is many",
         "python_path": "d3m.primitives.dsbox.EnsembleVoting",
-        "primitive_family": metadata_base.PrimitiveFamily.CLASSIFICATION,
+        "primitive_family": "DATA_CLEANING",
         "algorithm_types": ["ENSEMBLE_LEARNING"],
         "source": {
             "name": config.D3M_PERFORMER_TEAM,
@@ -48,24 +44,6 @@ class EnsembleVoting(SupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, Ens
     def __init__(self, *, hyperparams: EnsembleVotingHyperparams) -> None:
         super().__init__(hyperparams=hyperparams)
         self.hyperparams = hyperparams
-        self._training_data = None
-        self._fitted = False
-
-    def set_params(self, *, params: Params) -> None:
-        pass
-
-    def get_params(self) -> Params:
-        pass
-
-    def set_training_data(self, *, inputs: Inputs, outputs: Outputs) -> None:
-        pass
-
-    def fit(self, *, timeout: float = None, iterations: int = None) -> CallResult[None]:
-        if self._fitted:
-            return CallResult(None)
-        self._fitted = True
-
-        return CallResult(None)
 
     def produce(self, *, inputs: Inputs, timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
         df = inputs.copy()
