@@ -111,7 +111,7 @@ class Unfold(TransformerPrimitiveBase[Inputs, Outputs, UnfoldHyperparams]):
 
         ret_df = container.DataFrame(groupby_df)
         ret_df.metadata = new_df.metadata
-        ret_df = self._update_metadata(df=ret_df)
+        ret_df = self._update_metadata_dimension(df=ret_df)
 
         split_col_names = [inputs.columns[pos] for pos in unfold_cols]
 
@@ -124,21 +124,21 @@ class Unfold(TransformerPrimitiveBase[Inputs, Outputs, UnfoldHyperparams]):
         return CallResult(ret_df)
 
     @staticmethod
-    def _get_new_df(inputs: container.DataFrame, use_cols):
+    def _get_new_df(inputs: container.DataFrame, use_cols: list):
         metadata = common_utils.select_columns_metadata(inputs_metadata=inputs.metadata, columns=use_cols)
         new_df = inputs.iloc[:, use_cols]
         new_df.metadata = metadata
         return new_df
 
     @staticmethod
-    def _update_metadata(df: container.DataFrame) -> container.DataFrame:
+    def _update_metadata_dimension(df: container.DataFrame) -> container.DataFrame:
         old_metadata = dict(df.metadata.query(()))
         old_metadata["dimension"] = dict(old_metadata["dimension"])
         old_metadata["dimension"]["length"] = df.shape[0]
         df.metadata = df.metadata.update((), old_metadata)
         return df
 
-    def _split_aggregated(self, df, split_col_names):
+    def _split_aggregated(self, df: container.DataFrame, split_col_names: list) -> container.DataFrame:
         lengths = [len(df.loc[0, col_name]) for col_name in split_col_names]
 
         for idx, col_name in enumerate(split_col_names):
