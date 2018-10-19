@@ -7,7 +7,6 @@ import common_primitives.utils as common_utils
 import d3m.metadata.base as mbase
 import warnings
 
-
 __all__ = ('Unfold',)
 
 Inputs = container.DataFrame
@@ -99,13 +98,13 @@ class Unfold(TransformerPrimitiveBase[Inputs, Outputs, UnfoldHyperparams]):
                 warnings.warn("Multiple pipeline id columns found. Will use first.")
 
             if pipeline_id_cols:
-                inputs = inputs.sort_values(primary_key_col_names+[inputs.columns[pos] for pos in pipeline_id_cols])
+                inputs = inputs.sort_values(primary_key_col_names + [inputs.columns[pos] for pos in pipeline_id_cols])
                 self._sorted_pipe_ids = sorted(inputs.iloc[:, pipeline_id_cols[0]].unique())
             else:
                 warnings.warn(
                     "No pipeline id column found by 'https://metadata.datadrivendiscovery.org/types/PipelineId'")
 
-        new_df = self._get_new_df(inputs=inputs, use_cols=primary_key_cols+unfold_cols)
+        new_df = self._get_new_df(inputs=inputs, use_cols=primary_key_cols + unfold_cols)
 
         groupby_df = inputs.groupby(primary_key_col_names)[unfold_col_names].aggregate(
             lambda x: container.List(x)).reset_index(drop=False)
@@ -162,39 +161,3 @@ class Unfold(TransformerPrimitiveBase[Inputs, Outputs, UnfoldHyperparams]):
                 df.metadata = df.metadata.update((mbase.ALL_ELEMENTS, col_idx), origin_metadata)
 
         return df
-
-
-if __name__ == '__main__':
-    import os
-    from d3m.container.dataset import D3MDatasetLoader
-    from dsbox.datapreprocessing.cleaner.denormalize import Denormalize, DenormalizeHyperparams as hyper_DE
-    from common_primitives.dataset_to_dataframe import DatasetToDataFramePrimitive, Hyperparams as hyper_DD
-    from dsbox.datapostprocessing.vertical_concat import VerticalConcatHyperparams, VerticalConcat
-
-    h_de = hyper_DE.defaults()
-    h_dd = hyper_DD.defaults()
-    h_e_a = {'semantic_types': ('https://metadata.datadrivendiscovery.org/types/Attribute',),
-             'use_columns': (),
-             'exclude_columns': ()}
-    h_e_t = {'semantic_types': ('https://metadata.datadrivendiscovery.org/types/Target',
-                                'https://metadata.datadrivendiscovery.org/types/SuggestedTarget',),
-             'use_columns': (),
-             'exclude_columns': ()}
-
-    primitive_0 = Denormalize(hyperparams=h_de)
-    primitive_1 = DatasetToDataFramePrimitive(hyperparams=h_dd)
-
-    dataset_file_path = '/Users/runqishao/Downloads/datasets_dsbox/training_datasets/LL0/LL0_1026_grub_damage/LL0_1026_grub_damage_dataset/datasetDoc.json'
-    dataset = D3MDatasetLoader()
-    dataset = dataset.load(
-        'file://{dataset_doc_path}'.format(dataset_doc_path=os.path.abspath(dataset_file_path)))
-
-    result0 = primitive_0.produce(inputs=dataset)
-    result1 = primitive_1.produce(inputs=result0.value)  # this should be the input to this primitive
-
-    p = VerticalConcat(hyperparams=VerticalConcatHyperparams.defaults())
-    result = p.produce(inputs=container.List([result1.value, result1.value, result1.value]))
-    pp = Unfold(hyperparams=UnfoldHyperparams.defaults())
-    rr = pp.produce(inputs=result.value)
-    import pdb
-    pdb.set_trace()

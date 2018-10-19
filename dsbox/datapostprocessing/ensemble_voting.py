@@ -1,6 +1,6 @@
-from d3m import container, types
+from d3m import container
 from d3m.primitive_interfaces.transformer import TransformerPrimitiveBase
-from d3m.metadata import hyperparams, params, base as metadata_base
+from d3m.metadata import hyperparams
 from dsbox.datapreprocessing.cleaner import config
 from d3m.primitive_interfaces.base import CallResult
 import common_primitives.utils as common_utils
@@ -51,7 +51,7 @@ class EnsembleVoting(TransformerPrimitiveBase[Inputs, Outputs, EnsembleVotingHyp
             metadata=inputs.metadata, semantic_types=["https://metadata.datadrivendiscovery.org/types/PrimaryKey"])
         predict_target_col = common_utils.list_columns_with_semantic_types(
             metadata=inputs.metadata, semantic_types=["https://metadata.datadrivendiscovery.org/types/PredictedTarget"])
-        new_df = self._get_index_and_target_df(inputs=df, use_cols=index_col+predict_target_col)
+        new_df = self._get_index_and_target_df(inputs=df, use_cols=index_col + predict_target_col)
 
         if self.hyperparams["ensemble_method"] == 'majority':
             groupby_df = new_df.groupby([new_df.columns[pos] for pos in index_col]).agg(
