@@ -5,6 +5,7 @@ from dsbox.datapreprocessing.cleaner import config
 from d3m.primitive_interfaces.base import CallResult
 import common_primitives.utils as common_utils
 import pandas as pd
+import warnings
 
 __all__ = ('VerticalConcat',)
 
@@ -58,6 +59,9 @@ class VerticalConcat(TransformerPrimitiveBase[Inputs, Outputs, VerticalConcatHyp
         if self.hyperparams["sort_on_primary_key"]:
             primary_key_col = common_utils.list_columns_with_semantic_types(metadata=new_df.metadata, semantic_types=[
                 "https://metadata.datadrivendiscovery.org/types/PrimaryKey"])
+            if not primary_key_col:
+                warnings.warn("No PrimaryKey column found. Will not sort on PrimaryKey")
+                return CallResult(self._update_metadata(new_df))
             new_df = new_df.sort_values([new_df.columns[pos] for pos in primary_key_col])
         return CallResult(self._update_metadata(new_df))
 

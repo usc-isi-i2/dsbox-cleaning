@@ -34,7 +34,8 @@ setup(name='dsbox-datacleaning',
               'dsbox.FoldColumns = dsbox.datapreprocessing.cleaner:FoldColumns',
               'dsbox.Voter = dsbox.datapreprocessing.cleaner:Voter',
               'dsbox.VerticalConcat = dsbox.datapostprocessing:VerticalConcat',
-              'dsbox.EnsembleVoting = dsbox.datapostprocessing:EnsembleVoting'
+              'dsbox.EnsembleVoting = dsbox.datapostprocessing:EnsembleVoting',
+              'dsbox.Unfold = dsbox.datapostprocessing:Unfold'
           ],
       }
       )
