@@ -230,14 +230,10 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
             for i in PhoneParser_indices["columns_to_perform"]:
                 old_metadata = dict(inputs.metadata.query((mbase.ALL_ELEMENTS, i)))
                 # print("old metadata", old_metadata)
-                if 'https://metadata.datadrivendiscovery.org/types/AmericanPhoneNumber' not in old_metadata.get(
+                if 'https://metadata.datadrivendiscovery.org/types/isAmericanPhoneNumber' not in old_metadata.get(
                         "semantic_types", []):
                     old_metadata["semantic_types"] += (
-                        'https://metadata.datadrivendiscovery.org/types/AmericanPhoneNumber',)
-                if 'https://metadata.datadrivendiscovery.org/types/UnnormalizedEntity' not in old_metadata.get(
-                        "semantic_types", []):
-                    old_metadata["semantic_types"] += (
-                        'https://metadata.datadrivendiscovery.org/types/UnnormalizedEntity',)
+                        'https://metadata.datadrivendiscovery.org/types/isAmericanPhoneNumber',)
 
                 # if isinstance(self._sample_df.iloc[:, i].head(1).values[0], str):
                 #     old_metadata["structural_type"] = type("str")
@@ -267,10 +263,10 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
         if PunctuationSplitter_indices.get("columns_to_perform"):
             for i in PunctuationSplitter_indices["columns_to_perform"]:
                 old_metadata = dict(inputs.metadata.query((mbase.ALL_ELEMENTS, i)))
-                if 'https://metadata.datadrivendiscovery.org/types/CanBeSplitByPunctuation' not in old_metadata.get(
+                if 'https://metadata.datadrivendiscovery.org/types/TokenizableByPunctuation' not in old_metadata.get(
                         "semantic_types", []):
                     old_metadata["semantic_types"] += (
-                        'https://metadata.datadrivendiscovery.org/types/CanBeSplitByPunctuation',)
+                        'https://metadata.datadrivendiscovery.org/types/TokenizableByPunctuation',)
 
                 # if isinstance(self._sample_df.iloc[:, i].head(1).values[0], str):
                 #     old_metadata["structural_type"] = type("str")
@@ -301,10 +297,10 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
         if NumAlphaSplitter_indices.get("columns_to_perform"):
             for i in NumAlphaSplitter_indices["columns_to_perform"]:
                 old_metadata = dict(inputs.metadata.query((mbase.ALL_ELEMENTS, i)))
-                if 'https://metadata.datadrivendiscovery.org/types/CanBeSplitByAlphanumeric' not in old_metadata.get(
+                if 'https://metadata.datadrivendiscovery.org/types/TokenizableIntoNumericAndAlphaTokens' not in old_metadata.get(
                         "semantic_types", []):
                     old_metadata["semantic_types"] += (
-                        'https://metadata.datadrivendiscovery.org/types/CanBeSplitByAlphanumeric',)
+                        'https://metadata.datadrivendiscovery.org/types/TokenizableIntoNumericAndAlphaTokens',)
 
                 # if isinstance(self._sample_df.iloc[:, i].head(1).values[0], str):
                 #     old_metadata["structural_type"] = type("str")
