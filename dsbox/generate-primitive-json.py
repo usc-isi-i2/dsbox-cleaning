@@ -18,20 +18,25 @@ arguments = parser.parse_args()
 
 PREFIX = 'd3m.primitives.dsbox.'
 PRIMITIVES = [(p, cleaner_config) for p in [
-    'MeanImputation',
-    'IterativeRegressionImputation',
-    'GreedyImputation',
-    #'MiceImputation',
-    #'KnnImputation',
+    'CleaningFeaturizer',
     'Encoder',
     'UnaryEncoder',
+    'GreedyImputation',
+    'MeanImputation',
+    'IterativeRegressionImputation',
+    #'MiceImputation',
+    #'KnnImputation',
     'IQRScaler',
-    'CleaningFeaturizer',
     'Labler',
     'Denormalize',
-    'Profiler'
-            ]
-              ]
+    'Profiler',
+    'FoldColumns',
+    'Voter',
+    'VerticalConcat',
+    'EnsembleVoting',
+    'Unfold'
+        ]
+    ]
 
 for p, config in PRIMITIVES:
     print('Generating json for primitive ' + p)

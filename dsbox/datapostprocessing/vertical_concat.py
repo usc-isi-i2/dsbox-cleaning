@@ -60,6 +60,7 @@ class VerticalConcat(TransformerPrimitiveBase[Inputs, Outputs, VerticalConcatHyp
 
     def produce(self, *, inputs: Inputs, inputs1: Inputs, inputs2: Inputs,
                 timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
+
         new_df = pd.concat([x for x in [inputs, inputs1, inputs2] if x is not None], ignore_index=self.hyperparams["ignore_index"])
         if self.hyperparams["sort_on_primary_key"]:
             primary_key_col = common_utils.list_columns_with_semantic_types(metadata=new_df.metadata, semantic_types=[
