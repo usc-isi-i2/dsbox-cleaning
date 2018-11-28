@@ -3,6 +3,7 @@ from d3m.primitive_interfaces.transformer import TransformerPrimitiveBase
 from d3m.metadata import hyperparams
 from dsbox.datapreprocessing.cleaner import config
 from d3m.primitive_interfaces.base import CallResult
+from d3m.metadata.base import ALL_ELEMENTS
 import common_primitives.utils as common_utils
 import warnings
 
@@ -47,7 +48,6 @@ class EnsembleVoting(TransformerPrimitiveBase[Inputs, Outputs, EnsembleVotingHyp
         self.hyperparams = hyperparams
 
     def produce(self, *, inputs: Inputs, timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
-
         index_col = common_utils.list_columns_with_semantic_types(
             metadata=inputs.metadata, semantic_types=["https://metadata.datadrivendiscovery.org/types/PrimaryKey"])
         if not index_col:
@@ -61,6 +61,13 @@ class EnsembleVoting(TransformerPrimitiveBase[Inputs, Outputs, EnsembleVotingHyp
             return CallResult(inputs)
 
         df = inputs.copy()
+        # temporary fix for index type problem
+        # fix data type to be correct here
+        for each_col in index_col:
+            col_semantic_type = df.metadata.query((ALL_ELEMENTS, each_col))['semantic_types']
+            if 'http://schema.org/Integer' in col_semantic_type and df[df.columns[each_col]].dtype == 'O':
+                df[df.columns[each_col]] = df[df.columns[each_col]].astype(int)
+
         new_df = self._get_index_and_target_df(inputs=df, use_cols=index_col + predict_target_col)
 
         if self.hyperparams["ensemble_method"] == 'majority':

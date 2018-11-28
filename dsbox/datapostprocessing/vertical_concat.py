@@ -3,11 +3,12 @@ import time
 import typing
 
 import common_primitives.utils as common_utils
+from d3m.container.pandas import DataFrame as d3m_DataFrame
 from d3m import container, exceptions
 from d3m.primitive_interfaces.transformer import TransformerPrimitiveBase
 from d3m.metadata import hyperparams
 from d3m.primitive_interfaces.base import CallResult, MultiCallResult
-
+from d3m.metadata.base import ALL_ELEMENTS
 from dsbox.datapreprocessing.cleaner import config
 
 __all__ = ('VerticalConcat',)
@@ -24,7 +25,7 @@ class VerticalConcatHyperparams(hyperparams.Hyperparams):
         description="Controls whether new df should use original index or not"
     )
     sort_on_primary_key = hyperparams.UniformBool(
-        default=True,
+        default=False,
         semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
         description="Controls whether new df will be sorted based on primary key, mostly time it will be d3mIndex"
     )
@@ -58,20 +59,22 @@ class VerticalConcat(TransformerPrimitiveBase[Inputs, Outputs, VerticalConcatHyp
         self._training_data = None
         self._fitted = False
 
-    def produce(self, *, inputs: Inputs, inputs1: Inputs, inputs2: Inputs,
+    def produce(self, *,inputs1: Inputs, inputs2: Inputs,
                 timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
 
-        new_df = pd.concat([x for x in [inputs, inputs1, inputs2] if x is not None], ignore_index=self.hyperparams["ignore_index"])
+        new_df = pd.concat([x for x in [inputs1, inputs2] if x is not None], ignore_index=self.hyperparams["ignore_index"])
         if self.hyperparams["sort_on_primary_key"]:
             primary_key_col = common_utils.list_columns_with_semantic_types(metadata=new_df.metadata, semantic_types=[
                 "https://metadata.datadrivendiscovery.org/types/PrimaryKey"])
+
             if not primary_key_col:
                 warnings.warn("No PrimaryKey column found. Will not sort on PrimaryKey")
                 return CallResult(self._update_metadata(new_df))
             new_df = new_df.sort_values([new_df.columns[pos] for pos in primary_key_col])
+
         return CallResult(self._update_metadata(new_df))
 
-    def multi_produce(self, *, inputs: Inputs, inputs1: Inputs, inputs2: Inputs, produce_methods: typing.Sequence[str],
+    def multi_produce(self, *, inputs1: Inputs, inputs2: Inputs, produce_methods: typing.Sequence[str],
                 timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
         results = []
         for method_name in produce_methods:
@@ -86,8 +89,7 @@ class VerticalConcat(TransformerPrimitiveBase[Inputs, Outputs, VerticalConcatHyp
             except KeyError as error:
                 raise exceptions.InvalidArgumentValueError("Unknown produce method name '{method_name}'.".format(method_name=method_name)) from error
 
-            arguments = {'inputs': inputs,
-                         'inputs1': inputs1,
+            arguments = {'inputs1': inputs1,
                          'inputs2': inputs2}
 
             start = time.perf_counter()
