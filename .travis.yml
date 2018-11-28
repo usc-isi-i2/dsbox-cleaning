@@ -20,7 +20,7 @@ install:
   - source activate dsbox-cleaner-env
   - pip install -e git+https://gitlab.com/datadrivendiscovery/common-primitives@fa865a1babc190055cb2a17cbdcd5b37e6f5e774#egg=common-primitives --progress-bar off
   - pip install stopit --progress-bar off
-  - pip install fancyimpute --progress-bar off
+  - pip install fancyimpute==0.3.1 --progress-bar off
   - pip install langdetect --progress-bar off
 
 script:
