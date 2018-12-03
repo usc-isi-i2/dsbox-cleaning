@@ -65,10 +65,10 @@ class HorizontalConcat(TransformerPrimitiveBase[Inputs, Outputs, HorizontalConca
         super().__init__(hyperparams=hyperparams)
         self.hyperparams = hyperparams
 
-    def produce(self, *, inputs: Inputs, inputs1: Inputs, inputs2: Inputs,
+    def produce(self, *, inputs: Inputs, inputs1: Inputs,
                 timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
         # need to rename inputs1.columns and inputs2.columns name
-        inputslist = [inputs, inputs1, inputs2]
+        inputslist = [inputs, inputs1]
         from collections import deque
         combine_list = deque()
         for i,v in enumerate(inputslist):
@@ -87,7 +87,7 @@ class HorizontalConcat(TransformerPrimitiveBase[Inputs, Outputs, HorizontalConca
                     (ALL_ELEMENTS, i), column_metadata)
         return CallResult(new_df)
 
-    def multi_produce(self, *, inputs: Inputs, inputs1: Inputs, inputs2: Inputs, produce_methods: typing.Sequence[str],
+    def multi_produce(self, *, inputs: Inputs, inputs1: Inputs, produce_methods: typing.Sequence[str],
                       timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
         results = []
         for method_name in produce_methods:
@@ -108,7 +108,7 @@ class HorizontalConcat(TransformerPrimitiveBase[Inputs, Outputs, HorizontalConca
 
             arguments = {'inputs': inputs,
                          'inputs1': inputs1,
-                         'inputs2': inputs2}
+                        }
 
             start = time.perf_counter()
             results.append(getattr(self, method_name)(
