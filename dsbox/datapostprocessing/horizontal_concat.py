@@ -8,7 +8,7 @@ from d3m.primitive_interfaces.transformer import TransformerPrimitiveBase
 from d3m.metadata import hyperparams
 from d3m.primitive_interfaces.base import CallResult, MultiCallResult
 from d3m.metadata.base import ALL_ELEMENTS
-
+from copy import copy
 
 from dsbox.datapreprocessing.cleaner import config
 
@@ -34,6 +34,11 @@ class HorizontalConcatHyperparams(hyperparams.Hyperparams):
         semantic_types=[
             "https://metadata.datadrivendiscovery.org/types/ControlParameter"],
         description="Sementic typer to add for output dataframe"
+    )
+    column_name = hyperparams.Hyperparameter[int](
+                    semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+                    default=100,
+                    description="the control params for index name"
     )
 
 
@@ -65,19 +70,17 @@ class HorizontalConcat(TransformerPrimitiveBase[Inputs, Outputs, HorizontalConca
         super().__init__(hyperparams=hyperparams)
         self.hyperparams = hyperparams
 
+
+
     def produce(self, *, inputs1: Inputs, inputs2: Inputs,
                 timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
         # need to rename inputs1.columns and inputs2.columns name
-        inputslist = [inputs1, inputs2]
-        from collections import deque
-        combine_list = deque()
-        for i,v in enumerate(inputslist):
-            combine_list.append(v.rename(columns={v.columns[1]:str(str(v.columns[1])+"_"+str(i))}))
-        while len(combine_list) != 1:
-            left = combine_list.popleft()
-            right = combine_list.popleft()
-            combine_list.appendleft(common_utils.horizontal_concat(left, right))
-        new_df = combine_list[0]
+        if self.hyperparams["column_name"] == 0:
+            left = inputs1.rename(columns={0:"0"})
+        else:
+            left = copy(inputs1)
+        right = inputs2.rename(columns={0: str(self.hyperparams["column_name"]+1)})
+        new_df = common_utils.horizontal_concat(left, right)
 
         for i, column in enumerate(new_df.columns):
             column_metadata = dict(new_df.metadata.query((ALL_ELEMENTS, i)))
