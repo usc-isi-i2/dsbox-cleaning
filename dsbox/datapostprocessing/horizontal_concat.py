@@ -76,10 +76,10 @@ class HorizontalConcat(TransformerPrimitiveBase[Inputs, Outputs, HorizontalConca
                 timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
         # need to rename inputs1.columns and inputs2.columns name
         if self.hyperparams["column_name"] == 0:
-            left = inputs1.rename(columns={0:"0"})
+            left = inputs1.rename(columns={inputs1.columns[-1]: "0"})
         else:
             left = copy(inputs1)
-        right = inputs2.rename(columns={0: str(self.hyperparams["column_name"]+1)})
+        right = inputs2.rename(columns={inputs2.columns[-1]: str(self.hyperparams["column_name"]+1)})
         new_df = common_utils.horizontal_concat(left, right)
 
         for i, column in enumerate(new_df.columns):
