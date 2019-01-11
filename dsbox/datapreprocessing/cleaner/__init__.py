@@ -13,6 +13,8 @@ from .denormalize import Denormalize, DenormalizeHyperparams
 from .data_profile import Profiler, Hyperparams as ProfilerHyperparams
 from .column_fold import FoldColumns, FoldHyperparameter
 from .voter import Voter, VoterHyperparameter
+from .datamart_query_from_dataframe import QueryFromDataFrameHyperparams, QueryFromDataframe
+from .datamart_augment import DatamartAugmentationHyperparams, DatamartAugmentation
 
 
 # __all__ = ['Encoder', 'GreedyImputation', 'IterativeRegressionImputation',
@@ -33,6 +35,7 @@ __all__ = ['Encoder', 'EncHyperparameter',
            'Profiler', 'ProfilerHyperparams',
            'FoldColumns', 'FoldHyperparameter',
            'Voter', 'VoterHyperparameter',
+           'QueryFromDataframe', 'DatamartAugmentation'
 ]
 
 
