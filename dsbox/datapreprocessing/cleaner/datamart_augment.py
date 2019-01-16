@@ -3,10 +3,11 @@ import typing
 # importing d3m stuff
 from d3m.container.pandas import DataFrame
 from d3m.container.list import List
-from d3m.primitive_interfaces.base import CallResult
+from d3m.primitive_interfaces.base import CallResult, MultiCallResult
 from d3m.primitive_interfaces.transformer import TransformerPrimitiveBase
 from d3m.metadata import hyperparams
 from . import config
+import time
 
 # field for importing datamart stuff
 from datamart import augment
@@ -46,8 +47,8 @@ class DatamartAugmentation(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartAu
             "uris": [config.REPOSITORY]
         },
         "installation": [config.INSTALLATION],
-        'precondition': [],
-        'hyperparms_to_tune': []
+        # 'precondition': [],
+        # 'hyperparams_to_tune': []
 
     })
 
@@ -60,9 +61,9 @@ class DatamartAugmentation(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartAu
     def produce(self, *, inputs1: Inputs1, inputs2: Inputs2, timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
         # sort the inputslist by best score
         inputs1.sort(key=lambda x: x.score, reverse=True)
-        # choose the best one? maybe more, determined by hyperparms
+        # choose the best one? maybe more, determined by hyperparams
         res_df = augment(
-            original_data=inputs2, augment_data=inputs1[self.hyperparms["n_index"]])  # a pd.dataframe
+            original_data=inputs2, augment_data=inputs1[self.hyperparams["n_index"]])  # a pd.dataframe
 
         # join with inputs2
 
