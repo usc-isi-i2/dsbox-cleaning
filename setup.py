@@ -37,8 +37,8 @@ setup(name='dsbox-datacleaning',
               'dsbox.EnsembleVoting = dsbox.datapostprocessing:EnsembleVoting',
               'dsbox.Unfold = dsbox.datapostprocessing:Unfold',
               'dsbox.HorizontalConcat = dsbox.datapostprocessing:HorizontalConcat',
-              'datamart.Augmentation = dsbox.datapreprocessing.cleaner:DatamartAugmentation',
-              'datamart.QueryDataframe = dsbox.datapreprocessing.cleaner:QueryFromDataframe'  
+              'dsbox.Augmentation = dsbox.datapreprocessing.cleaner:DatamartAugmentation',
+              'dsbox.QueryDataframe = dsbox.datapreprocessing.cleaner:QueryFromDataframe'
           ],
       }
       )

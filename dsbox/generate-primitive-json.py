@@ -31,10 +31,12 @@ PRIMITIVES = [(p, cleaner_config) for p in [
     'Denormalize',
     'Profiler',
     'FoldColumns',
-    'Voter',
+    # 'Voter',
     'VerticalConcat',
     'EnsembleVoting',
-    'Unfold'
+    'Unfold',
+    'Augmentation',
+    'QueryDataframe'
         ]
     ]
 

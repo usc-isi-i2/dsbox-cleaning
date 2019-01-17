@@ -38,7 +38,7 @@ class DatamartAugmentation(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartAu
         "id": "datamart-augmentation",
         "version": config.VERSION,
         "name": "Datamart Augmentation",
-        "python_path": "d3m.primitives.datamart.Augmentation",
+        "python_path": "d3m.primitives.dsbox.Augmentation",
         "primitive_family": "DATA_AUGMENTATION",
         "algorithm_types": ["APPROXIMATE_DATA_AUGMENTATION"],  # fix me!
         "keywords": ["data augmentation", "datamart", "join"],
