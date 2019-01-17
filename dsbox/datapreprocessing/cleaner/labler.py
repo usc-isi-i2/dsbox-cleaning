@@ -6,7 +6,9 @@ from typing import Any, Callable, List, Dict, Union, Optional, Sequence, Tuple
 from d3m import container
 import d3m.metadata.base as mbase
 from . import config
-from d3m.primitive_interfaces.featurization import FeaturizationLearnerPrimitiveBase
+# from d3m.primitive_interfaces.featurization import FeaturizationLearnerPrimitiveBase
+# changed class to fit in devel branch of d3m (2019-1-17)
+from d3m.primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 import common_primitives.utils as common_utils
 from d3m.metadata import hyperparams, params
 from d3m.container import DataFrame as d3m_DataFrame
@@ -57,7 +59,7 @@ class LablerHyperparams(hyperparams.Hyperparams):
 
 
 
-class Labler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHyperparams]):
+class Labler(UnsupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHyperparams]):
     """
         A primitive which scales all the Integer & Float variables in the Dataframe.
     """

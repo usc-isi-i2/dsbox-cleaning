@@ -21,12 +21,14 @@ Outputs = container.DataFrame
 class VerticalConcatHyperparams(hyperparams.Hyperparams):
     ignore_index = hyperparams.UniformBool(
         default=True,
-        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+        semantic_types=[
+            'https://metadata.datadrivendiscovery.org/types/ControlParameter'],
         description="Controls whether new df should use original index or not"
     )
     sort_on_primary_key = hyperparams.UniformBool(
         default=False,
-        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
+        semantic_types=[
+            'https://metadata.datadrivendiscovery.org/types/ControlParameter'],
         description="Controls whether new df will be sorted based on primary key, mostly time it will be d3mIndex"
     )
 
@@ -59,41 +61,94 @@ class VerticalConcat(TransformerPrimitiveBase[Inputs, Outputs, VerticalConcatHyp
         self._training_data = None
         self._fitted = False
 
-    def produce(self, *,inputs1: Inputs, inputs2: Inputs,
+    def produce(self, *, inputs1: Inputs, inputs2: Inputs,
                 timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
 
-        new_df = pd.concat([x for x in [inputs1, inputs2] if x is not None], ignore_index=self.hyperparams["ignore_index"])
+        new_df = pd.concat([x for x in [inputs1, inputs2] if x is not None],
+                           ignore_index=self.hyperparams["ignore_index"])
         if self.hyperparams["sort_on_primary_key"]:
             primary_key_col = common_utils.list_columns_with_semantic_types(metadata=new_df.metadata, semantic_types=[
                 "https://metadata.datadrivendiscovery.org/types/PrimaryKey"])
 
             if not primary_key_col:
-                warnings.warn("No PrimaryKey column found. Will not sort on PrimaryKey")
+                warnings.warn(
+                    "No PrimaryKey column found. Will not sort on PrimaryKey")
                 return CallResult(self._update_metadata(new_df))
-            new_df = new_df.sort_values([new_df.columns[pos] for pos in primary_key_col])
+            new_df = new_df.sort_values(
+                [new_df.columns[pos] for pos in primary_key_col])
 
         return CallResult(self._update_metadata(new_df))
 
+# functions to fit in devel branch of d3m (2019-1-17)
+
+    def set_training_data(self, *, inputs1: Inputs, inputs2: Inputs) -> None:
+        pass
+
+    def fit_multi_produce(self, *, produce_methods: typing.Sequence[str], inputs1: Inputs, inputs2: Inputs, timeout: float = None, iterations: int = None) -> MultiCallResult:
+        """
+        A method calling ``fit`` and after that multiple produce methods at once.
+
+        This method allows primitive author to implement an optimized version of both fitting
+        and producing a primitive on same data.
+
+        If any additional method arguments are added to primitive's ``set_training_data`` method
+        or produce method(s), or removed from them, they have to be added to or removed from this
+        method as well. This method should accept an union of all arguments accepted by primitive's
+        ``set_training_data`` method and produce method(s) and then use them accordingly when
+        computing results.
+
+        The default implementation of this method just calls first ``set_training_data`` method,
+        ``fit`` method, and all produce methods listed in ``produce_methods`` in order and is
+        potentially inefficient.
+
+        Parameters
+        ----------
+        produce_methods : Sequence[str]
+            A list of names of produce methods to call.
+        inputs : Inputs
+            The inputs given to ``set_training_data`` and all produce methods.
+        outputs : Outputs
+            The outputs given to ``set_training_data``.
+        timeout : float
+            A maximum time this primitive should take to both fit the primitive and produce outputs
+            for all produce methods listed in ``produce_methods`` argument, in seconds.
+        iterations : int
+            How many of internal iterations should the primitive do for both fitting and producing
+            outputs of all produce methods.
+
+        Returns
+        -------
+        MultiCallResult
+            A dict of values for each produce method wrapped inside ``MultiCallResult``.
+        """
+
+        return self._fit_multi_produce(produce_methods=produce_methods, timeout=timeout, iterations=iterations, inputs=inputs1, outputs=inputs2)
+
     def multi_produce(self, *, inputs1: Inputs, inputs2: Inputs, produce_methods: typing.Sequence[str],
-                timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
+                      timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
         results = []
         for method_name in produce_methods:
             if method_name != 'produce' and not method_name.startswith('produce_'):
-                raise exceptions.InvalidArgumentValueError("Invalid produce method name '{method_name}'.".format(method_name=method_name))
+                raise exceptions.InvalidArgumentValueError(
+                    "Invalid produce method name '{method_name}'.".format(method_name=method_name))
 
             if not hasattr(self, method_name):
-                raise exceptions.InvalidArgumentValueError("Unknown produce method name '{method_name}'.".format(method_name=method_name))
+                raise exceptions.InvalidArgumentValueError(
+                    "Unknown produce method name '{method_name}'.".format(method_name=method_name))
 
             try:
-                expected_arguments = set(self.metadata.query()['primitive_code'].get('instance_methods', {})[method_name]['arguments'])
+                expected_arguments = set(self.metadata.query()['primitive_code'].get(
+                    'instance_methods', {})[method_name]['arguments'])
             except KeyError as error:
-                raise exceptions.InvalidArgumentValueError("Unknown produce method name '{method_name}'.".format(method_name=method_name)) from error
+                raise exceptions.InvalidArgumentValueError(
+                    "Unknown produce method name '{method_name}'.".format(method_name=method_name)) from error
 
             arguments = {'inputs1': inputs1,
                          'inputs2': inputs2}
 
             start = time.perf_counter()
-            results.append(getattr(self, method_name)(timeout=timeout, iterations=iterations, **arguments))
+            results.append(getattr(self, method_name)(
+                timeout=timeout, iterations=iterations, **arguments))
             delta = time.perf_counter() - start
 
             # Decrease the amount of time available to other calls. This delegates responsibility
@@ -110,14 +165,15 @@ class VerticalConcat(TransformerPrimitiveBase[Inputs, Outputs, VerticalConcatHyp
                 if iterations_done is None:
                     iterations_done = result.iterations_done
                 else:
-                    iterations_done = max(iterations_done, result.iterations_done)
+                    iterations_done = max(
+                        iterations_done, result.iterations_done)
 
         return MultiCallResult(
-            values={name: result.value for name, result in zip(produce_methods, results)},
+            values={name: result.value for name,
+                    result in zip(produce_methods, results)},
             has_finished=all(result.has_finished for result in results),
             iterations_done=iterations_done,
         )
-
 
     @staticmethod
     def _update_metadata(df: container.DataFrame) -> container.DataFrame:

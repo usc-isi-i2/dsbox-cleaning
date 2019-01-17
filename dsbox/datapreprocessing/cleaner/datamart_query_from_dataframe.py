@@ -42,9 +42,9 @@ class QueryFromDataframe(TransformerPrimitiveBase[Inputs, Outputs, QueryFromData
         "id": "datamart-from-dataframe",
         "version": config.VERSION,
         "name": "Datamart Query Primitive from dataframe",
-        "python_path": "d3m.primitives.datamart.QueryDataframe",  # FIXME
-        "primitive_family": "DATA_PREPROCESSING",
-        "algorithm_types": ["AUDIO_STREAM_MANIPULATION"],  # FIXME!
+        "python_path": "d3m.primitives.datamart.QueryDataframe",
+        "primitive_family": "DATA_AUGMENTATION",
+        "algorithm_types": ["APPROXIMATE_DATA_AUGMENTATION"],
         "keywords": ["data augmentation", "datamart"],
         "source": {
             "name": config.D3M_PERFORMER_TEAM,

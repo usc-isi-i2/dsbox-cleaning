@@ -2,7 +2,9 @@ import typing
 import pandas as pd
 import d3m.metadata.base as mbase
 from . import config
-from d3m.primitive_interfaces.featurization import FeaturizationLearnerPrimitiveBase
+# from d3m.primitive_interfaces.featurization import FeaturizationLearnerPrimitiveBase, FeaturizationTransformerPrimitiveBase
+# changed primitive class to fit in devel branch of d3m (2019-1-17)
+from d3m.primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 from typing import Any, Callable, List, Dict, Union, Optional, Sequence, Tuple
 from d3m import container
 from numpy import ndarray
@@ -92,7 +94,7 @@ class IQRHyperparams(hyperparams.Hyperparams):
     )
 
 
-class IQRScaler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, IQRHyperparams]):
+class IQRScaler(UnsupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, IQRHyperparams]):
     """
         A primitive which scales all the Integer & Float variables in the Dataframe.
     """
