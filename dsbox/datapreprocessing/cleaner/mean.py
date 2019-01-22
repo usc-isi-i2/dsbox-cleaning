@@ -93,7 +93,7 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
         "installation": [config.INSTALLATION],
         "location_uris": [],
         "precondition": [hyperparams.base.PrimitivePrecondition.NO_CATEGORICAL_VALUES],
-        "effects": [hyperparams.base.PrimitiveEffects.NO_MISSING_VALUES],
+        # "effects": [hyperparams.base.PrimitiveEffects.NO_MISSING_VALUES],
         "hyperparms_to_tune": []
     })
 

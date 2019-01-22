@@ -8,10 +8,10 @@ changed_names_cleaning = {
     "dsbox.MeanImputation": "data_preprocessing.MeanImputation.DSBOX",
     "dsbox.IQRScaler": "data_preprocessing.Encoder.DSBOX.IQRScaler.DSBOX",
     "dsbox.Labler": "data_preprocessing.Labler.DSBOX",
-    "dsbox.Denormalize": "data_preprocessing.Denormalize.DSBOX",
+    "dsbox.Denormalize": "data_preprocessing.Denormalize.DSBOX", # DATA_TRANSFORMATION
     "dsbox.Profiler": "data_preprocessing.Profiler.DSBOX",
     "dsbox.FoldColumns": "data_preprocessing.FoldColumns.DSBOX",
-    "dsbox.Voter": "data_preprocessing.Voter.DSBOX",
+    "dsbox.Voter": "data_preprocessing.Voter.DSBOX", # ensemble
     "dsbox.VerticalConcat": "data_preprocessing.VerticalConcat.DSBOX",
     "dsbox.EnsembleVoting": "data_preprocessing.EnsembleVoting.DSBOX",
     "dsbox.Unfold": "data_preprocessing.Unfold.DSBOX",
