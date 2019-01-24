@@ -9,18 +9,29 @@ from d3m.metadata import hyperparams
 from . import config
 import time
 
-# field for importing datamart stuff
-from datamart import augment
-from datamart import Dataset
+# # field for importing datamart stuff
+# from datamart import augment
+# from datamart import Dataset
+
+# # fixme, now datamart_nyu and datamart_isi has the same import module name "datamart"
+# from datamart_nyu import augment
 
 Inputs1 = List
-Inputs2 = DataFrame  # FIXMEE
+Inputs2 = DataFrame  # FIXME
 Outputs = DataFrame
 
 
 class DatamartAugmentationHyperparams(hyperparams.Hyperparams):
     # indexes of dataset to choose from
     #
+
+    url = hyperparams.Hyperparameter[str](
+        default='https://isi-datamart.edu',
+        description='url indicates which datamart resource to use',
+        semantic_types=[
+            'https://metadata.datadrivendiscovery.org/types/TuningParameter']
+    )
+
     n_index = hyperparams.Hyperparameter[int](
         default=0,
         description='index of dataset from list to choose from. Default is 0',
@@ -58,16 +69,34 @@ class DatamartAugmentation(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartAu
         self._has_finished = False
         self._iterations_done = False
 
+    def _import_module(self):
+        if self.hyperparams["url"].startswith('https://isi-datamart.edu'):
+            from datamart import augment, Dataset
+            return 1
+        if self.hyperparams["url"].startswith('https://datamart.d3m.vida-nyu.org'):
+            from datamart_nyu import augment, Dataset
+            return 2
+        return 0
+
     def produce(self, *, inputs1: Inputs1, inputs2: Inputs2, timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
-        # sort the inputslist by best score
-        inputs1.sort(key=lambda x: x.score, reverse=True)
-        # choose the best one? maybe more, determined by hyperparams
-        res_df = augment(
-            original_data=inputs2, augment_data=inputs1[self.hyperparams["n_index"]])  # a pd.dataframe
+        status = self._import_module()
+        if status == 0:
+            print("not a specified url")
+            return CallResult(DataFrame())
+        if status == 1:  # run isi-datamart
+            # sort the inputslist by best score
+            inputs1.sort(key=lambda x: x.score, reverse=True)
+            # choose the best one? maybe more, determined by hyperparams
+            res_df = augment(
+                original_data=inputs2, augment_data=inputs1[self.hyperparams["n_index"]])  # a pd.dataframe
 
-        # join with inputs2
+            # join with inputs2
 
-        # updating "attribute columns", "datatype" from datamart.Dataset
+            # updating "attribute columns", "datatype" from datamart.Dataset
+        else:  # run
+            inputs1.sort(key=lambda x: x.score, reverse=True)
+            res_df = augment(
+                data=inputs2, augment_data=inputs1[self.hyperparams["n_index"]])
 
         self._has_finished = True
         self._iterations_done = True
