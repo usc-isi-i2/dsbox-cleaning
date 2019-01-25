@@ -1,4 +1,5 @@
 import typing
+import importlib
 
 # importing d3m stuff
 from d3m.container.pandas import DataFrame
@@ -71,23 +72,28 @@ class DatamartAugmentation(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartAu
 
     def _import_module(self):
         if self.hyperparams["url"].startswith('https://isi-datamart.edu'):
-            from datamart import augment, Dataset
+            global ISI_datamart
+            ISI_datamart = importlib.import_module('datamart')
+            # ISI_Dataset = importlib.import_module('datamart.Dataset')
             return 1
         if self.hyperparams["url"].startswith('https://datamart.d3m.vida-nyu.org'):
-            from datamart_nyu import augment, Dataset
+            # from datamart_nyu import augment, Dataset
+            global NYU_datamart
+            NYU_datamart = importlib.import_module('datamart_nyu')
+            # NYU_Dataset = importlib.import_module('datamart_nyu.Dataset')
             return 2
         return 0
 
     def produce(self, *, inputs1: Inputs1, inputs2: Inputs2, timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
         status = self._import_module()
         if status == 0:
-            print("not a specified url")
+            print("not a valid  url")
             return CallResult(DataFrame())
         if status == 1:  # run isi-datamart
             # sort the inputslist by best score
             inputs1.sort(key=lambda x: x.score, reverse=True)
             # choose the best one? maybe more, determined by hyperparams
-            res_df = augment(
+            res_df = ISI_datamart.augment(
                 original_data=inputs2, augment_data=inputs1[self.hyperparams["n_index"]])  # a pd.dataframe
 
             # join with inputs2
@@ -95,7 +101,7 @@ class DatamartAugmentation(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartAu
             # updating "attribute columns", "datatype" from datamart.Dataset
         else:  # run
             inputs1.sort(key=lambda x: x.score, reverse=True)
-            res_df = augment(
+            res_df = NYU_datamart.augment(
                 data=inputs2, augment_data=inputs1[self.hyperparams["n_index"]])
 
         self._has_finished = True
@@ -145,7 +151,7 @@ class DatamartAugmentation(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartAu
             A dict of values for each produce method wrapped inside ``MultiCallResult``.
         """
 
-        return self._fit_multi_produce(produce_methods=produce_methods, timeout=timeout, iterations=iterations, inputs=inputs1, outputs=inputs2)
+        return self._fit_multi_produce(produce_methods=produce_methods, timeout=timeout, iterations=iterations, inputs1=inputs1, inputs2=inputs2) # add check for inputs name here, must be the sames as produce and set_training data
 
     def multi_produce(self, *, inputs1: Inputs1, inputs2: Inputs2, produce_methods: typing.Sequence[str],
                       timeout: float = None, iterations: int = None) -> CallResult[Outputs]:

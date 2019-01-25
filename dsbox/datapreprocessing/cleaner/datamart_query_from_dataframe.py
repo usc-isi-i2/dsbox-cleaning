@@ -2,6 +2,7 @@
 
 import pandas as pd
 import typing
+import importlib
 
 
 # importing d3m stuff
@@ -67,10 +68,14 @@ class QueryFromDataframe(TransformerPrimitiveBase[Inputs, Outputs, QueryFromData
 
     def _import_module(self):
         if self.hyperparams["url"].startswith('https://isi-datamart.edu'):
-            from datamart import search, Dataset
+            global ISI_datamart
+            ISI_datamart = importlib.import_module('datamart')
+            # ISI_Dataset = importlib.import_module('datamart.Data')
             return 1
         if self.hyperparams["url"].startswith('https://datamart.d3m.vida-nyu.org'):
-            from datamart_nyu import search, Dataset
+            global NYU_datamart
+            NYU_datamart = importlib.import_module('datamart_nyu')
+            # NYU_Dataset = importlib.import_module('datamart_nyu.Dataset')
             return 2
         return 0
 
@@ -81,10 +86,10 @@ class QueryFromDataframe(TransformerPrimitiveBase[Inputs, Outputs, QueryFromData
             return CallResult(DataFrame())
         if status == 1:
             # fixme one of the field
-            res_list = search(
+            res_list = ISI_datamart.search(
                 query=self.hyperparams["query"], data=inputs)
         else:
-            res_list = search(query=self.hyperparams["query"], data=inputs)
+            res_list = NYU_datamart.search(query=self.hyperparams["query"], data=inputs)
         self._has_finished = True
         self._iterations_done = True
         return CallResult(res_list)
