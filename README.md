@@ -2,13 +2,13 @@
 
 # ISI DSBox Cleaning Primitives
 
-The Git repository for DSBox cleaning related primitives is [here](https://github.com/usc-isi-i2/dsbox-cleaning). DSBox primitives related to featurization are located in this Git repository [here](https://github.com/usc-isi-i2/dsbox-featurizer).
+The git repository containing DSBox cleaning related primitives is [here](https://github.com/usc-isi-i2/dsbox-cleaning). The git repository for DSBox primitives related to featurization is located [here](https://github.com/usc-isi-i2/dsbox-featurizer).
 
 ## Data cleaning primitives
 
 ### d3m.primitives.dsbox.CleaningFeaturizer
 
-This is multi-purpose cleaning featurizer primitive. This primitive requires the metadata annotations from ISI profiling primitive, see `d3m.primitives.dsbox.Profiler` below. The cleaning featurization operations supported include:
+This is a multi-purpose cleaning featurizer primitive. This primitive requires metadata annotations from ISI's profiling primitive, see `d3m.primitives.dsbox.Profiler` below. The cleaning featurization operations supported include:
 
 * Split date column into multiple columns, e.g. year, month, date, day
 * Split US phone number into multiple columns.
@@ -17,13 +17,13 @@ This is multi-purpose cleaning featurizer primitive. This primitive requires the
 
 ### d3m.primitives.dsbox.FoldColumns
 
-Fold multiple columns with common prefix of their column names into one column. For example, fold columns with names 'month-jan', 'month-feb', 'month-mar' and so on, into one column named 'month'.
+Fold multiple columns into one column based on common column name prefix. For example, fold columns with names 'month-jan', 'month-feb', 'month-mar' and so on, into one column named 'month'.
 
 ## Encoding primitives
 
 ### d3m.primitives.dsbox.Encoder
 
-Performs one-hot encoding for categorical attributes. This encoder can handle missing values, and it allows an user to specify the upper limit of columns to generate per cagtegorical attribute, `n_limit`.
+Performs one-hot encoding for categorical attributes. This encoder can handle missing values, and it allows user to specify the upper limit of columns to generate per cagtegorical attribute, `n_limit`.
 
 ### d3m.primitives.dsbox.UnaryEncoder
 
