@@ -1,108 +1,70 @@
 ![travis ci](https://travis-ci.org/usc-isi-i2/dsbox-cleaning.svg?branch=master)
 
-## Missing value imputer
-This component is for missing value imputation. This module is designed to support:
+# ISI DSBox Cleaning Primitives
 
-1. multiple ways to impute data, including our self-defined methods.
-2. missing pattern related analysis (to be exposed)
+The Git repository for DSBox cleaning related primitives is [here](https://github.com/usc-isi-i2/dsbox-cleaning). DSBox primitives related to featurization are located in this Git repository [here](https://github.com/usc-isi-i2/dsbox-featurizer).
 
-Now the functionality is limited to:
+## Data cleaning primitives
 
-* one label problem
+### d3m.primitives.dsbox.CleaningFeaturizer
 
-### Dependencies
-[check here](setup.py)
+This is multi-purpose cleaning featurizer primitive. This primitive requires the metadata annotations from ISI profiling primitive, see `d3m.primitives.dsbox.Profiler` below. The cleaning featurization operations supported include:
 
-To install:
-```sh
-pip install --process-dependency-links git+https://github.com/usc-isi-i2/dsbox-profiling.git@v1.0
-```
+* Split date column into multiple columns, e.g. year, month, date, day
+* Split US phone number into multiple columns.
+* Split column with consistent alpha-numeric value patterns, e.g. '2days' into multiple columns.
+* Split column with consistent puntucation value patterns, e.g. 'NY_US' into multiple columns.
 
-### Run Tests
-```sh
-python -m unittest discover
-```
+### d3m.primitives.dsbox.FoldColumns
 
-### Usage:
+Fold multiple columns with common prefix of their column names into one column. For example, fold columns with names 'month-jan', 'month-feb', 'month-mar' and so on, into one column named 'month'.
 
-see [imputation pipelines](imputer_pipelines) for reference
+## Encoding primitives
 
+### d3m.primitives.dsbox.Encoder
 
-### methods
-see [methods](methods.md) for details.
+Performs one-hot encoding for categorical attributes. This encoder can handle missing values, and it allows an user to specify the upper limit of columns to generate per cagtegorical attribute, `n_limit`.
 
-## One-hot encoder
-The encoder takes pandas DataFrame as input, then one-hot encode columns which are considered categorical.
-For **categorical_features = '95in10'**, it takes a column as category if:
-* its dtype is not float and
-* 95% of its data fall in 10 values.
-* For the rest values (not top 10) with low frequency, put into one column _[colname]\_other\__
+### d3m.primitives.dsbox.UnaryEncoder
 
-Note:
-* Maximum number of values encoded: **n_limit**, Whether to convert other text columns to integers: **text2int**.
-* Apply set_params() function to change the two parameters' values.
-* For one-hot encoded columns, in the output there would always be a _[colname]\_other__ column for values not appear in fitted data and values with fewer occurrence (when there are more than **n_limit** distinct values).
+Performs unary encoding, which useful for ordinal data.
 
+## Imputation primitives
 
-### Usage:
-```python
-from dsbox.datapreprocessing.cleaner import Encoder, EncHyperparameter
+### d3m.primitives.dsbox.MeanImputation
 
-train_x = pd.read_csv(train_dataset)
-test_x = pd.read_csv(test_dataset)
+Performs mean missing value imputation for numerical columns, and mode imputation for categorical columns.
 
-hp = EncHyperparameter(text2int=True,n_limit=12,categorical_features='95in10')
-enc = Encoder(hyperparams=hp)
-enc.set_training_data(inputs=train_x)
-enc.fit()
+### d3m.primitives.dsbox.GreedyImputation
 
-result = enc.produce(inputs=train_x)
+Performs missing value imputation by greedy search over simple imputation methods, i.e. mean, min, max, and zero.
 
-p = enc.get_params()
-enc2 = Encoder(hyperparams=hp)
-enc2.set_params(params=p)
-result2 = enc2.produce(inputs=test_x)
-```
+### d3m.primitives.dsbox.IterativeRegressionImputation
 
-### TODO:
-1. ~~Find better way to distinguish categorical columns - by statistics?~~ by Profiler
-2. ~~More functionality and more flexible implementation for user to config prefered setting.~~
-3. ~~Deal with ID-like columns: identify (also let user decide?) and delete ?~~ Will have encoders which users can specify columns to encode.
+Performs missing value imputation by regression, then improve the imputation by iterating over columns with missing values.
 
+## Profiling Primitive
 
-## Unary encoder
-The encoder takes pandas DataFrame and specified column name(s) as input, then unary encode the column(s).
+### d3m.primitives.dsbox.Profiler
 
-### Usage:
+This primitive generates metadata by examining the given data. The types of metadata include:
 
+* Column contains values tokenizable as an American phone number
+* Column contains values tokenizable by puntucation
+* Column contains values tokenizable into numerical tokens and alpha tokens
+* Column value tokenization features (most common tokens, number of distinct tokens, ratio of distinct tokens, and so on)
+* Column value features (most common values, number of distinct values, ration of distinct values, and so on)
+* Column contains filename-like values
+* Column contains missing values (number of missing values, ratio of missing values)
+* Number of outlier values
+* Correlation between columns (Pearson, Spearman)
 
-see [encoder pipelines](encoder_pipelines) for reference
+## Datamart Primitives
 
+### d3m.primitives.dsbox.QueryDataframe
 
-## Discretizer
-Take a column (pandas Series) as input, output a column with discretized values. For the discretize() function:
-* **by**: "width": discretize by equal width; "frequency": discretize by equal frequency; "kmeans": discretize by kmeans clustering; "gmm": discretize by Gaussian mixure models clustering. default by="width".
-* **num_bins**: number of bins. default num_bins=10.
-* **labels**: list of values for the discretized bins, currently only for binning methods where orders of values are kept (by width and by frequency). default labels= [0,1,2...].
+Queries datamart for available datasets. The JSON query specification is defined [Datamart Query API](https://datadrivendiscovery.org/wiki/display/work/Datamart+Query+API "Datamart Query API "). The primitive returns a list of dataset metadata.
 
+### d3m.primitives.dsbox.Join
 
-Note, currently:
-* Missing cells remain missing in the output column.
-
-### Usage:
-```python
-from dsbox.datapreprocessing.cleaner import discretizer
-
-data = pd.read_csv('yourDataset.csv')
-col = data["column_name"]
-# 10 bins, discretize by equal width
-result = discretizer.discretize(col)
-# 5 bins, discretize by gmm
-result = discretizer.discretize(col,num_bins=5,by='gmm')
-# or you can replace original column in the dataset with discretized values
-data["column_name"] = result
-
-```
-
-### TODO:
-- See if a better k, number of bins to choose can be found automatically. e.g. num_bins='auto'.
+Joins two dataframes into one dataframe. The primtive takes two dataframes, left\_dataframe and right\_dataframe, and two lists specifing the join columns, left\_columns and right\_columns.
