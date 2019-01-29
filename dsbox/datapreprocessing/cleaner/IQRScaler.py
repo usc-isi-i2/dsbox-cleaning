@@ -118,7 +118,7 @@ class IQRScaler(FeaturizationLearnerPrimitiveBase[Inputs, Outputs, Params, IQRHy
     })
 
     def __init__(self, *, hyperparams: IQRHyperparams) -> None:
-        super().__init__(hyperparams=hyperparams)
+        super(IQRScaler,self).__init__(hyperparams=hyperparams)
         self.hyperparams = hyperparams
         self._model = RobustScaler(with_centering=self.hyperparams['with_centering'],
                                    with_scaling=self.hyperparams['with_scaling'],
