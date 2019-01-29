@@ -38,7 +38,8 @@ setup(name='dsbox-datacleaning',
               'dsbox.Unfold = dsbox.datapostprocessing:Unfold',
               'dsbox.HorizontalConcat = dsbox.datapostprocessing:HorizontalConcat',
               'dsbox.Augmentation = dsbox.datapreprocessing.cleaner:DatamartAugmentation',
-              'dsbox.QueryDataframe = dsbox.datapreprocessing.cleaner:QueryFromDataframe'
+              'dsbox.QueryDataframe = dsbox.datapreprocessing.cleaner:QueryFromDataframe',
+              'dsbox.Join = dsbox.datapreprocessing.cleaner:DatamartJoin'
           ],
       }
       )

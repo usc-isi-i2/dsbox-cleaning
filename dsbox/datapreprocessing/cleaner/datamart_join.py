@@ -1,5 +1,4 @@
 import typing
-import importlib
 
 # importing d3m stuff
 from d3m.container.pandas import DataFrame
@@ -10,47 +9,42 @@ from d3m.metadata import hyperparams
 from . import config
 import time
 
-# # field for importing datamart stuff
-# from datamart import augment
-# from datamart import Dataset
+# import datamart stuff
+# from datamart.augment import Augment 
 
-# # fixme, now datamart_nyu and datamart_isi has the same import module name "datamart"
-# from datamart_nyu import augment
-
-Inputs1 = List
-Inputs2 = DataFrame  # FIXME
+Inputs1 = DataFrame
+Inputs2 = DataFrame
 Outputs = DataFrame
 
 
-class DatamartAugmentationHyperparams(hyperparams.Hyperparams):
-    # indexes of dataset to choose from
-    #
+# join two dataframe by columns
 
-    url = hyperparams.Hyperparameter[str](
-        default='https://isi-datamart.edu',
-        description='url indicates which datamart resource to use',
+class DatamartJoinHyperparams(hyperparams.Hyperparams):
+    left_columns = hyperparams.Hyperparameter[typing.List[typing.List[int or str]]](
+        default=[[1], []],  # fixme
+        description='columns to join for the left_colums',
+        semantic_types=[
+            'https://metadata.datadrivendiscovery.org/types/TuningParameter']
+    )
+    right_columns = hyperparams.Hyperparameter[typing.List[typing.List[int or str]]](
+        default=[[1], []],  # fixme
+        description='columns to join for the right_colums',
         semantic_types=[
             'https://metadata.datadrivendiscovery.org/types/TuningParameter']
     )
 
-    n_index = hyperparams.Hyperparameter[int](
-        default=0,
-        description='index of dataset from list to choose from. Default is 0',
-        semantic_types=[
-            'https://metadata.datadrivendiscovery.org/types/TuningParameter']
-    )
 
+class DatamartJoin(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartJoinHyperparams]):
+    '''
+    A primitive perform join between datasets by lists of column names 
+    '''
 
-class DatamartAugmentation(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartAugmentationHyperparams]):
-    '''
-    A primitive that takes a list of datamart dataset and choose 1 or a few best dataframe and perform join, return an accessible d3m.dataframe for further processing
-    '''
     __author__ = "USC ISI"
     metadata = hyperparams.base.PrimitiveMetadata({
         "id": "datamart-augmentation",
         "version": config.VERSION,
         "name": "Datamart Augmentation",
-        "python_path": "d3m.primitives.dsbox.Augmentation",
+        "python_path": "d3m.primitives.dsbox.Join",
         "primitive_family": "DATA_AUGMENTATION",
         "algorithm_types": ["APPROXIMATE_DATA_AUGMENTATION"],  # fix me!
         "keywords": ["data augmentation", "datamart", "join"],
@@ -64,51 +58,20 @@ class DatamartAugmentation(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartAu
 
     })
 
-    def __init__(self, *, hyperparams: DatamartAugmentationHyperparams)-> None:
+    def __init__(self, *, hyperparams: DatamartJoinHyperparams) -> None:
         super().__init__(hyperparams=hyperparams)
         self.hyperparams = hyperparams
         self._has_finished = False
-        self._iterations_done = False
-
-    def _import_module(self):
-        if self.hyperparams["url"].startswith('https://isi-datamart.edu'):
-            global ISI_datamart
-            ISI_datamart = importlib.import_module('datamart')
-            # ISI_Dataset = importlib.import_module('datamart.Dataset')
-            return 1
-        if self.hyperparams["url"].startswith('https://datamart.d3m.vida-nyu.org'):
-            # from datamart_nyu import augment, Dataset
-            global NYU_datamart
-            NYU_datamart = importlib.import_module('datamart_nyu')
-            # NYU_Dataset = importlib.import_module('datamart_nyu.Dataset')
-            return 2
-        return 0
+        self._iteration_done = False
 
     def produce(self, *, inputs1: Inputs1, inputs2: Inputs2, timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
-        status = self._import_module()
-        if status == 0:
-            print("not a valid  url")
-            return CallResult(DataFrame())
-        if status == 1:  # run isi-datamart
-            # sort the inputslist by best score
-            inputs1.sort(key=lambda x: x.score, reverse=True)
-            # choose the best one? maybe more, determined by hyperparams
-            res_df = ISI_datamart.augment(
-                original_data=inputs2, augment_data=inputs1[self.hyperparams["n_index"]])  # a pd.dataframe
-
-            # join with inputs2
-
-            # updating "attribute columns", "datatype" from datamart.Dataset
-        else:  # run
-            inputs1.sort(key=lambda x: x.score, reverse=True)
-            res_df = NYU_datamart.augment(
-                data=inputs2, augment_data=inputs1[self.hyperparams["n_index"]])
-
+        res_df = DataFrame(join(left_df=inputs1, right_df=inputs2, left_columns=self.hyperparams["left_columns"], right_columns=sefl.hyperparams["right_columns"]))
         self._has_finished = True
-        self._iterations_done = True
+        self._iteration_done = True
         return CallResult(res_df)
 
-# functions to fit in devel branch of d3m (2019-1-17)
+
+    # functions to fit in devel branch of d3m (2019-1-17)
 
     def set_training_data(self, *, inputs1: Inputs1, inputs2: Inputs2) -> None:
         pass
@@ -151,7 +114,7 @@ class DatamartAugmentation(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartAu
             A dict of values for each produce method wrapped inside ``MultiCallResult``.
         """
 
-        return self._fit_multi_produce(produce_methods=produce_methods, timeout=timeout, iterations=iterations, inputs1=inputs1, inputs2=inputs2) # add check for inputs name here, must be the sames as produce and set_training data
+        return self._fit_multi_produce(produce_methods=produce_methods, timeout=timeout, iterations=iterations, inputs=inputs1, outputs=inputs2)
 
     def multi_produce(self, *, inputs1: Inputs1, inputs2: Inputs2, produce_methods: typing.Sequence[str],
                       timeout: float = None, iterations: int = None) -> CallResult[Outputs]:

@@ -36,7 +36,8 @@ PRIMITIVES = [(p, cleaner_config) for p in [
     'EnsembleVoting',
     'Unfold',
     'Augmentation',
-    'QueryDataframe'
+    'QueryDataframe', 
+    'Join'
         ]
     ]
 

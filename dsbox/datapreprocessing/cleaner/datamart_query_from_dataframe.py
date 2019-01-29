@@ -2,6 +2,7 @@
 
 import pandas as pd
 import typing
+import importlib
 
 
 # importing d3m stuff
@@ -12,9 +13,6 @@ from d3m.primitive_interfaces.transformer import TransformerPrimitiveBase
 from d3m.metadata import hyperparams
 from . import config
 
-# field for importing datamart stuff
-from datamart import search
-from datamart import Dataset
 
 
 Inputs = DataFrame
@@ -23,6 +21,12 @@ Outputs = List
 
 class QueryFromDataFrameHyperparams(hyperparams.Hyperparams):
 
+    url = hyperparams.Hyperparameter[str](
+        default='https://isi-datamart.edu',
+        description='url indicates which datamart resource to use',
+        semantic_types=[
+            'https://metadata.datadrivendiscovery.org/types/TuningParameter']
+    )
     # query
     query = hyperparams.Hyperparameter[dict](
         default={},
@@ -51,8 +55,8 @@ class QueryFromDataframe(TransformerPrimitiveBase[Inputs, Outputs, QueryFromData
             "uris": [config.REPOSITORY]
         },
         "installation": [config.INSTALLATION],
-        'precondition': [],
-        'hyperparms_to_tune': []
+        # 'precondition': [],
+        # 'hyperparms_to_tune': []
 
     })
 
@@ -62,10 +66,30 @@ class QueryFromDataframe(TransformerPrimitiveBase[Inputs, Outputs, QueryFromData
         self._has_finished = False
         self._iterations_done = False
 
+    def _import_module(self):
+        if self.hyperparams["url"].startswith('https://isi-datamart.edu'):
+            global ISI_datamart
+            ISI_datamart = importlib.import_module('datamart')
+            # ISI_Dataset = importlib.import_module('datamart.Data')
+            return 1
+        if self.hyperparams["url"].startswith('https://datamart.d3m.vida-nyu.org'):
+            global NYU_datamart
+            NYU_datamart = importlib.import_module('datamart_nyu')
+            # NYU_Dataset = importlib.import_module('datamart_nyu.Dataset')
+            return 2
+        return 0
+
     def produce(self, *, inputs: Inputs, timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
-        # fixme one of the field
-        res_list = search(
-            query=self.hyperparams["query"], data=inputs)
+        status = self._import_module()
+        if status == 0:
+            print("not a valid url")
+            return CallResult(DataFrame())
+        if status == 1:
+            # fixme one of the field
+            res_list = ISI_datamart.search(
+                query=self.hyperparams["query"], data=inputs)
+        else:
+            res_list = NYU_datamart.search(query=self.hyperparams["query"], data=inputs)
         self._has_finished = True
         self._iterations_done = True
         return CallResult(res_list)
