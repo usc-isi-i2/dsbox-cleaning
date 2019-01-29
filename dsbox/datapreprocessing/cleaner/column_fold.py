@@ -138,7 +138,7 @@ class FoldColumns(UnsupervisedLearnerPrimitiveBase[Input, Output, FoldParams, Fo
                 return False
         return True
 
-    def fit(self, *, timeout: float = None, iterations: int = None) -> None:
+    def fit(self, *, timeout: float = None, iterations: int = None) -> CallResult[None]:
         """
         call both prefix and date method and return  a combined list
         :return: list of list of columns to fold
@@ -170,6 +170,7 @@ class FoldColumns(UnsupervisedLearnerPrimitiveBase[Input, Output, FoldParams, Fo
 
         self._mapping = {'foldable_columns': ret_lst}
         self._fitted = True
+        return CallResult(None, has_finished=True, iterations_done=1)
 
     def _detect_columns_to_fold_prefix(self):
         sorted_prefix_lst = sorted(self._prefix_dict, key=len, reverse=True)

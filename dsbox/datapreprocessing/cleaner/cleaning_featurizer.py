@@ -154,7 +154,7 @@ class CleaningFeaturizer(
         self._input_data = inputs
         self._fitted = False
 
-    def fit(self, *, timeout: float = None, iterations: int = None) -> None:
+    def fit(self, *, timeout: float = None, iterations: int = None) -> CallResult[None]:
         if self._fitted:
             return
 
@@ -196,6 +196,7 @@ class CleaningFeaturizer(
             self._mapping = mapping
 
         self._fitted = True
+        return CallResult(None, has_finished=True, iterations_done=1)
 
     def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> CallResult[Output]:
         self._input_data_copy = inputs.copy()

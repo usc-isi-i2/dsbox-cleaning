@@ -117,7 +117,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
         topn = [x for x in topn if x]
         return feature.name, topn
 
-    def fit(self, *, timeout: float = None, iterations: int = None) -> None:
+    def fit(self, *, timeout: float = None, iterations: int = None) -> CallResult[None]:
 
         if self._fitted:
             return
@@ -170,6 +170,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
                 mapping[temp[0]] = temp[1]
         self._mapping = mapping
         self._fitted = True
+        return CallResult(None, has_finished=True)
 
     def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> CallResult[Output]:
         """

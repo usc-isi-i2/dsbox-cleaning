@@ -150,6 +150,7 @@ class IQRScaler(UnsupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, IQRHyp
             self._fitted = True
         else:
             self._fitted = False
+        return CallResult(None, has_finished=True, iterations_done=1)
 
     def produce(self, *, inputs: Inputs, timeout: float = None, iterations: int = None) \
             -> CallResult[Outputs]:

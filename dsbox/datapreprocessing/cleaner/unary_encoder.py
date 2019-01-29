@@ -15,14 +15,16 @@ from . import config
 Input = container.DataFrame
 Output = container.DataFrame
 
+
 class Params(params.Params):
-    mapping : typing.Dict
-    all_columns : typing.Set[str]
-    empty_columns : typing.List[object]
-    textmapping : typing.Dict
-    requirement : typing.Dict
-    cat_columns : typing.List[object]
-    cat_col_index : typing.List[object]
+    mapping: typing.Dict
+    all_columns: typing.Set[str]
+    empty_columns: typing.List[object]
+    textmapping: typing.Dict
+    requirement: typing.Dict
+    cat_columns: typing.List[object]
+    cat_col_index: typing.List[object]
+
 
 class UEncHyperparameter(hyperparams.Hyperparams):
     text2int = hyperparams.UniformBool(
@@ -30,7 +32,6 @@ class UEncHyperparameter(hyperparams.Hyperparams):
         description='Whether to convert everything to numerical. For text columns, each row may get converted into a column',
         semantic_types=['http://schema.org/Boolean',
                         'https://metadata.datadrivendiscovery.org/types/ControlParameter'])
-
 
     use_columns = hyperparams.Set(
         elements=hyperparams.Hyperparameter[int](-1),
@@ -60,6 +61,7 @@ class UEncHyperparameter(hyperparams.Hyperparams):
         semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
         description="Also include primary index columns if input data has them. Applicable only if \"return_result\" is set to \"new\".",
     )
+
 
 ## reference: https://github.com/scikit-learn/scikit-learn/issues/8136
 class Label_encoder(object):
@@ -148,7 +150,6 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
     def __repr__(self):
         return "%s(%r)" % ('UnaryEncoder', self.__dict__)
 
-
     def __init__(self, *, hyperparams: UEncHyperparameter) -> None:
         super().__init__(hyperparams=hyperparams)
 
@@ -158,7 +159,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         self._mapping: typing.Dict = dict()
         self._all_columns: typing.Set = set()
         self._empty_columns: typing.List[object] = []
-        self._cat_col_index: typing.List[object] = [] 
+        self._cat_col_index: typing.List[object] = []
         self._cat_columns: typing.List[object] = []
         self._training_inputs = None
         self._fitted = False
@@ -171,16 +172,15 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         for key in self._mapping.keys():
             self._mapping[key] = [np.nan if np.isnan(x) else int(x) for x in self._mapping[key]]
 
-        param = Params(mapping = self._mapping, 
-                       all_columns = self._all_columns, 
+        param = Params(mapping = self._mapping,
+                       all_columns = self._all_columns,
                        empty_columns = self._empty_columns,
-                       textmapping = self._textmapping, 
-                       requirement = self._requirement, 
-                       cat_columns = self._cat_columns, 
+                       textmapping = self._textmapping,
+                       requirement = self._requirement,
+                       cat_columns = self._cat_columns,
                        cat_col_index = self._cat_col_index
                        )
         return param
-
 
     def set_params(self, *, params: Params) -> None:
         self._textmapping = params['textmapping']
@@ -192,13 +192,11 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         self._cat_col_index = params['cat_col_index']
         self._fitted = True
 
-
     def set_training_data(self, *, inputs: Input) -> None:
         self._training_inputs = inputs
         self._fitted = False
 
-
-    def fit(self, *, timeout:float = None, iterations: int = None) -> None:
+    def fit(self, *, timeout: float = None, iterations: int = None) -> CallResult[None]:
         """
         Need training data from set_training_data first.
         The encoder would record specified columns to encode and column values to
@@ -278,18 +276,18 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
                 self._requirement[column_name] = True
             else:
                 self._requirement[column_name] = False
-                
+
         self._fitted = True
 
+        return CallResult(None, has_finished=True, iterations_done=1)
 
     def __encode_column(self, col):
         unary = pd.DataFrame(col)
         for v in self._mapping[col.name]:
             unary[col.name+"_"+str(v)] = (col >= v).astype(int)
-        return unary.drop(col.name,axis=1)
+        return unary.drop(col.name, axis=1)
 
-
-    def produce(self, *, inputs: Input, timeout:float = None, iterations: int = None) -> CallResult[Output]:
+    def produce(self, *, inputs: Input, timeout: float = None, iterations: int = None) -> CallResult[Output]:
         """
         Convert and output the input data into unary encoded format,
         using the trained (fitted) encoder.
@@ -312,7 +310,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
             data = inputs[0].copy()
         data = utils.remove_columns(data, self._empty_columns, source='ISI DSBox Data Unary Encoder')
         set_columns = set(data.columns)
-        
+
         if set_columns != self._all_columns:
             raise ValueError('Columns(features) fed at produce() differ from fitted data.')
 
