@@ -35,6 +35,7 @@ class Voter(TransformerPrimitiveBase[Inputs, Outputs, VoterHyperparameter]):
         "algorithm_types": ["DATA_CONVERSION"],
         "source": {
             "name": config.D3M_PERFORMER_TEAM,
+            "contact": config.D3M_CONTACT,
             "uris": [config.REPOSITORY]
         },
         "keywords": ["vote"],

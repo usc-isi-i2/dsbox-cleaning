@@ -52,6 +52,7 @@ class QueryFromDataframe(TransformerPrimitiveBase[Inputs, Outputs, QueryFromData
         "keywords": ["data augmentation", "datamart"],
         "source": {
             "name": config.D3M_PERFORMER_TEAM,
+            "contact": config.D3M_CONTACT,
             "uris": [config.REPOSITORY]
         },
         "installation": [config.INSTALLATION],

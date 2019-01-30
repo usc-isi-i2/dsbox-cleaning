@@ -48,6 +48,7 @@ class Denormalize(transformer.TransformerPrimitiveBase[Inputs, Outputs, Denormal
         "algorithm_types": ["DATA_NORMALIZATION"],
         "source": {
             "name": config.D3M_PERFORMER_TEAM,
+            "contact": config.D3M_CONTACT,
             "uris": [config.REPOSITORY]
         },
         "keywords": ["NORMALIZATION", "Scaler"],

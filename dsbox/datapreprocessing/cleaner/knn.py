@@ -51,6 +51,7 @@ class KNNImputation(TransformerPrimitiveBase[Input, Output, KnnHyperparameter]):
         "algorithm_types": [ "IMPUTATION", "K_NEAREST_NEIGHBORS" ],
         "source": {
             "name": config.D3M_PERFORMER_TEAM,
+            "contact": config.D3M_CONTACT,
             "uris": [ config.REPOSITORY ]
             },
         ### Automatically generated
