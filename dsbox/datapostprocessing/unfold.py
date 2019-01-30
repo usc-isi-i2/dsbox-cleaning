@@ -51,7 +51,7 @@ class Unfold(TransformerPrimitiveBase[Inputs, Outputs, UnfoldHyperparams]):
         "name": "DSBox unfold",
         "description": "A primitive which unfold a vertically concatenated dataframe",
         "python_path": "d3m.primitives.data_preprocessing.Unfold.DSBOX",
-        "primitive_family": "DATA_CLEANING",
+        "primitive_family": "DATA_PREPROCESSING",
         "algorithm_types": ["DATA_CONVERSION"],
         "source": {
             "name": config.D3M_PERFORMER_TEAM,

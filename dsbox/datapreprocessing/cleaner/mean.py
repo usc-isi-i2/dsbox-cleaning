@@ -77,7 +77,7 @@ class MeanImputation(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, Mea
         "name": "DSBox Mean Imputer",
         "description": "Impute missing values using the `mean` value of the attribute.",
         "python_path": "d3m.primitives.data_preprocessing.MeanImputation.DSBOX",
-        "primitive_family": "DATA_CLEANING",
+        "primitive_family": "DATA_PREPROCESSING",
         "algorithm_types": ["IMPUTATION"],
         "source": {
             "name": config.D3M_PERFORMER_TEAM,

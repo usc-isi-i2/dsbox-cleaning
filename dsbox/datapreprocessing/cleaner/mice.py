@@ -38,7 +38,7 @@ class MICE(TransformerPrimitiveBase[Input, Output, MiceHyperparameter]):
         "version": config.VERSION,
         "name": "DSBox MICE Imputer",
         "description": "Impute missing values using the MICE algorithm",
-        "python_path": "d3m.primitives.dsbox.MiceImputation",
+        "python_path": "d3m.primitives.data_cleaning.MiceImputation.DSBOX",
         "primitive_family": "DATA_CLEANING",
         "algorithm_types": [ "IMPUTATION" ],
         "source": {

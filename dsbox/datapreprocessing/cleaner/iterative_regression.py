@@ -88,7 +88,7 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
         "name": "DSBox Iterative Regression Imputer",
         "description": "Impute missing values using iterative regression",
         "python_path": "d3m.primitives.data_preprocessing.IterativeRegressionImputation.DSBOX",
-        "primitive_family": "DATA_CLEANING",
+        "primitive_family": "DATA_PREPROCESSING",
         "algorithm_types": ["IMPUTATION"],
         "source": {
             "name": config.D3M_PERFORMER_TEAM,
