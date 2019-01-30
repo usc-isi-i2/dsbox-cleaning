@@ -69,7 +69,7 @@ class Labler(UnsupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHyp
         "version": config.VERSION,
         "name": "DSBox feature labeler",
         "description": "A simple primitive that labels all string based categorical columns",
-        "python_path": "d3m.primitives.dsbox.Labler",
+        "python_path": "d3m.primitives.data_preprocessing.Labler.DSBOX",
         "primitive_family": "DATA_CLEANING",
         "algorithm_types": ["DATA_NORMALIZATION"],
         "source": {

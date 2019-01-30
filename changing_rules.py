@@ -16,8 +16,9 @@ changed_names_cleaning = {
     "dsbox.EnsembleVoting": "data_preprocessing.EnsembleVoting.DSBOX",
     "dsbox.Unfold": "data_preprocessing.Unfold.DSBOX",
     "dsbox.HorizontalConcat": "data_preprocessing.HorizontalConcat.DSBOX",
-    "datamart.Augmentation": "data_augmentation.Augmentation.DSBOX",
-    "datamart.QueryDataframe": "data_augmentation.QueryDataframe.DSBOX"
+    "dsbox.Augmentation": "data_augmentation.Augmentation.DSBOX",
+    "dsbox.QueryDataframe": "data_augmentation.QueryDataframe.DSBOX",
+    "dsbox.Join":"data_augmentation.Join.DSBOX"
 }
 
 changed_names_featurizer = {

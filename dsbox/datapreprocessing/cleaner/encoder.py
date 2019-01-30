@@ -77,7 +77,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
         "version": config.VERSION,
         "name": "ISI DSBox Data Encoder",
         "description": "Encode data, such as one-hot encoding for categorical data",
-        "python_path": "d3m.primitives.dsbox.Encoder",
+        "python_path": "d3m.primitives.data_preprocessing.Encoder.DSBOX",
         "primitive_family": "DATA_CLEANING",
         "algorithm_types": ["ENCODE_ONE_HOT"],  # !!!! Need to submit algorithm type "Imputation"
         "source": {

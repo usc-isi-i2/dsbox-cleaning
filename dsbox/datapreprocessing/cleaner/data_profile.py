@@ -107,7 +107,7 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
         'version': config.VERSION,
         'name': "DSBox Profiler",
         'description': 'Generate profiles of datasets',
-        'python_path': 'd3m.primitives.dsbox.Profiler',
+        'python_path': 'd3m.primitives.data_preprocessing.Profiler.DSBOX',
         'primitive_family': PrimitiveFamily.SCHEMA_DISCOVERY,
         'algorithm_types': [
             PrimitiveAlgorithmType.DATA_PROFILING,

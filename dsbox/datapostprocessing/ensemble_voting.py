@@ -32,7 +32,7 @@ class EnsembleVoting(TransformerPrimitiveBase[Inputs, Outputs, EnsembleVotingHyp
         "version": config.VERSION,
         "name": "DSBox ensemble voting",
         "description": "A primitive which generate single prediction result for one index if there is many",
-        "python_path": "d3m.primitives.dsbox.EnsembleVoting",
+        "python_path": "d3m.primitives.data_preprocessing.EnsembleVoting.DSBOX",
         "primitive_family": "DATA_CLEANING",
         "algorithm_types": ["ENSEMBLE_LEARNING"],
         "source": {

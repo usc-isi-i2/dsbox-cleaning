@@ -38,7 +38,7 @@ class FoldColumns(UnsupervisedLearnerPrimitiveBase[Input, Output, FoldParams, Fo
         "version": config.VERSION,
         "name": "DSBox Fold Columns",
         "description": "Fold Columns",
-        "python_path": "d3m.primitives.dsbox.FoldColumns",
+        "python_path": "d3m.primitives.data_preprocessing.FoldColumns.DSBOX",
         "primitive_family": "DATA_CLEANING",
         "algorithm_types": ["DATA_CONVERSION"],
         "source": {

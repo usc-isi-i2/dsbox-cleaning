@@ -126,7 +126,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         "version": config.VERSION,
         "name": "DSBox Unary Data Encoder",
         "description": "Encode using unary code for orinal data",
-        "python_path": "d3m.primitives.dsbox.UnaryEncoder",
+        "python_path": "d3m.primitives.data_preprocessing.UnaryEncoder.DSBOX",
         "primitive_family": "DATA_CLEANING",
         "algorithm_types": [ "ENCODE_ONE_HOT" ],
         "source": {

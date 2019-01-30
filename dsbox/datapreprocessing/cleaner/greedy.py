@@ -88,7 +88,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
         "name": "DSBox Greedy Imputer",
         "description": "Impute missing values using greedy search, supervised learining",
 
-        "python_path": "d3m.primitives.dsbox.GreedyImputation",
+        "python_path": "d3m.primitives.data_preprocessing.GreedyImputation.DSBOX",
         "primitive_family": "DATA_CLEANING",
         "algorithm_types": ["IMPUTATION"],
         "source": {
