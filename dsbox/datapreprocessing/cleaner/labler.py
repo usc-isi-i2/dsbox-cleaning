@@ -1,8 +1,6 @@
 import pandas as pd
-import numpy as np
-from numpy import ndarray
-import typing
-from typing import Any, Callable, List, Dict, Union, Optional, Sequence, Tuple
+from typing import List, Dict
+
 from d3m import container
 import d3m.metadata.base as mbase
 from . import config
@@ -56,7 +54,6 @@ class LablerHyperparams(hyperparams.Hyperparams):
         semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter'],
         description="Also include primary index columns if input data has them. Applicable only if \"return_result\" is set to \"new\".",
     )
-
 
 
 class Labler(UnsupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHyperparams]):
@@ -121,6 +118,8 @@ class Labler(UnsupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHyp
         else:
             self._fitted = False
 
+        return CallResult(None, has_finished=True)
+
     def produce(self, *, inputs: Inputs, timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
         if not self._fitted:
             return CallResult(inputs, self._has_finished, self._iterations_done)
@@ -161,7 +160,6 @@ class Labler(UnsupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHyp
         else:
             return CallResult(inputs, self._has_finished, self._iterations_done)
 
-
     @classmethod
     def _get_columns_to_fit(cls, inputs: Inputs, hyperparams: LablerHyperparams):
         if not hyperparams['use_semantic_types']:
@@ -172,12 +170,10 @@ class Labler(UnsupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHyp
         def can_produce_column(column_index: int) -> bool:
             return cls._can_produce_column(inputs_metadata, column_index, hyperparams)
 
-        columns_to_produce, columns_not_to_produce = common_utils.get_columns_to_use(inputs_metadata,
-                                                                             use_columns=hyperparams['use_columns'],
-                                                                             exclude_columns=hyperparams['exclude_columns'],
-                                                                             can_use_column=can_produce_column)
+        columns_to_produce, columns_not_to_produce = common_utils.get_columns_to_use(
+            inputs_metadata, use_columns=hyperparams['use_columns'], exclude_columns=hyperparams['exclude_columns'],
+            can_use_column=can_produce_column)
         return inputs.iloc[:, columns_to_produce], columns_to_produce
-
 
     @classmethod
     def _can_produce_column(cls, inputs_metadata: mbase.DataMetadata, column_index: int, hyperparams: LablerHyperparams) -> bool:
@@ -192,17 +188,14 @@ class Labler(UnsupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHyp
 
         return False
 
-
     def get_params(self) -> Params:
         labeler_dict = {}
         if self._model:
             # extract the dictionary of the models
-            for each_key,each_value in self._model.items():
+            for each_key, each_value in self._model.items():
                 labeler_dict[each_key] = each_value.classes_
             # return parameters
-            return Params(s_cols = self._s_cols,
-                          labler_dict = labeler_dict
-                        )
+            return Params(s_cols=self._s_cols, labler_dict=labeler_dict)
         else:
             return Params({
                 's_cols':[],
