@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='dsbox-datacleaning',
-      version='1.3.0',
+      version='1.3.1',
       description='DSBox data processing tools for cleaning data',
       author='USC ISI',
       url='https://github.com/usc-isi-i2/dsbox-cleaning.git',
@@ -28,7 +28,7 @@ setup(name='dsbox-datacleaning',
               #              'dsbox.KnnImputation = dsbox.datapreprocessing.cleaner:KNNImputation',
               'data_preprocessing.MeanImputation.DSBOX = dsbox.datapreprocessing.cleaner:MeanImputation',
               'normalization.IQRScaler.DSBOX = dsbox.datapreprocessing.cleaner:IQRScaler',
-              'data_cleaning.Labler.DSBOX = dsbox.datapreprocessing.cleaner:Labler',
+              'data_cleaning.Labeler.DSBOX = dsbox.datapreprocessing.cleaner:Labler',
               'normalization.Denormalize.DSBOX = dsbox.datapreprocessing.cleaner:Denormalize',
               'schema_discovery.Profiler.DSBOX = dsbox.datapreprocessing.cleaner:Profiler',
               'data_cleaning.FoldColumns.DSBOX = dsbox.datapreprocessing.cleaner:FoldColumns',

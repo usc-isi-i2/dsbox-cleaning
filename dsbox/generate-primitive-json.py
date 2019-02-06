@@ -11,35 +11,34 @@ from dsbox.datapreprocessing.cleaner import config as cleaner_config
 
 import dsbox
 
-parser = argparse.ArgumentParser(description='Generate primitive.json descriptions')
+parser = argparse.ArgumentParser(
+    description='Generate primitive.json descriptions')
 parser.add_argument(
     'dirname', action='store', help='Top-level directory to store the json descriptions')
 arguments = parser.parse_args()
 
-PREFIX = 'd3m.primitives.dsbox.'
+PREFIX = 'd3m.primitives.'
 PRIMITIVES = [(p, cleaner_config) for p in [
-    'CleaningFeaturizer',
-    'Encoder',
-    'UnaryEncoder',
-    'GreedyImputation',
-    'MeanImputation',
-    'IterativeRegressionImputation',
-    #'MiceImputation',
-    #'KnnImputation',
-    'IQRScaler',
-    'Labler',
-    'Denormalize',
-    'Profiler',
-    'FoldColumns',
-    # 'Voter',
-    'VerticalConcat',
-    'EnsembleVoting',
-    'Unfold',
-    'Augmentation',
-    'QueryDataframe', 
-    'Join'
-        ]
-    ]
+    'data_cleaning.CleaningFeaturizer.DSBOX',
+    'data_preprocessing.Encoder.DSBOX',
+    'data_preprocessing.UnaryEncoder.DSBOX',
+    'data_preprocessing.GreedyImputation.DSBOX',
+    'data_preprocessing.IterativeRegressionImputation.DSBOX',
+    'data_preprocessing.MeanImputation.DSBOX',
+    'normalization.IQRScaler.DSBOX',
+    'data_cleaning.Labeler.DSBOX',
+    'normalization.Denormalize.DSBOX',
+    'schema_discovery.Profiler.DSBOX',
+    'data_cleaning.FoldColumns.DSBOX',
+    'data_preprocessing.VerticalConcat.DSBOX',
+    'data_preprocessing.EnsembleVoting.DSBOX',
+    'data_preprocessing.Unfold.DSBOX',
+    'data_preprocessing.HorizontalConcat.DSBOX',
+    'data_augmentation.Augmentation.DSBOX',
+    'data_augmentation.QueryDataframe.DSBOX',
+    'data_augmentation.Join.DSBOX'
+]
+]
 
 for p, config in PRIMITIVES:
     print('Generating json for primitive ' + p)
@@ -51,6 +50,7 @@ for p, config in PRIMITIVES:
 
     json_filename = os.path.join(outdir, 'primitive.json')
     print('    at ' + json_filename)
-    command = ['python', '-m', 'd3m.index', 'describe', '-i', '4', primitive_name]
+    command = ['python', '-m', 'd3m.index',
+               'describe', '-i', '4', primitive_name]
     with open(json_filename, 'w') as out:
         subprocess.run(command, stdout=out)
