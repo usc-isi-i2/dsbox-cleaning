@@ -1,4 +1,21 @@
 from setuptools import setup
+from setuptools.command.install import install
+
+
+class PostInstallCommand(install):
+    """Post-installation for installation mode."""
+    def run(self):
+        import subprocess
+        result = subprocess.check_output(['pip', 'list'])
+        lines = str(result).split('\\n')
+        for line in lines[2:]:
+            part = line.split()
+            if 'dsbox-featurizer' in part[0]:
+                print(line)
+                if '0' == part[1].split('.')[0]:
+                    subprocess.call(['pip', 'uninstall', '-y', 'dsbox-featurizer'])
+        install.run(self)
+
 
 setup(name='dsbox-datacleaning',
       version='1.4',
@@ -41,5 +58,7 @@ setup(name='dsbox-datacleaning',
               'data_augmentation.QueryDataframe.DSBOX = dsbox.datapreprocessing.cleaner:QueryFromDataframe',
               'data_augmentation.Join.DSBOX = dsbox.datapreprocessing.cleaner:DatamartJoin'
           ],
-      }
-      )
+      },
+      cmdclass={
+          'install': PostInstallCommand
+      })
