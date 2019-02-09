@@ -230,7 +230,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
         self._empty_columns = list(set(self._empty_columns))
         self._empty_columns.reverse()
         self._empty_columns = container.List(self._empty_columns)
-        data = utils.remove_columns(data, self._empty_columns, source='ISI DSBox Data Encoder')
+        data = utils.remove_columns(data, self._empty_columns)
         # print('fit', data.shape)
 
         categorical_attributes = utils.list_columns_with_semantic_types(
@@ -309,7 +309,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
             data = inputs.copy()
         else:
             data = inputs[0].copy()
-        data = utils.remove_columns(data, self._empty_columns, source='ISI DSBox Data Unary Encoder')
+        data = utils.remove_columns(data, self._empty_columns)
         set_columns = set(data.columns)
 
         if set_columns != self._all_columns:
@@ -348,7 +348,7 @@ class UnaryEncoder(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, UEncH
                 'http://schema.org/Integer', 'https://metadata.datadrivendiscovery.org/types/Attribute')
             encoded.metadata = encoded.metadata.update((mbase.ALL_ELEMENTS, index), old_metadata)
         # after extracting the traget columns, remove these columns from dataFrame
-        data_else = utils.remove_columns(data, self._cat_col_index, source='ISI DSBox Data Unary Encoder')
+        data_else = utils.remove_columns(data, self._cat_col_index)
         result = utils.horizontal_concat(data_else, encoded)
 
         return CallResult(result, True, 1)

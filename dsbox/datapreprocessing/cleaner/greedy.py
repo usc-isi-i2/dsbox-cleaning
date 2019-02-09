@@ -434,7 +434,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
         from sklearn.model_selection import train_test_split  # type: ignore
         try:
             X_train, X_test, y_train, y_test = train_test_split(data_clean, label, test_size=0.4, random_state=0, stratify=label)
-        except:
+        except Exception:
             if self._verbose:
                 print("cannot stratified sample, try random sample: ")
             X_train, X_test, y_train, y_test = train_test_split(data_clean, label, test_size=0.4, random_state=42)

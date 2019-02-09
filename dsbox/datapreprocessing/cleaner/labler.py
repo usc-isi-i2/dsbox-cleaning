@@ -1,4 +1,6 @@
+import logging
 import pandas as pd
+from collections import defaultdict
 from typing import List, Dict
 
 from d3m import container
@@ -12,9 +14,9 @@ from d3m.metadata import hyperparams, params
 from d3m.container import DataFrame as d3m_DataFrame
 from d3m.primitive_interfaces.base import CallResult
 from sklearn.preprocessing import LabelEncoder
-from collections import defaultdict
 
 __all__ = ('Labler',)
+_logger = logging.getLogger(__name__)
 
 Inputs = container.DataFrame
 Outputs = container.DataFrame
@@ -74,7 +76,7 @@ class Labler(UnsupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHyp
             "contact": config.D3M_CONTACT,
             "uris": [config.REPOSITORY]
         },
-        "keywords": ["NORMALIZATION", "Labler"],
+        "keywords": ["NORMALIZATION", "Labeler"],
         "installation": [config.INSTALLATION],
         "precondition": ["NO_MISSING_VALUES", "CATEGORICAL_VALUES"],
 
@@ -108,7 +110,7 @@ class Labler(UnsupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHyp
             )
 
         self._s_cols = container.List(set(all_attributes).intersection(categorical_attributes))
-        print("[INFO] %d of categorical attributes found." % (len(self._s_cols)))
+        _logger.debug("%d of categorical attributes found." % (len(self._s_cols)))
 
         if len(self._s_cols) > 0:
             temp_model = defaultdict(LabelEncoder)
@@ -148,7 +150,7 @@ class Labler(UnsupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHyp
         drop_names = set(outputs.columns[self._s_cols]).difference(set(self._model.keys()))
         drop_indices = map(lambda a: outputs.columns.get_loc(a), drop_names)
         drop_indices = sorted(drop_indices)
-        outputs = common_utils.remove_columns(outputs, drop_indices, source='ISI DSBox Data Labler')
+        outputs = common_utils.remove_columns(outputs, drop_indices)
 
         # sanity check and report the results
         if outputs.shape[0] == inputs.shape[0] and \
@@ -198,8 +200,8 @@ class Labler(UnsupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHyp
             return Params(s_cols=self._s_cols, labler_dict=labeler_dict)
         else:
             return Params({
-                's_cols':[],
-                'labler_dict':{}
+                's_cols': [],
+                'labler_dict': {}
                 })
 
     def set_params(self, *, params: Params) -> None:

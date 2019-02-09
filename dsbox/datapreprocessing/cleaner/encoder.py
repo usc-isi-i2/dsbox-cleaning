@@ -79,7 +79,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
         "description": "Encode data, such as one-hot encoding for categorical data",
         "python_path": "d3m.primitives.data_preprocessing.Encoder.DSBOX",
         "primitive_family": "DATA_PREPROCESSING",
-        "algorithm_types": ["ENCODE_ONE_HOT"],  # !!!! Need to submit algorithm type "Imputation"
+        "algorithm_types": ["ENCODE_ONE_HOT"],
         "source": {
             "name": config.D3M_PERFORMER_TEAM,
             "contact": config.D3M_CONTACT,
@@ -136,20 +136,25 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
         numeric = utils.list_columns_with_semantic_types(
             data.metadata, ['http://schema.org/Integer', 'http://schema.org/Float'])
         numeric = [x for x in numeric if x in all_attributes]
+
+        self._empty_columns = []
+        _logger.debug(f'Numeric columns: {numeric}')
         for element in numeric:
             if data.metadata.query((mbase.ALL_ELEMENTS, element)).get('structural_type', ()) == str:
                 if pd.isnull(pd.to_numeric(data.iloc[:, element])).sum() == data.shape[0]:
+                    _logger.debug(f'Empty numeric str column: {element}')
                     self._empty_columns.append(element)
 
         # Remove columns with all empty values, structural numeric
         is_empty = pd.isnull(data).sum(axis=0) == data.shape[0]
         for i in all_attributes:
-            if is_empty.iloc[i]:
+            if is_empty.iloc[i] and i not in self._empty_columns:
+                _logger.debug(f'Empty numeric str column: {element}')
                 self._empty_columns.append(i)
 
         _logger.debug('Removing entirely empty columns: {}'.format(data.columns[self._empty_columns]))
 
-        data = utils.remove_columns(data, self._empty_columns, source='ISI DSBox Data Encoder')
+        data = utils.remove_columns(data, self._empty_columns)
 
         categorical_attributes = utils.list_columns_with_semantic_types(metadata=data.metadata,
                                                                         semantic_types=[
@@ -185,8 +190,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
 
         # Remove columns with all empty values
         _logger.debug('Removing entirely empty columns: {}'.format(self._input_data_copy.columns[self._empty_columns]))
-        self._input_data_copy = utils.remove_columns(self._input_data_copy, self._empty_columns,
-                                                     source='ISI DSBox Data Encoder')
+        self._input_data_copy = utils.remove_columns(self._input_data_copy, self._empty_columns)
 
         # Return if there is nothing to encode
         if len(self._cat_columns) == 0:
@@ -224,8 +228,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
 
         all_categorical = False
         try:
-            self._input_data_copy = utils.remove_columns(self._input_data_copy, drop_indices,
-                                                         source='ISI DSBox Data Encoder')
+            self._input_data_copy = utils.remove_columns(self._input_data_copy, drop_indices)
         except ValueError:
             _logger.warning("[warn] All the attributes are categorical!")
             all_categorical = True
