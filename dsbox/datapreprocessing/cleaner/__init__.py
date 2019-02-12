@@ -6,8 +6,8 @@ from .iterative_regression import IterativeRegressionImputation, IterativeRegres
 from .greedy import GreedyImputation, GreedyHyperparameter
 from .mice import MICE, MiceHyperparameter
 from .knn import KNNImputation, KnnHyperparameter
-from .IQRScaler import IQRScaler,IQRHyperparams
-from .labler import Labler,LablerHyperparams
+from .IQRScaler import IQRScaler, IQRHyperparams
+from .labler import Labler, LablerHyperparams
 from .cleaning_featurizer import CleaningFeaturizer, CleaningFeaturizerHyperparameter
 from .denormalize import Denormalize, DenormalizeHyperparams
 from .data_profile import Profiler, Hyperparams as ProfilerHyperparams
@@ -16,6 +16,7 @@ from .voter import Voter, VoterHyperparameter
 from .datamart_query_from_dataframe import QueryFromDataFrameHyperparams, QueryFromDataframe
 from .datamart_augment import DatamartAugmentationHyperparams, DatamartAugmentation
 from .datamart_join import DatamartJoinHyperparams, DatamartJoin
+from .to_numeric import ToNumeric
 
 
 # __all__ = ['Encoder', 'GreedyImputation', 'IterativeRegressionImputation',
@@ -37,7 +38,8 @@ __all__ = ['Encoder', 'EncHyperparameter',
            'FoldColumns', 'FoldHyperparameter',
            'Voter', 'VoterHyperparameter',
            'QueryFromDataframe', 'DatamartAugmentation',
-           'DatamartJoin'
+           'DatamartJoin',
+           'ToNumeric'
 ]
 
 

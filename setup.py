@@ -56,7 +56,8 @@ setup(name='dsbox-datacleaning',
               'data_preprocessing.HorizontalConcat.DSBOX = dsbox.datapostprocessing:HorizontalConcat',
               'data_augmentation.Augmentation.DSBOX = dsbox.datapreprocessing.cleaner:DatamartAugmentation',
               'data_augmentation.QueryDataframe.DSBOX = dsbox.datapreprocessing.cleaner:QueryFromDataframe',
-              'data_augmentation.Join.DSBOX = dsbox.datapreprocessing.cleaner:DatamartJoin'
+              'data_augmentation.Join.DSBOX = dsbox.datapreprocessing.cleaner:DatamartJoin',
+              'data_transformation.to_numeric.DSBOX = dsbox.datapreprocessing.cleaner:ToNumeric'
           ],
       },
       cmdclass={
