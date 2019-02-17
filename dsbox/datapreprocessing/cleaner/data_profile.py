@@ -433,25 +433,27 @@ class Profiler(TransformerPrimitiveBase[Input, Output, Hyperparams]):
             # dict: map feature name to content
             each_res = defaultdict(lambda: defaultdict())
 
-            # if block updated on 6/26
+            # 17 Feb 2019: Disabling automatic detection of category data. This dangerous
+            # because the data profiler may gave different labels on different partitons
+            # of the same dataset. Testing partitions are smaller, so they tend to get
+            # labelled categorical.
 
-            # old_metadata = dict(data.metadata.query((mbase.ALL_ELEMENTS, column_counter))),
-
-            if 'semantic_types' in self._specified_features and is_category[column_name]:
-                # rewrites old metadata
-                old_metadata = dict(data.metadata.query((mbase.ALL_ELEMENTS, column_counter)))
-                temp_value = list(old_metadata["semantic_types"])
-                if len(temp_value) == 2:
-                    ##print("$$$$$$", ('https://metadata.datadrivendiscovery.org/types/CategoricalData', temp_value[1]))
-                    each_res["semantic_types"] = (
-                        'https://metadata.datadrivendiscovery.org/types/CategoricalData', temp_value[-1])
-                elif len(temp_value) == 1:
-                    each_res["semantic_types"] = (
-                        'https://metadata.datadrivendiscovery.org/types/CategoricalData', temp_value[-1])
-                elif len(temp_value) == 3:
-                    each_res["semantic_types"] = (
-                        'https://metadata.datadrivendiscovery.org/types/CategoricalData', temp_value[-2],
-                        temp_value[-1])
+            # if 'semantic_types' in self._specified_features and is_category[column_name]:
+            #     # rewrites old metadata
+            #     old_metadata = dict(data.metadata.query((mbase.ALL_ELEMENTS, column_counter)))
+            #     temp_value = list(old_metadata["semantic_types"])
+            #     if len(temp_value) == 2:
+            #         ##print("$$$$$$", ('https://metadata.datadrivendiscovery.org/types/CategoricalData', temp_value[1]))
+            #         each_res["semantic_types"] = (
+            #             'https://metadata.datadrivendiscovery.org/types/CategoricalData', temp_value[-1])
+            #     elif len(temp_value) == 1:
+            #         each_res["semantic_types"] = (
+            #             'https://metadata.datadrivendiscovery.org/types/CategoricalData', temp_value[-1])
+            #     elif len(temp_value) == 3:
+            #         each_res["semantic_types"] = (
+            #             'https://metadata.datadrivendiscovery.org/types/CategoricalData', temp_value[-2],
+            #             temp_value[-1])
+            #     _logger.info(f'Category type detected "{column_name}": old={temp_value} new={each_res["semantic_types"]}')
 
             if (("spearman_correlation_of_features" in self._specified_features) and
                     (column_name in corr_columns)):
