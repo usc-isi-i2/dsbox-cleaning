@@ -3,7 +3,7 @@ import pandas as pd
 from collections import defaultdict
 from typing import List, Dict
 
-from d3m import container
+from d3m import container, exceptions
 import d3m.metadata.base as mbase
 from . import config
 # from d3m.primitive_interfaces.featurization import FeaturizationLearnerPrimitiveBase
@@ -114,17 +114,19 @@ class Labler(UnsupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHyp
 
         if len(self._s_cols) > 0:
             temp_model = defaultdict(LabelEncoder)
-            self._training_data.iloc[:,self._s_cols].apply(lambda x: temp_model[x.name].fit(x))
+            self._training_data.iloc[:, self._s_cols].apply(lambda x: temp_model[x.name].fit(x))
             self._model = dict(temp_model)
             self._fitted = True
-        else:
-            self._fitted = False
 
         return CallResult(None, has_finished=True)
 
     def produce(self, *, inputs: Inputs, timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
         if not self._fitted:
-            return CallResult(inputs, self._has_finished, self._iterations_done)
+            raise exceptions.PrimitiveNotFittedError('Labeller not fitted')
+
+        if len(self._s_cols) == 0:
+            # No categorical columns. Nothing to do.
+            return CallResult(inputs, True)
 
         assert isinstance(self._model, dict), "self._model type must be dict not defaultdict!"
 
