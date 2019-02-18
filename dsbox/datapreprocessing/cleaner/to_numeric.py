@@ -89,7 +89,7 @@ class ToNumeric(transformer.TransformerPrimitiveBase[Inputs, Outputs, Hyperparam
     def produce(self, *, inputs: Inputs, timeout: float = None, iterations: int = None) -> base.CallResult[Outputs]:
         columns_to_use = self._get_columns(inputs.metadata, self.hyperparams)
         _logger.debug(f'converting columns: {columns_to_use}')
-        _logger.debug(f'converting columns: {inputs.iloc[columns_to_use].columns}')
+        _logger.debug(f'converting columns: {inputs.iloc[:, columns_to_use].columns}')
         output = inputs.copy()
         for col in columns_to_use:
             output.iloc[:, col] = pd.to_numeric(output.iloc[:, col])
