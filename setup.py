@@ -5,6 +5,7 @@ from setuptools.command.install import install
 class PostInstallCommand(install):
     """Post-installation for installation mode."""
     def run(self):
+        # This is used so that it will pass d3m metadata submission process. The dsbox-featurizer package depends on
         import subprocess
         result = subprocess.check_output(['pip', 'list'])
         lines = str(result).split('\\n')
@@ -18,7 +19,7 @@ class PostInstallCommand(install):
 
 
 setup(name='dsbox-datacleaning',
-      version='1.4.2',
+      version='1.4.3',
       description='DSBox data processing tools for cleaning data',
       author='USC ISI',
       url='https://github.com/usc-isi-i2/dsbox-cleaning.git',
