@@ -1,7 +1,7 @@
 import os
 from d3m import utils
 
-D3M_API_VERSION = '2019.2.12'
+D3M_API_VERSION = '2019.2.18'
 VERSION = "1.4.4"
 TAG_NAME = "{git_commit}".format(git_commit=utils.current_git_commit(os.path.dirname(__file__)), )
 
