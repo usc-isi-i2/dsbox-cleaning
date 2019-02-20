@@ -37,7 +37,7 @@ PRIMITIVES = [(p, cleaner_config) for p in [
     'data_augmentation.Augmentation.DSBOX',
     'data_augmentation.QueryDataframe.DSBOX',
     'data_augmentation.Join.DSBOX',
-    'data_transformation.to_numeric.DSBOX'
+    'data_transformation.ToNumeric.DSBOX'
 ]
 ]
 
