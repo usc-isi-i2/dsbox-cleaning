@@ -1,19 +1,17 @@
 import logging
-import pandas as pd
-from collections import defaultdict
 from typing import List, Dict
 
 from d3m import container, exceptions
 import d3m.metadata.base as mbase
-from . import config
 # from d3m.primitive_interfaces.featurization import FeaturizationLearnerPrimitiveBase
 # changed class to fit in devel branch of d3m (2019-1-17)
 from d3m.primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 import common_primitives.utils as common_utils
 from d3m.metadata import hyperparams, params
-from d3m.container import DataFrame as d3m_DataFrame
 from d3m.primitive_interfaces.base import CallResult
-from sklearn.preprocessing import LabelEncoder
+
+
+from . import config
 
 __all__ = ('Labler',)
 _logger = logging.getLogger(__name__)
@@ -23,8 +21,9 @@ Outputs = container.DataFrame
 
 
 class Params(params.Params):
-    labler_dict: Dict
+    model: Dict
     s_cols: List[object]
+    fitted: bool
 
 
 class LablerHyperparams(hyperparams.Hyperparams):
@@ -60,7 +59,8 @@ class LablerHyperparams(hyperparams.Hyperparams):
 
 class Labler(UnsupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHyperparams]):
     """
-        A primitive which scales all the Integer & Float variables in the Dataframe.
+    A primitive which encode all categorical values into integers. This primitive can
+    handle values not seen during training.
     """
     __author__ = 'USC ISI'
     metadata = hyperparams.base.PrimitiveMetadata({
@@ -87,10 +87,9 @@ class Labler(UnsupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHyp
         self.hyperparams = hyperparams
         self._training_data = None
         self._fitted = False
-        self._s_cols = None
-        self._model = {}
+        self._s_cols: List = []
+        self._model: Dict = {}
         self._has_finished = False
-        self._iterations_done = False
 
     def set_training_data(self, *, inputs: Inputs) -> None:
         self._training_data = inputs
@@ -113,30 +112,36 @@ class Labler(UnsupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHyp
         _logger.debug("%d of categorical attributes found." % (len(self._s_cols)))
 
         if len(self._s_cols) > 0:
-            temp_model = defaultdict(LabelEncoder)
-            self._training_data.iloc[:, self._s_cols].apply(lambda x: temp_model[x.name].fit(x))
-            self._model = dict(temp_model)
+            # temp_model = defaultdict(LabelEncoder)
+            # self._training_data.iloc[:, self._s_cols].apply(lambda x: temp_model[x.name].fit(x))
+            # self._model = dict(temp_model)
+            self._model = {}
+            for col_index in self._s_cols:
+                self._model[col_index] = self._training_data.iloc[:, col_index].dropna().unique()
             self._fitted = True
 
         return CallResult(None, has_finished=True)
 
     def produce(self, *, inputs: Inputs, timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
         if not self._fitted:
-            raise exceptions.PrimitiveNotFittedError('Labeller not fitted')
+            raise exceptions.PrimitiveNotFittedError('Labeler not fitted')
 
         if len(self._s_cols) == 0:
             # No categorical columns. Nothing to do.
             return CallResult(inputs, True)
 
-        assert isinstance(self._model, dict), "self._model type must be dict not defaultdict!"
+        # Generate label encoding
+        columns = []
+        for col_index in self._s_cols:
+            size = self._model[col_index].size
+            mapping = {x: i for i, x in enumerate(self._model[col_index])}
+            columns.append(inputs.iloc[:, col_index].apply(lambda x: mapping[x] if x in mapping else size))
 
-        temp = pd.DataFrame(inputs.iloc[:, self._s_cols].apply(
-            lambda x: self._model[x.name].transform(x) if x.name in self._model else None
-        ))
-
+        # insert encoded columns
         outputs = inputs.copy()
-        for id_index, od_index in zip(self._s_cols, range(temp.shape[1])):
-            outputs.iloc[:, id_index] = temp.iloc[:, od_index]
+        for col, index in enumerate(self._s_cols):
+            outputs.iloc[:, index] = columns[col]
+
         lookup = {
             "int": ('http://schema.org/Integer',
                     'https://metadata.datadrivendiscovery.org/types/Attribute')
@@ -148,21 +153,24 @@ class Labler(UnsupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHyp
             old_metadata["structural_type"] = type(10)
             outputs.metadata = outputs.metadata.update((mbase.ALL_ELEMENTS, index), old_metadata)
 
-        # remove the columns that appeared in produce method but were not in fitted data
-        drop_names = set(outputs.columns[self._s_cols]).difference(set(self._model.keys()))
-        drop_indices = map(lambda a: outputs.columns.get_loc(a), drop_names)
-        drop_indices = sorted(drop_indices)
-        outputs = common_utils.remove_columns(outputs, drop_indices)
+        self._has_finished = True
+        return CallResult(outputs, self._has_finished)
 
-        # sanity check and report the results
-        if outputs.shape[0] == inputs.shape[0] and \
-           outputs.shape[1] == inputs.shape[1] - len(drop_names):
-            self._has_finished = True
-            self._iterations_done = True
-            # print("output:",outputs.head(5))
-            return CallResult(d3m_DataFrame(outputs), self._has_finished, self._iterations_done)
-        else:
-            return CallResult(inputs, self._has_finished, self._iterations_done)
+        # remove the columns that appeared in produce method but were not in fitted data
+        # drop_names = set(outputs.columns[self._s_cols]).difference(set(self._model.keys()))
+        # drop_indices = map(lambda a: outputs.columns.get_loc(a), drop_names)
+        # drop_indices = sorted(drop_indices)
+        # outputs = common_utils.remove_columns(outputs, drop_indices)
+
+        # # sanity check and report the results
+        # if outputs.shape[0] == inputs.shape[0] and \
+        #    outputs.shape[1] == inputs.shape[1] - len(drop_names):
+        #     self._has_finished = True
+        #     self._iterations_done = True
+        #     # print("output:",outputs.head(5))
+        #     return CallResult(d3m_DataFrame(outputs), self._has_finished, self._iterations_done)
+        # else:
+        #     return CallResult(inputs, self._has_finished, self._iterations_done)
 
     @classmethod
     def _get_columns_to_fit(cls, inputs: Inputs, hyperparams: LablerHyperparams):
@@ -193,28 +201,9 @@ class Labler(UnsupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHyp
         return False
 
     def get_params(self) -> Params:
-        labeler_dict = {}
-        if self._model:
-            # extract the dictionary of the models
-            for each_key, each_value in self._model.items():
-                labeler_dict[each_key] = each_value.classes_
-            # return parameters
-            return Params(s_cols=self._s_cols, labler_dict=labeler_dict)
-        else:
-            return Params({
-                's_cols': [],
-                'labler_dict': {}
-                })
+        return Params(model=self._model, s_cols=self._s_cols, fitted=self._fitted)
 
     def set_params(self, *, params: Params) -> None:
         self._s_cols = params['s_cols']
-        if params['labler_dict']:
-            self._model = {}
-            # defaultdict(LabelEncoder)
-            for each_key, each_value in params['labler_dict'].items():
-                each_encoder = LabelEncoder()
-                each_encoder.classes_ = each_value
-                self._model[each_key] = each_encoder
-            self._fitted = True
-        else:
-            self._fitted = False
+        self._model = params['model']
+        self._fitted = params['fitted']

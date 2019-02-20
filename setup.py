@@ -19,7 +19,7 @@ class PostInstallCommand(install):
 
 
 setup(name='dsbox-datacleaning',
-      version='1.4.3',
+      version='1.4.4',
       description='DSBox data processing tools for cleaning data',
       author='USC ISI',
       url='https://github.com/usc-isi-i2/dsbox-cleaning.git',
