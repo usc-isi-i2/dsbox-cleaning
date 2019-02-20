@@ -65,6 +65,7 @@ class ToNumeric(transformer.TransformerPrimitiveBase[Inputs, Outputs, Hyperparam
                 metadata_base.PrimitiveAlgorithmType.DATA_CONVERSION,
             ],
             'primitive_family': metadata_base.PrimitiveFamily.DATA_TRANSFORMATION,
+            "installation": [config.INSTALLATION],
         },
     )
 
