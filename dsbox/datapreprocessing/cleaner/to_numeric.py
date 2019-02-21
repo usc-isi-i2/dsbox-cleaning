@@ -55,7 +55,7 @@ class ToNumeric(transformer.TransformerPrimitiveBase[Inputs, Outputs, Hyperparam
             'version': config.VERSION,
             'name': 'ISI DSBox To Numeric DataFrame',
             'desription': 'Convert to purely numeric DataFrame',
-            'python_path': 'd3m.primitives.data_transformation.to_numeric.DSBOX',
+            'python_path': 'd3m.primitives.data_transformation.ToNumeric.DSBOX',
             'source': {
                 'name': config.D3M_PERFORMER_TEAM,
                 'contact': config.D3M_CONTACT,
