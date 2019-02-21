@@ -175,7 +175,6 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
         # setup the timeout
         with stopit.ThreadingTimeout(timeout) as to_ctx_mrg:
             assert to_ctx_mrg.state == to_ctx_mrg.EXECUTING
-
             if isinstance(self._train_x, pd.DataFrame):
                 data = self._train_x.copy()
                 label = self._train_y.copy()
@@ -231,8 +230,12 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
 
         if (timeout is None):
             timeout = 2**31 - 1
-
         data = inputs.copy()
+        d3mIndex = None
+        if "d3mIndex" in data:
+            d3mIndex = data["d3mIndex"]
+            data = data.drop(["d3mIndex"], axis=1)
+
 
         # record keys:
         keys = data.keys()
@@ -254,7 +257,19 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
             self._iterations_done = True
             value = pd.DataFrame(data_clean, index, keys)
             value = container.DataFrame(value)
-            value.metadata = data.metadata
+            start_index = 0
+            if d3mIndex is not None:
+                start_index = 1
+                value = container.DataFrame(pd.concat([pd.DataFrame(d3mIndex, columns=["d3mIndex"]), value], axis=1))
+                index_metadata_selector = (mbase.ALL_ELEMENTS, 0)
+                index_metadata = {'semantic_types': ('https://metadata.datadrivendiscovery.org/types/TabularColumn', 'https://metadata.datadrivendiscovery.org/types/PrimaryKey')}
+                value.metadata = value.metadata.update(metadata=index_metadata, selector=index_metadata_selector)
+            for each_column in range(start_index, value.shape[1]):
+                metadata_selector = (mbase.ALL_ELEMENTS, each_column)
+                metadata_each_column = {'semantic_types': ('https://metadata.datadrivendiscovery.org/types/TabularColumn', 'https://metadata.datadrivendiscovery.org/types/Attribute')}
+                value.metadata = value.metadata.update(metadata=metadata_each_column, selector=metadata_selector)
+
+
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
             print("Timed Out...")
             self._is_fitted = False
@@ -327,6 +342,8 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
             data.metadata, ['https://metadata.datadrivendiscovery.org/types/Attribute'])
         numeric = utils.list_columns_with_semantic_types(
             data.metadata, ['http://schema.org/Integer', 'http://schema.org/Float'])
+        d3m_index = utils.list_columns_with_semantic_types(
+            data.metadata, ['https://metadata.datadrivendiscovery.org/types/PrimaryKey'])
         numeric = [x for x in numeric if x in attribute]
 
         col_names = data.keys()
@@ -440,7 +457,6 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
             X_train, X_test, y_train, y_test = train_test_split(data_clean, label, test_size=0.4, random_state=42)
 
         # remove the nan rows
-
         mask_train = np.isnan(X_train).any(axis=1)  # nan rows index
         mask_test = np.isnan(X_test).any(axis=1)
         num_removed_test = sum(mask_test)
