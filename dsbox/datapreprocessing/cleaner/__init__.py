@@ -17,7 +17,7 @@ from .datamart_query_from_dataframe import QueryFromDataFrameHyperparams, QueryF
 from .datamart_augment import DatamartAugmentationHyperparams, DatamartAugmentation
 from .datamart_join import DatamartJoinHyperparams, DatamartJoin
 from .to_numeric import ToNumeric
-
+from .splitter import Splitter, SplitterHyperparameter
 
 # __all__ = ['Encoder', 'GreedyImputation', 'IterativeRegressionImputation',
 # 			'MICE', 'KNNImputation', 'MeanImputation', 'KnnHyperparameter',
@@ -37,6 +37,7 @@ __all__ = ['Encoder', 'EncHyperparameter',
            'Profiler', 'ProfilerHyperparams',
            'FoldColumns', 'FoldHyperparameter',
            'Voter', 'VoterHyperparameter',
+           'Splitter','SplitterHyperparameter',
            'QueryFromDataframe', 'DatamartAugmentation',
            'DatamartJoin',
            'ToNumeric'
