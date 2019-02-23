@@ -24,11 +24,12 @@ class Status(enum.Enum):
     TEST = 2
 
 class Params(params.Params):
-    status: int
+    status: Status
     need_reduce_rows: bool
     need_reduce_columns: bool
+    main_resource_id: str
     columns_remained: typing.List[object]
-    rows_remained: typing.List[object]
+    rows_remained: typing.Dict
 
 class SplitterHyperparameter(hyperparams.Hyperparams):
     threshold_columns_length = hyperparams.UniformInt(
@@ -117,10 +118,13 @@ class Splitter(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, SplitterH
         self._further_reduce_threshold_columnes_length = self.hyperparams['further_reduce_threshold_columnes_length']
         self._further_reduce_ratio = self.hyperparams['further_reduce_ratio']
 
+        self._columns_remained = []
+        self._rows_remained = {}
         self._status = Status.UNFIT
-        self._main_resource_id = None
+        self._main_resource_id = ""
         self._need_reduce_columns = False
         self._need_reduce_rows = False
+
         self._training_inputs = None
         self._fitted = False
 
@@ -132,7 +136,6 @@ class Splitter(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, SplitterH
                        need_reduce_columns = self._need_reduce_columns,
                        columns_remained = self._columns_remained,
                        rows_remained = self._rows_remained,
-                       index_removed_percent = self._index_removed_percent,
                        main_resource_id = self._main_resource_id
                       )
         return param
@@ -143,7 +146,6 @@ class Splitter(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, SplitterH
         self._need_reduce_rows = params['need_reduce_rows']
         self._columns_remained = params['columns_remained']
         self._rows_remained = params['rows_remained']
-        self._index_removed_percent = params['index_removed_percent']
         self._main_resource_id = params['main_resource_id']
         self._fitted = True
 
@@ -159,7 +161,7 @@ class Splitter(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, SplitterH
         f the size is larger than threshold, the primitive will record and generate 
         a list of columns/ rows that need to be remained.
         """
-        if self._fitted or self._status is not Status.UNFIT:
+        if self._fitted:
             return
 
         if self._training_inputs is None:
@@ -204,7 +206,10 @@ class Splitter(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, SplitterH
 
         # Return if there is nothing to split
         if not self._need_reduce_rows and not self._need_reduce_columns:
+            print("No reduce need.")
             return CallResult(inputs, True, 1)
+        else:
+            print("reduce needed.")
 
         results = copy.copy(inputs)
         if self._status is Status.TEST:
@@ -241,9 +246,8 @@ class Splitter(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, SplitterH
         row_indices_to_keep_sets[self._main_resource_id] = set(sample_indices)
 
         # We sort indices to get deterministic outputs from sets (which do not have deterministic order).
-        row_indices_to_keep = {resource_id: sorted(indices) for resource_id, indices in row_indices_to_keep_sets.items()}
-
-        output_dataset = utils.cut_dataset(input_dataset, row_indices_to_keep)
+        self._rows_remained = {resource_id: sorted(indices) for resource_id, indices in row_indices_to_keep_sets.items()}
+        output_dataset = utils.cut_dataset(input_dataset, self._rows_remained)
 
         return output_dataset
 
@@ -260,26 +264,29 @@ class Splitter(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, SplitterH
         if not index_columns:
             self._logger.warn("No index columns found from the input dataset.")
 
-        # check again on the amount of the attributes columns only
-        # we only need to sample when attribute column numbers are larger than threshould
-        attribute_column_length = (input_dataset_shape[1] - len(index_columns) - len(target_columns))
-        if attribute_column_length > self._threshold_columns_length:
-            attribute_columns = set(range(input_dataset_shape[1]))
-            for each_target_column in target_columns:
-                attribute_columns.remove(each_target_column)
-            for each_index_column in index_columns:
-                attribute_columns.remove(each_index_column)
+        outputs = copy.copy(inputs)
+        if self._status is Status.TRAIN:
+            # check again on the amount of the attributes columns only
+            # we only need to sample when attribute column numbers are larger than threshould
+            attribute_column_length = (input_dataset_shape[1] - len(index_columns) - len(target_columns))
+            if attribute_column_length > self._threshold_columns_length:
+                attribute_columns = set(range(input_dataset_shape[1]))
+                for each_target_column in target_columns:
+                    attribute_columns.remove(each_target_column)
+                for each_index_column in index_columns:
+                    attribute_columns.remove(each_index_column)
 
-            # generate the remained column index randomly and sort it
-            remained_columns = random.sample(attribute_columns, self._threshold_columns_length)
-            remained_columns.extend(target_columns)
-            remained_columns.extend(index_columns)
-            remained_columns.sort()
+                # generate the remained column index randomly and sort it
+                self._columns_remained = random.sample(attribute_columns, self._threshold_columns_length)
+                self._columns_remained.extend(target_columns)
+                self._columns_remained.extend(index_columns)
+                self._columns_remained.sort()
             # use common primitive's RemoveColumnsPrimitive inner function to finish sampling
-            outputs = copy.copy(inputs)
+
+        if len(self._columns_remained) > 0: 
             # Just to make sure.
             outputs.metadata = inputs.metadata.set_for_value(outputs, generate_metadata=False)
-            outputs[self._main_resource_id] = inputs[self._main_resource_id].iloc[:, remained_columns]
-            outputs.metadata = RemoveColumnsPrimitive._select_columns_metadata(outputs.metadata, self._main_resource_id, remained_columns)
+            outputs[self._main_resource_id] = inputs[self._main_resource_id].iloc[:, self._columns_remained]
+            outputs.metadata = RemoveColumnsPrimitive._select_columns_metadata(outputs.metadata, self._main_resource_id, self._columns_remained)
 
         return outputs
