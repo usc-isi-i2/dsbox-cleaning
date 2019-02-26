@@ -59,7 +59,7 @@ class SplitterHyperparameter(hyperparams.Hyperparams):
     further_reduce_ratio = hyperparams.Uniform(
         lower=0,
         upper=1,
-        default=0.7,
+        default=0.5,
         upper_inclusive = True,
         description='The ratio to further reduce the threshold_row_length value for the condition that both the amount of column and row are very large',
         semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter']
@@ -175,7 +175,7 @@ class Splitter(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, SplitterH
             self._need_reduce_row = True
             if main_res_shape[1] > self._further_reduce_threshold_column_length:
                 self._threshold_row_length = self._threshold_row_length * self._further_reduce_ratio
-            self._logger.info("This dataset's column number and row number are both oversized, will further reduce the threshold of the row about to be." + str(self._threshold_row_length))
+                self._logger.info("This dataset's column number and row number are both oversized, will further reduce the threshold of the row about to be." + str(self._threshold_row_length))
 
         if main_res_shape[1] > self._threshold_column_length:
             self._need_reduce_column = True
@@ -219,14 +219,19 @@ class Splitter(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, SplitterH
 
         else:
             if self._need_reduce_row:
+                self._logger.info("Now sampling rows.") 
                 results = self._split_row(results)
+                self._logger.info("Sampling rows finished.") 
             if self._need_reduce_column:
+                self._logger.info("Now sampling columns.") 
                 results = self._split_column(results)
+                self._logger.info("Sampling columns finished.") 
             # if it is first time to run produce here, we should in train status
             # so we need to let the program know that for next time, we will in test process
             if self._status is Status.TRAIN:
                 self._status = Status.TEST
 
+        self._logger.info("After sampling, the dataset's main resource shape is:",results[self._main_resource_id].shape)
         return CallResult(results, True, 1)
 
     def _split_row(self, input_dataset):
