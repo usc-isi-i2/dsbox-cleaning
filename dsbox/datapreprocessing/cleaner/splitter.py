@@ -8,7 +8,7 @@ import random
 import itertools
 
 from d3m.container import Dataset
-from common_primitives.dataset_remove_columns import RemoveColumnsPrimitive # _select_columns_metadata
+from common_primitives.dataset_remove_columns import RemoveColumnsPrimitive # _select_column_metadata
 from d3m.primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 from d3m.primitive_interfaces.base import CallResult
 from d3m.metadata import hyperparams, params, base as metadata_base
@@ -25,59 +25,59 @@ class Status(enum.Enum):
 
 class Params(params.Params):
     status: Status
-    need_reduce_rows: bool
-    need_reduce_columns: bool
+    need_reduce_row: bool
+    need_reduce_column: bool
     main_resource_id: str
-    columns_remained: typing.List[object]
-    rows_remained: typing.Dict
+    column_remained: typing.List[object]
+    row_remained: typing.Dict
 
 class SplitterHyperparameter(hyperparams.Hyperparams):
-    threshold_columns_length = hyperparams.UniformInt(
+    threshold_column_length = hyperparams.UniformInt(
         lower=1,
         upper=sys.maxsize,
         default=300,
-        description='The threshold value of amount of columns in a dataframe, if the value is larger, it will be splitted (sampled).',
+        description='The threshold value of amount of column in a dataframe, if the value is larger, it will be splitted (sampled).',
         semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter']
     )
 
-    threshold_rows_length = hyperparams.UniformInt(
+    threshold_row_length = hyperparams.UniformInt(
         lower=1,
         upper=sys.maxsize,
         default=100000,
-        description='The threshold value of amount of rows in a dataframe, if the value is larger, it will be splitted (sampled).',
+        description='The threshold value of amount of row in a dataframe, if the value is larger, it will be splitted (sampled).',
         semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter']
     )
 
-    further_reduce_threshold_columnes_length = hyperparams.UniformInt(
+    further_reduce_threshold_column_length = hyperparams.UniformInt(
         lower=1,
         upper=sys.maxsize,
-        default=20,
-        description='The threshold of columns amount to further reduce the threshold_rows_length value for the condition that both the amount of columns and rows are very large',
+        default=200,
+        description='The threshold of column amount to further reduce the threshold_row_length value for the condition that both the amount of column and row are very large',
         semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter']
     )
 
     further_reduce_ratio = hyperparams.Uniform(
         lower=0,
         upper=1,
-        default=0.3,
+        default=0.7,
         upper_inclusive = True,
-        description='The ratio to further reduce the threshold_rows_length value for the condition that both the amount of columns and rows are very large',
+        description='The ratio to further reduce the threshold_row_length value for the condition that both the amount of column and row are very large',
         semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter']
     )
 
-    random_seed_val = hyperparams.UniformInt(
-        lower=0,
-        upper=sys.maxsize,
-        default=4676,
-        description='The random seed for generating the sampling results, set up for consistent results.',
-        semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter']
-    )
+    # random_seed_val = hyperparams.UniformInt(
+    #     lower=0,
+    #     upper=sys.maxsize,
+    #     default=4676,
+    #     description='The random seed for generating the sampling results, set up for consistent results.',
+    #     semantic_types=['https://metadata.datadrivendiscovery.org/types/ControlParameter']
+    # )
 
 class Splitter(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, SplitterHyperparameter]):
     """
     A primitive that could be used before processing the dataset.
     If the size of the dataset(or dataframe) is smaller than threshold, it will do nothing but pass through the original dataset
-    If the size if larger than the threshold, it will reduce the amount of columns or rows or both by splitting the dataset/dataframe.
+    If the size if larger than the threshold, it will reduce the amount of column or row or both by splitting the dataset/dataframe.
     """
     metadata = hyperparams.base.PrimitiveMetadata({
         "id": "DSBox-splitter",
@@ -106,24 +106,25 @@ class Splitter(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, SplitterH
         #"hyperparms_to_tune": []
         })
 
-    def __init__(self, *, hyperparams: SplitterHyperparameter) -> None:
-        super().__init__(hyperparams=hyperparams)
+    def __init__(self, *, hyperparams: SplitterHyperparameter, random_seed: int = 0) -> None:
+        super().__init__(hyperparams=hyperparams, random_seed=random_seed)
 
         self._logger = logging.getLogger(__name__)
         self.hyperparams = hyperparams
         # set up random seed for consistence
-        random.seed(hyperparams['random_seed_val'])
-        self._threshold_columns_length = self.hyperparams['threshold_columns_length']
-        self._threshold_rows_length = self.hyperparams['threshold_rows_length']
-        self._further_reduce_threshold_columnes_length = self.hyperparams['further_reduce_threshold_columnes_length']
+        # random.seed(hyperparams['random_seed_val'])
+        random.seed(random_seed)
+        self._threshold_column_length = self.hyperparams['threshold_column_length']
+        self._threshold_row_length = self.hyperparams['threshold_row_length']
+        self._further_reduce_threshold_column_length = self.hyperparams['further_reduce_threshold_column_length']
         self._further_reduce_ratio = self.hyperparams['further_reduce_ratio']
 
-        self._columns_remained = []
-        self._rows_remained = {}
+        self._column_remained = []
+        self._row_remained = {}
         self._status = Status.UNFIT
         self._main_resource_id = ""
-        self._need_reduce_columns = False
-        self._need_reduce_rows = False
+        self._need_reduce_column = False
+        self._need_reduce_row = False
 
         self._training_inputs = None
         self._fitted = False
@@ -132,20 +133,20 @@ class Splitter(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, SplitterH
     def get_params(self) -> Params:
         param = Params(
                        status = self._status,
-                       need_reduce_rows = self._need_reduce_rows,
-                       need_reduce_columns = self._need_reduce_columns,
-                       columns_remained = self._columns_remained,
-                       rows_remained = self._rows_remained,
+                       need_reduce_row = self._need_reduce_row,
+                       need_reduce_column = self._need_reduce_column,
+                       column_remained = self._column_remained,
+                       row_remained = self._row_remained,
                        main_resource_id = self._main_resource_id
                       )
         return param
 
     def set_params(self, *, params: Params) -> None:
         self._status = params['status']
-        self._need_reduce_columns = params['need_reduce_columns']
-        self._need_reduce_rows = params['need_reduce_rows']
-        self._columns_remained = params['columns_remained']
-        self._rows_remained = params['rows_remained']
+        self._need_reduce_column = params['need_reduce_column']
+        self._need_reduce_row = params['need_reduce_row']
+        self._column_remained = params['column_remained']
+        self._row_remained = params['row_remained']
         self._main_resource_id = params['main_resource_id']
         self._fitted = True
 
@@ -159,7 +160,7 @@ class Splitter(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, SplitterH
         """
         check the shape of the main resource dataset. I
         f the size is larger than threshold, the primitive will record and generate 
-        a list of columns/ rows that need to be remained.
+        a list of column/ row that need to be remained.
         """
         if self._fitted:
             return
@@ -170,21 +171,21 @@ class Splitter(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, SplitterH
         data = self._training_inputs.copy()
         main_res_shape = data[self._main_resource_id].shape
 
-        if main_res_shape[0] > self._threshold_rows_length:
-            self._need_reduce_rows = True
-            if main_res_shape[1] > self._further_reduce_threshold_columnes_length:
-                self._threshold_rows_length = self._threshold_rows_length * self._further_reduce_ratio
-            self._logger.info("This dataset's columns number and rows number are both oversized, will further reduce the threshold of the rows about to be." + str(self._threshold_rows_length))
+        if main_res_shape[0] > self._threshold_row_length:
+            self._need_reduce_row = True
+            if main_res_shape[1] > self._further_reduce_threshold_column_length:
+                self._threshold_row_length = self._threshold_row_length * self._further_reduce_ratio
+            self._logger.info("This dataset's column number and row number are both oversized, will further reduce the threshold of the row about to be." + str(self._threshold_row_length))
 
-        if main_res_shape[1] > self._threshold_columns_length:
-            self._need_reduce_columns = True
+        if main_res_shape[1] > self._threshold_column_length:
+            self._need_reduce_column = True
 
-        if self._need_reduce_columns and self._need_reduce_rows:
-            self._logger.info("This dataset's columns number and rows number are both oversized, will sample both of them.")
-        elif self._need_reduce_columns:
-            self._logger.info("The columns number of the input dataset is very large, will split part of them.")
-        elif self._need_reduce_rows:
-            self._logger.info("The rows number of the input dataset is very large, will split part of them.")
+        if self._need_reduce_column and self._need_reduce_row:
+            self._logger.info("This dataset's column number and row number are both oversized, will sample both of them.")
+        elif self._need_reduce_column:
+            self._logger.info("The column number of the input dataset is very large, will split part of them.")
+        elif self._need_reduce_row:
+            self._logger.info("The row number of the input dataset is very large, will split part of them.")
         else:
             self._logger.info("This dataset's size is OK, no split on dataset needed.")
 
@@ -205,22 +206,22 @@ class Splitter(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, SplitterH
             raise ValueError('Splitter model not fitted. Use fit() first')
 
         # Return if there is nothing to split
-        if not self._need_reduce_rows and not self._need_reduce_columns:
-            print("No reduce need.")
+        if not self._need_reduce_row and not self._need_reduce_column:
+            self._logger.info("No sampling need.")
             return CallResult(inputs, True, 1)
         else:
-            print("reduce needed.")
+            self._logger.info("sampling needed.")
 
         results = copy.copy(inputs)
         if self._status is Status.TEST:
-            self._logger.info("In test process, no split on rows needed") 
+            self._logger.info("In test process, no split on row needed") 
             return CallResult(results, True, 1)
 
         else:
-            if self._need_reduce_rows:
-                results = self._split_rows(results)
-            if self._need_reduce_columns:
-                results = self._split_columns(results)
+            if self._need_reduce_row:
+                results = self._split_row(results)
+            if self._need_reduce_column:
+                results = self._split_column(results)
             # if it is first time to run produce here, we should in train status
             # so we need to let the program know that for next time, we will in test process
             if self._status is Status.TRAIN:
@@ -228,9 +229,9 @@ class Splitter(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, SplitterH
 
         return CallResult(results, True, 1)
 
-    def _split_rows(self, input_dataset):
+    def _split_row(self, input_dataset):
         """
-            Inner function to sample part of the rows of the input dataset
+            Inner function to sample part of the row of the input dataset
             adapted from d3m's common-primitives
 
         Returns
@@ -238,55 +239,55 @@ class Splitter(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, SplitterH
         Dataset
             The sampled Dataset
         """
-        rows_length = input_dataset[self._main_resource_id].shape[0]
-        all_indexes_list = range(1, rows_length)
-        sample_indices = random.sample(all_indexes_list, self._threshold_columns_length)
-        # We store rows as sets, but later on we sort them when we cut DataFrames.
+        row_length = input_dataset[self._main_resource_id].shape[0]
+        all_indexes_list = range(1, row_length)
+        sample_indices = random.sample(all_indexes_list, self._threshold_row_length)
+        # We store row as sets, but later on we sort them when we cut DataFrames.
         row_indices_to_keep_sets: typing.Dict[str, typing.Set[int]] = collections.defaultdict(set)
         row_indices_to_keep_sets[self._main_resource_id] = set(sample_indices)
 
         # We sort indices to get deterministic outputs from sets (which do not have deterministic order).
-        self._rows_remained = {resource_id: sorted(indices) for resource_id, indices in row_indices_to_keep_sets.items()}
-        output_dataset = utils.cut_dataset(input_dataset, self._rows_remained)
+        self._row_remained = {resource_id: sorted(indices) for resource_id, indices in row_indices_to_keep_sets.items()}
+        output_dataset = utils.cut_dataset(input_dataset, self._row_remained)
 
         return output_dataset
 
-    def _split_columns(self, inputs):
+    def _split_column(self, inputs):
         """
-            Inner function to sample part of the columns of the input dataset
+            Inner function to sample part of the column of the input dataset
         """
         input_dataset_shape = inputs[self._main_resource_id].shape
-        # find target columns, we should not split these columns
-        target_columns = utils.list_columns_with_semantic_types(self._training_inputs.metadata, ['https://metadata.datadrivendiscovery.org/types/TrueTarget'], at=(self._main_resource_id,))
-        if not target_columns:
-            self._logger.warn("No target columns found from the input dataset.")
-        index_columns = utils.get_index_columns(self._training_inputs.metadata,at=(self._main_resource_id,))
-        if not index_columns:
-            self._logger.warn("No index columns found from the input dataset.")
+        # find target column, we should not split these column
+        target_column = utils.list_column_with_semantic_types(self._training_inputs.metadata, ['https://metadata.datadrivendiscovery.org/types/TrueTarget'], at=(self._main_resource_id,))
+        if not target_column:
+            self._logger.warn("No target column found from the input dataset.")
+        index_column = utils.get_index_column(self._training_inputs.metadata,at=(self._main_resource_id,))
+        if not index_column:
+            self._logger.warn("No index column found from the input dataset.")
 
         outputs = copy.copy(inputs)
         if self._status is Status.TRAIN:
-            # check again on the amount of the attributes columns only
+            # check again on the amount of the attributes column only
             # we only need to sample when attribute column numbers are larger than threshould
-            attribute_column_length = (input_dataset_shape[1] - len(index_columns) - len(target_columns))
-            if attribute_column_length > self._threshold_columns_length:
-                attribute_columns = set(range(input_dataset_shape[1]))
-                for each_target_column in target_columns:
-                    attribute_columns.remove(each_target_column)
-                for each_index_column in index_columns:
-                    attribute_columns.remove(each_index_column)
+            attribute_column_length = (input_dataset_shape[1] - len(index_column) - len(target_column))
+            if attribute_column_length > self._threshold_column_length:
+                attribute_column = set(range(input_dataset_shape[1]))
+                for each_target_column in target_column:
+                    attribute_column.remove(each_target_column)
+                for each_index_column in index_column:
+                    attribute_column.remove(each_index_column)
 
                 # generate the remained column index randomly and sort it
-                self._columns_remained = random.sample(attribute_columns, self._threshold_columns_length)
-                self._columns_remained.extend(target_columns)
-                self._columns_remained.extend(index_columns)
-                self._columns_remained.sort()
+                self._column_remained = random.sample(attribute_column, self._threshold_column_length)
+                self._column_remained.extend(target_column)
+                self._column_remained.extend(index_column)
+                self._column_remained.sort()
             # use common primitive's RemoveColumnsPrimitive inner function to finish sampling
 
-        if len(self._columns_remained) > 0: 
+        if len(self._column_remained) > 0: 
             # Just to make sure.
             outputs.metadata = inputs.metadata.set_for_value(outputs, generate_metadata=False)
-            outputs[self._main_resource_id] = inputs[self._main_resource_id].iloc[:, self._columns_remained]
-            outputs.metadata = RemoveColumnsPrimitive._select_columns_metadata(outputs.metadata, self._main_resource_id, self._columns_remained)
+            outputs[self._main_resource_id] = inputs[self._main_resource_id].iloc[:, self._column_remained]
+            outputs.metadata = RemoveColumnsPrimitive._select_column_metadata(outputs.metadata, self._main_resource_id, self._column_remained)
 
         return outputs
