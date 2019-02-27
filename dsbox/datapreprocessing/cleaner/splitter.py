@@ -234,7 +234,7 @@ class Splitter(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, SplitterH
                 self._status = Status.TEST
 
         new_dataset_shape = results[self._main_resource_id].shape
-        self._logger.info("The input dataset's main resource shape is: ("+str(new_dataset_shape[0]) + ", "+str(new_dataset_shape[1])+")")
+        self._logger.info("The sampled dataset's main resource shape is: ("+str(new_dataset_shape[0]) + ", "+str(new_dataset_shape[1])+")")
         return CallResult(results, True, 1)
 
     def _split_row(self, input_dataset):
