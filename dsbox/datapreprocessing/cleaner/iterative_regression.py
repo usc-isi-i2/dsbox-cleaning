@@ -179,7 +179,8 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
         if (iterations is None):
             self._iterations_done = True
             iterations = 30
-
+        # import pdb
+        # pdb.set_trace()
         # setup the timeout
         with stopit.ThreadingTimeout(timeout) as to_ctx_mrg:
             assert to_ctx_mrg.state == to_ctx_mrg.EXECUTING
@@ -233,6 +234,7 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
 
         # keys = data.keys()
         # missing_col_id = []
+
         inputs = inputs.iloc[:, numeric].apply(
             lambda col: pd.to_numeric(col, errors='coerce'))
         # data = mvp.df2np(numeric_data, missing_col_id, self._verbose)
