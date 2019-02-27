@@ -48,7 +48,7 @@ class QueryFromDataframe(TransformerPrimitiveBase[Inputs, Outputs, QueryFromData
         "name": "Datamart Query Primitive from dataframe",
         "python_path": "d3m.primitives.data_augmentation.QueryDataframe.DSBOX",
         "primitive_family": "DATA_AUGMENTATION",
-        "description": "Queries datamart for available datasets. The JSON query specification is defined Datamart Query API. The primitive returns a list of dataset metadata.",
+        "description": "Queries datamart for available datasets. The JSON query specification is defined Datamart Query API. The primitive returns a list of ranked dataset metadata.",
         "algorithm_types": ["APPROXIMATE_DATA_AUGMENTATION"],
         "keywords": ["data augmentation", "datamart"],
         "source": {
