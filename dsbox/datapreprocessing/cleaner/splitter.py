@@ -205,6 +205,8 @@ class Splitter(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, SplitterH
         if not self._fitted or self._status is Status.UNFIT:
             raise ValueError('Splitter model not fitted. Use fit() first')
 
+        old_dataset_shape = inputs[self._main_resource_id].shape
+        self._logger.info("The input dataset's main resource shape is: ("+str(old_dataset_shape[0]) + ", "+str(old_dataset_shape[1])+")")
         # Return if there is nothing to split
         if not self._need_reduce_row and not self._need_reduce_column:
             self._logger.info("No sampling need.")
@@ -231,8 +233,8 @@ class Splitter(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, SplitterH
             if self._status is Status.TRAIN:
                 self._status = Status.TEST
 
-        new_dataset_shape = results[self._main_resource_id].shape[0]
-        self._logger.info("After sampling, the dataset's main resource shape is:",str(new_dataset_shape[0]),str(new_dataset_shape[1]))
+        new_dataset_shape = results[self._main_resource_id].shape
+        self._logger.info("The input dataset's main resource shape is: ("+str(new_dataset_shape[0]) + ", "+str(new_dataset_shape[1])+")")
         return CallResult(results, True, 1)
 
     def _split_row(self, input_dataset):
