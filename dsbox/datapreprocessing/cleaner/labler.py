@@ -95,6 +95,7 @@ class Labler(UnsupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHyp
         self._training_data = inputs
 
     def fit(self, *, timeout: float = None, iterations: int = None) -> CallResult[None]:
+        self._fitted = True
         categorical_attributes = common_utils.list_columns_with_semantic_types(
             metadata=self._training_data.metadata,
             semantic_types=[
@@ -118,7 +119,6 @@ class Labler(UnsupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, LablerHyp
             self._model = {}
             for col_index in self._s_cols:
                 self._model[col_index] = self._training_data.iloc[:, col_index].dropna().unique()
-            self._fitted = True
 
         return CallResult(None, has_finished=True)
 
