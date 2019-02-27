@@ -51,6 +51,7 @@ class DatamartAugmentation(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartAu
         "version": config.VERSION,
         "name": "Datamart Augmentation",
         "python_path": "d3m.primitives.data_augmentation.Augmentation.DSBOX",
+        "description": "Join a dataframe with one of a datamart dataset from a list",
         "primitive_family": "DATA_AUGMENTATION",
         "algorithm_types": ["APPROXIMATE_DATA_AUGMENTATION"],  # fix me!
         "keywords": ["data augmentation", "datamart", "join"],

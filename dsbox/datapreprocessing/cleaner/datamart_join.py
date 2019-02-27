@@ -41,10 +41,11 @@ class DatamartJoin(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartJoinHyperp
 
     __author__ = "USC ISI"
     metadata = hyperparams.base.PrimitiveMetadata({
-        "id": "datamart-augmentation",
+        "id": "datamart-join",
         "version": config.VERSION,
         "name": "Datamart Augmentation",
         "python_path": "d3m.primitives.data_augmentation.Join.DSBOX",
+        "description": "Joins two dataframes into one dataframe. The primtive takes two dataframes, left_dataframe and right_dataframe, and two lists specifing the join columns, left_columns and right_columns.",
         "primitive_family": "DATA_AUGMENTATION",
         "algorithm_types": ["APPROXIMATE_DATA_AUGMENTATION"],  # fix me!
         "keywords": ["data augmentation", "datamart", "join"],
