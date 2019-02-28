@@ -1,4 +1,5 @@
 import typing
+import importlib
 
 # importing d3m stuff
 from d3m import exceptions
@@ -10,11 +11,8 @@ from d3m.metadata import hyperparams
 from . import config
 import time
 
-# import datamart stuff
-from datamart import join
-from datamart.joiners.joiner_base import JoinerType
+
 import pandas as pd
-# from datamart.augment import Augment
 
 Inputs = List
 Outputs = DataFrame
@@ -76,17 +74,22 @@ class DatamartJoin(TransformerPrimitiveBase[Inputs, Outputs, DatamartJoinHyperpa
         self._has_finished = False
         self._iteration_done = False
 
+    def _import_module(self):
+        global ISI_datamart
+        ISI_datamart = importlib.import_module('datamart')
+
     def produce(self, *, inputs: Inputs, timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
+        self._import_module()
         left_df, right_df = inputs
         left_df = pd.DataFrame(left_df)
         right_df = pd.DataFrame(right_df) #!
         join_type = self.hyperparams["join_type"]
         if join_type == "exact":
-            joiner = JoinerType.EXACT_MATCH
+            joiner = ISI_datamart.JoinerType.EXACT_MATCH
         else:
-            joiner = JoinerType.RLTK
+            joiner = ISI_datamart.JoinerType.RLTK
 
-        res = join(left_data=left_df, right_data=right_df,
+        res = ISI_datamart.join(left_data=left_df, right_data=right_df,
                                 left_columns=self.hyperparams["left_columns"], right_columns=self.hyperparams["right_columns"], joiner=joiner)
         res_df = DataFrame(res.df)
         self._has_finished = True
