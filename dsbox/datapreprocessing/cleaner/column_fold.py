@@ -37,7 +37,7 @@ class FoldColumns(UnsupervisedLearnerPrimitiveBase[Input, Output, FoldParams, Fo
         "id": "dsbox-fold-columns",
         "version": config.VERSION,
         "name": "DSBox Fold Columns",
-        "description": "Fold Columns",
+        "description": "Fold multiple columns into one column based on common column name prefix. For example, fold columns with names 'month-jan', 'month-feb', 'month-mar' and so on, into one column named 'month'.",
         "python_path": "d3m.primitives.data_cleaning.FoldColumns.DSBOX",
         "primitive_family": "DATA_CLEANING",
         "algorithm_types": ["DATA_CONVERSION"],

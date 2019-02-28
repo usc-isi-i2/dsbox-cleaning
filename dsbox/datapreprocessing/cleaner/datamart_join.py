@@ -1,8 +1,8 @@
 import typing
 
 # importing d3m stuff
+from d3m import exceptions
 from d3m.container.pandas import DataFrame
-from d3m.container.list import List
 from d3m.primitive_interfaces.base import CallResult, MultiCallResult
 from d3m.primitive_interfaces.transformer import TransformerPrimitiveBase
 from d3m.metadata import hyperparams
@@ -10,7 +10,7 @@ from . import config
 import time
 
 # import datamart stuff
-# from datamart.augment import Augment 
+# from datamart.augment import Augment
 
 Inputs1 = DataFrame
 Inputs2 = DataFrame
@@ -36,15 +36,16 @@ class DatamartJoinHyperparams(hyperparams.Hyperparams):
 
 class DatamartJoin(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartJoinHyperparams]):
     '''
-    A primitive perform join between datasets by lists of column names 
+    A primitive perform join between datasets by lists of column names
     '''
 
     __author__ = "USC ISI"
     metadata = hyperparams.base.PrimitiveMetadata({
-        "id": "datamart-augmentation",
+        "id": "datamart-join",
         "version": config.VERSION,
         "name": "Datamart Augmentation",
         "python_path": "d3m.primitives.data_augmentation.Join.DSBOX",
+        "description": "Joins two dataframes into one dataframe. The primtive takes two dataframes, left_dataframe and right_dataframe, and two lists specifing the join columns, left_columns and right_columns.",
         "primitive_family": "DATA_AUGMENTATION",
         "algorithm_types": ["APPROXIMATE_DATA_AUGMENTATION"],  # fix me!
         "keywords": ["data augmentation", "datamart", "join"],

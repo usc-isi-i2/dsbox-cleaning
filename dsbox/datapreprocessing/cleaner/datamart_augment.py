@@ -2,6 +2,7 @@ import typing
 import importlib
 
 # importing d3m stuff
+from d3m import exceptions
 from d3m.container.pandas import DataFrame
 from d3m.container.list import List
 from d3m.primitive_interfaces.base import CallResult, MultiCallResult
@@ -51,6 +52,7 @@ class DatamartAugmentation(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartAu
         "version": config.VERSION,
         "name": "Datamart Augmentation",
         "python_path": "d3m.primitives.data_augmentation.Augmentation.DSBOX",
+        "description": "Join the given dataframe with the highest ranked datamart dataset return by the primitive QueryFromDataframe. Also, see the DatamartJoin primitive for joining two dataframes.",
         "primitive_family": "DATA_AUGMENTATION",
         "algorithm_types": ["APPROXIMATE_DATA_AUGMENTATION"],  # fix me!
         "keywords": ["data augmentation", "datamart", "join"],
