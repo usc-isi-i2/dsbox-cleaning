@@ -33,6 +33,7 @@ PRIMITIVES = [(p, cleaner_config) for p in [
     'data_preprocessing.VerticalConcat.DSBOX',
     'data_preprocessing.EnsembleVoting.DSBOX',
     'data_preprocessing.Unfold.DSBOX',
+    'data_preprocessing.Splitter.DSBOX',
     'data_preprocessing.HorizontalConcat.DSBOX',
     'data_augmentation.Augmentation.DSBOX',
     'data_augmentation.QueryDataframe.DSBOX',
