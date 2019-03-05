@@ -28,7 +28,7 @@ class Params(params.Params):
     need_reduce_row: bool
     need_reduce_column: bool
     main_resource_id: str
-    column_remained: typing.List[object]
+    column_remained: typing.List[int]
     row_remained: typing.Dict
 
 class SplitterHyperparameter(hyperparams.Hyperparams):
@@ -119,8 +119,8 @@ class Splitter(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, SplitterH
         self._further_reduce_threshold_column_length = self.hyperparams['further_reduce_threshold_column_length']
         self._further_reduce_ratio = self.hyperparams['further_reduce_ratio']
 
-        self._column_remained = []
-        self._row_remained = {}
+        self._column_remained: typing.List[int] = []
+        self._row_remained: typing.Dict = dict()
         self._status = Status.UNFIT
         self._main_resource_id = ""
         self._need_reduce_column = False
@@ -266,10 +266,10 @@ class Splitter(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, SplitterH
         """
         input_dataset_shape = inputs[self._main_resource_id].shape
         # find target column, we should not split these column
-        target_column = utils.list_column_with_semantic_types(self._training_inputs.metadata, ['https://metadata.datadrivendiscovery.org/types/TrueTarget'], at=(self._main_resource_id,))
+        target_column = utils.list_columns_with_semantic_types(self._training_inputs.metadata, ['https://metadata.datadrivendiscovery.org/types/TrueTarget'], at=(self._main_resource_id,))
         if not target_column:
             self._logger.warn("No target column found from the input dataset.")
-        index_column = utils.get_index_column(self._training_inputs.metadata,at=(self._main_resource_id,))
+        index_column = utils.get_index_columns(self._training_inputs.metadata,at=(self._main_resource_id,))
         if not index_column:
             self._logger.warn("No index column found from the input dataset.")
 
@@ -296,6 +296,6 @@ class Splitter(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, SplitterH
             # Just to make sure.
             outputs.metadata = inputs.metadata.set_for_value(outputs, generate_metadata=False)
             outputs[self._main_resource_id] = inputs[self._main_resource_id].iloc[:, self._column_remained]
-            outputs.metadata = RemoveColumnsPrimitive._select_column_metadata(outputs.metadata, self._main_resource_id, self._column_remained)
+            outputs.metadata = RemoveColumnsPrimitive._select_columns_metadata(outputs.metadata, self._main_resource_id, self._column_remained)
 
         return outputs
