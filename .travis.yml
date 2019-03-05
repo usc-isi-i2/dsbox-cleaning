@@ -3,26 +3,25 @@ language: python
 python:
 - 3.6.6
 install:
-  - sudo apt-get update
-  # We do this conditionally because it saves us some downloading if the
-  # version is the same.
-  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - hash -r
-  - conda config --set always_yes yes --set changeps1 no
-  - conda update -q conda
-  # Useful for debugging any issues with conda
-  - conda info -a
-  - sudo apt-get install libtcmalloc-minimal4
-  - export LD_PRELOAD="/usr/lib/libtcmalloc_minimal.so.4"
-  - conda create --name dsbox-cleaner-env python=3.6
-  - source activate dsbox-cleaner-env
-  - pip install -e git+https://gitlab.com/datadrivendiscovery/common-primitives@fa865a1babc190055cb2a17cbdcd5b37e6f5e774#egg=common-primitives --progress-bar off
-  - pip install stopit --progress-bar off
-  - pip install fancyimpute==0.3.1 --progress-bar off
-  - pip install langdetect --progress-bar off
-
+- sudo apt-get update
+- wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+- bash miniconda.sh -b -p $HOME/miniconda
+- export PATH="$HOME/miniconda/bin:$PATH"
+- hash -r
+- conda config --set always_yes yes --set changeps1 no
+- conda update -q conda
+- conda info -a
+- sudo apt-get install libtcmalloc-minimal4
+- export LD_PRELOAD="/usr/lib/libtcmalloc_minimal.so.4"
+- conda create --name dsbox-cleaner-env python=3.6
+- source activate dsbox-cleaner-env
+- pip install -e git+https://gitlab.com/datadrivendiscovery/common-primitives@fa865a1babc190055cb2a17cbdcd5b37e6f5e774#egg=common-primitives
+  --progress-bar off
+- pip install stopit --progress-bar off
+- pip install fancyimpute==0.3.1 --progress-bar off
+- pip install langdetect --progress-bar off
 script:
-  - python -W ignore -m unittest discover
-
+- python -W ignore -m unittest discover
+env:
+  global:
+    secure: Ntxm4sDdwk736e59XDZ4VysH8sJr35bGVfSPMc97DPBdHFuz0N4+ce3mrcN1IVCQ7OQq3JDmDbqOV5TmQMpiXY7cIEortTQDZTmAJZ72z/z/BJp8PTX88Q3S3dZC/Q1kaGUG1RhCQPxblbj7JjTBPHaPGGLSUX8vasMHP1VFwaf7u2b+RkzmujELn1ZwMRJlGqQ0OhuIWeLgj/Q7jiuMRUxWD0MfOgots8W0AMQL7wCq89e1i96TEg6Hiv2tA9LcNquqnQSwTYEpQBo7ZaOFdtpZMoSPsYa8NxLISyMhQGEPcWFc1LVuRP4VNwcs0TmBVctifQq4CDXsNY0ocM2VNDCT5zFf5OhDhDZfHTk7FKK3mhb2/WBZwIT4Ruw7k4V0Bq8AkSV+4qmvMqYQ4YKcz73dHHC2TNg8aRtiN+IXP0vplQU0w/5ZR35Je/QIeDUHkIaQ1Law49QZAl4Qc/O2eHKaUi503qiBPEJWnyPh909r/XHFdXI5Ly+ZP3t12T8z0diy2MKDiK+4xJTrBjLdX7NsUxWMCHxXaIXpOtMo+Zebs7QKe2/iu725PRw1+qwO0k7TTJEEa8FVmoNpGABIm7JLP07KIhbXcg8fIF9dTLk5zfH9wMkGsVGLhMi+fk2htNRsMT/kC/QP9yCymHaqMQZB/3NfWzn1pxUIqIdsygc=
