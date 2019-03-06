@@ -1,8 +1,11 @@
+dist: xenial
 sudo: required
 language: python
+cache: false
 python:
 - 3.6.6
 install:
+- echo "Installing dependencies"
 - sudo apt-get update
 - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
 - bash miniconda.sh -b -p $HOME/miniconda
@@ -11,17 +14,33 @@ install:
 - conda config --set always_yes yes --set changeps1 no
 - conda update -q conda
 - conda info -a
-- sudo apt-get install libtcmalloc-minimal4
-- export LD_PRELOAD="/usr/lib/libtcmalloc_minimal.so.4"
-- conda create --name dsbox-cleaner-env python=3.6
-- source activate dsbox-cleaner-env
-- pip install -e git+https://gitlab.com/datadrivendiscovery/common-primitives@fa865a1babc190055cb2a17cbdcd5b37e6f5e774#egg=common-primitives
+- conda create --name ta2-env python=3.6
+- source activate ta2-env
+- sudo apt-get install libgnutls28-dev
+- pip install -e git+https://gitlab.com/datadrivendiscovery/d3m@master#egg=d3m
   --progress-bar off
-- pip install stopit --progress-bar off
-- pip install fancyimpute==0.3.1 --progress-bar off
-- pip install langdetect --progress-bar off
+- pip install -e git+https://gitlab.com/datadrivendiscovery/common-primitives@master#egg=common-primitives
+  --progress-bar off
+- pip install -e git+https://gitlab.com/datadrivendiscovery/sklearn-wrap@dist#egg=sklearn-wrap
+  --progress-bar off
+- pip install -e git+https://github.com/usc-isi-i2/dsbox-cleaning@master#egg=dsbox-datacleaning
+  --progress-bar off
+- pip install -e git+https://github.com/usc-isi-i2/dsbox-featurizer@master#egg=dsbox-featurizer
+  --progress-bar off
+- pip install -e git+https://github.com/brekelma/dsbox_corex@master#egg=dsbox_corex
+  --progress-bar off
+- pip install psutil==5.4.7
+before_script:
+- python .travis/genereate_pipelines.py
+- python unit_tests/resources/construct_config.py 38_sick
+- python python/ta2-search unit_tests/resources/38_sick/search_config.json --timeout
+  5 --cpus 3 --test unit_tests/resources/38_sick/test_config.json
 script:
-- python -W ignore -m unittest discover
+- echo "Generating primitive description json and pipelines"
+- python -W ignore -m unittest discover unit_tests/
+after_success:
+- echo "Generated succeed, now pushing files"
+- .travis/push.sh
 env:
   global:
-    secure: Ntxm4sDdwk736e59XDZ4VysH8sJr35bGVfSPMc97DPBdHFuz0N4+ce3mrcN1IVCQ7OQq3JDmDbqOV5TmQMpiXY7cIEortTQDZTmAJZ72z/z/BJp8PTX88Q3S3dZC/Q1kaGUG1RhCQPxblbj7JjTBPHaPGGLSUX8vasMHP1VFwaf7u2b+RkzmujELn1ZwMRJlGqQ0OhuIWeLgj/Q7jiuMRUxWD0MfOgots8W0AMQL7wCq89e1i96TEg6Hiv2tA9LcNquqnQSwTYEpQBo7ZaOFdtpZMoSPsYa8NxLISyMhQGEPcWFc1LVuRP4VNwcs0TmBVctifQq4CDXsNY0ocM2VNDCT5zFf5OhDhDZfHTk7FKK3mhb2/WBZwIT4Ruw7k4V0Bq8AkSV+4qmvMqYQ4YKcz73dHHC2TNg8aRtiN+IXP0vplQU0w/5ZR35Je/QIeDUHkIaQ1Law49QZAl4Qc/O2eHKaUi503qiBPEJWnyPh909r/XHFdXI5Ly+ZP3t12T8z0diy2MKDiK+4xJTrBjLdX7NsUxWMCHxXaIXpOtMo+Zebs7QKe2/iu725PRw1+qwO0k7TTJEEa8FVmoNpGABIm7JLP07KIhbXcg8fIF9dTLk5zfH9wMkGsVGLhMi+fk2htNRsMT/kC/QP9yCymHaqMQZB/3NfWzn1pxUIqIdsygc=
+    secure: JUJDUqkny/5uMtuX4BhYg9fOgx+nKzbbvr0s6/Pusyy+XTw4G6AjpuWCH/3VMI6ggnQZP7+jRlWeI2zkUXJ34kPONDYs0uCBv55UKP8avJKrXRoXG4rxwuWehspDjAoOPBKvT1qmtxlnH1ms0TEB7i5N3X6M2ghgryAVpEtKn55RtKkPeRMqo7nBpWXzrDlKI+bGW94TWtkcTSh9PoXQKy/PYa6bND5c1feWvccSDX48Pk+9fg5U0U3p4a5w6qZrJjSNCnj9FYeYGyKAX8bPxloyTWQnojinFCg65sWxj+Hj76Lk96JJMDxC2CEDzgG/kfeYUZ9P5yrAh2N/MjjEjWz/Ec3bY2JmMSsvMi3EufWCeZFMzGHL/NrAW1Ri/id5zVxphENgJ/MBdfboRhxhMDxH7e8i98kcG77OTcFaiGwTBOcNEggcRLQTuWn1EVotK2v660Ju+7mmHzYgWuL7CznRmfZRDZYtKIDWlz2oWV5eXUCXjubvimJfha933kWhDekh9g40qtdkPb/ewTmUvy9snop7icytBa2BKd7hqf9+HinG0pALG/fJfopmZTxKYSTsOcCOeU6ze/4zVK52GCek8hjS/URouwOrzu4CIaMA76bUMyTpHWo+9KRjEIHH9aRiE0MJq+nUaGkGMvKa1AocYvuiax3H7fHbQetkcbw=
