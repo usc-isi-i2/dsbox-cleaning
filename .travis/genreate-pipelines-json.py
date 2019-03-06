@@ -56,7 +56,7 @@ def generate_pipeline(config:dict, meta_json):
             print("!!!!!!!")
             print("failed!")
             print("!!!!!!!")
-            
+
 def remove_temp_files():
     tmp_files = os.listdir("tmp")
     for each_file in tmp_files:
@@ -70,18 +70,23 @@ def test_pipeline(each_config_name, config, test_dataset_id):
         temp_pipeline = os.path.join("tmp/test_pipeline.json")
         with open(temp_pipeline,"w") as f:
             json.dump(pipeline_json,f)
-        d3m_runtime_command = "python -m d3m.runtime -d datasets fit-produce -p tmp/test_pipeline.json -r datasets/" + \
-                              test_dataset_id + "/TRAIN/problem_TRAIN/problemDoc.json -i datasets/" + \
-                              test_dataset_id + "/TRAIN/dataset_TRAIN/datasetDoc.json -t datasets/" + \
+        d3m_runtime_command = "python -m d3m.runtime -d dsbox-unit-test-datasets fit-produce -p tmp/test_pipeline.json -r dsbox-unit-test-datasets/" + \
+                              test_dataset_id + "/TRAIN/problem_TRAIN/problemDoc.json -i dsbox-unit-test-datasets/" + \
+                              test_dataset_id + "/TRAIN/dataset_TRAIN/datasetDoc.json -t dsbox-unit-test-datasets/" + \
                               test_dataset_id + "/TEST/dataset_TEST/datasetDoc.json -o tmp/produced_output.csv" 
 
 
         p = subprocess.Popen(d3m_runtime_command, shell=True, stdout=subprocess.PIPE, universal_newlines=True)
         p.wait()
-        # load prediction file
-        predictions = pd.read_csv("tmp/produced_output.csv")
+        try:
+            # load prediction file
+            predictions = pd.read_csv("tmp/produced_output.csv")
+        except:
+            print("predictions file load failed, please check the pipeline.")
+            return False
+
         # load ground truth file
-        ground_truth = pd.read_csv("datasets/"+test_dataset_id+"/mitll_predictions.csv")
+        ground_truth = pd.read_csv("dsbox-unit-test-datasets/"+test_dataset_id+"/mitll_predictions.csv")
 
         if predictions.columns.all() != ground_truth.columns.all():
             print("prediction columns are:")
@@ -89,6 +94,7 @@ def test_pipeline(each_config_name, config, test_dataset_id):
             print("ground truth columns are:")
             print(ground_truth.columns)
             print("The predictions columns and ground truth columns are not same.")
+            return False
 
         if set(predictions['d3mIndex']) != set(ground_truth['d3mIndex']):
             temp1 = list(set(predictions['d3mIndex']))
@@ -100,6 +106,7 @@ def test_pipeline(each_config_name, config, test_dataset_id):
             print("ground truth indexes are:")
             print(temp2)
             print("The prediction d3mIndex and ground truth d3mIndex are not same.")
+            return False
 
         return True
     except:
