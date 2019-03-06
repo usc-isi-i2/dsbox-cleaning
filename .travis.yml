@@ -19,8 +19,9 @@ install:
 - conda create --name ta1-test-env python=3.6
 - source activate ta1-test-env
 - sudo apt-get install libgnutls28-dev
-- pip install -e git+https://gitlab.com/datadrivendiscovery/d3m@master#egg=d3m --progress-bar
-  off
+- git clone https://${GH_TOKEN}@github.com/usc-isi-i2/dsbox-unit-test-datasets.git
+- pip install -e git+https://gitlab.com/datadrivendiscovery/d3m@master#egg=d3m 
+  --progress-bar off
 - pip install -e git+https://gitlab.com/datadrivendiscovery/common-primitives@master#egg=common-primitives
   --progress-bar off
 - pip install -e git+https://gitlab.com/datadrivendiscovery/sklearn-wrap@dist#egg=sklearn-wrap
