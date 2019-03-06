@@ -5,7 +5,7 @@ cache: false
 python:
 - 3.6.6
 before_install:
-- echo -e "machine github.com\n  login $CI_USER_TOKEN" > ~/.netrc
+- echo -e "machine github.com\n  login $GH_TOKEN" > ~/.netrc
 install:
 - echo "Installing dependencies"
 - sudo apt-get update
@@ -19,7 +19,6 @@ install:
 - conda create --name ta1-test-env python=3.6
 - source activate ta1-test-env
 - sudo apt-get install libgnutls28-dev
-- git clone https://${GH_TOKEN}@github.com/usc-isi-i2/dsbox-unit-test-datasets.git
 - pip install -e git+https://gitlab.com/datadrivendiscovery/d3m@master#egg=d3m 
   --progress-bar off
 - pip install -e git+https://gitlab.com/datadrivendiscovery/common-primitives@master#egg=common-primitives
@@ -34,7 +33,7 @@ install:
   --progress-bar off
 - pip install psutil==5.4.7
 before_script:
-- git clone https://${CI_USER_TOKEN}@github.com/usc-isi-i2/dsbox-unit-test-datasets.git
+- git clone https://${GH_TOKEN}@github.com/usc-isi-i2/dsbox-unit-test-datasets.git
 script:
 - echo "Generating primitive description json and pipelines"
 - python .travis/genreate-pipelines-json.py
