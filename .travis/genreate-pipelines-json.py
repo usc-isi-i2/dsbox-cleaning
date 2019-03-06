@@ -76,7 +76,7 @@ def clean_up_primitive_repo():
         dataset_ids = os.listdir("dsbox-unit-test-datasets")
         for each in dataset_ids:
             if each[0] != ".":
-            shutil.rmtree("dsbox-unit-test-datasets" + each)
+                shutil.rmtree("dsbox-unit-test-datasets" + each)
         shutil.move("output", "dsbox-unit-test-datasets")
     except:
         print("clean up failed!")
