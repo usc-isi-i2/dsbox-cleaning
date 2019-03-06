@@ -71,6 +71,16 @@ def remove_temp_files():
         file_path = os.path.join("tmp", each_file)
         os.remove(file_path)
 
+def clean_up_primitive_repo():
+    try:
+        dataset_ids = os.listdir("dsbox-unit-test-datasets")
+        for each in dataset_ids:
+            if each[0] != ".":
+            shutil.rmtree("dsbox-unit-test-datasets" + each)
+        shutil.move("output", "dsbox-unit-test-datasets")
+    except:
+        print("clean up failed!")
+
 def test_pipeline(each_config_name, config, test_dataset_id):
     try:
         pipeline = a.to_pipeline(config)
@@ -152,6 +162,8 @@ def main():
             else:
                 print("Test pipeline not passed! Please check the detail errors")
                 raise ValueError("Auto generating pipelines failed")
+
+    clean_up_primitive_repo()
 if __name__ == "__main__":
     main()
 

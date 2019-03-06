@@ -32,14 +32,15 @@ install:
 - pip install -e git+https://github.com/brekelma/dsbox_corex@master#egg=dsbox_corex
   --progress-bar off
 - pip install psutil==5.4.7
-before_script:
-- git clone https://${GH_TOKEN}@github.com/usc-isi-i2/dsbox-unit-test-datasets.git
 script:
 - echo "Generating primitive description json and pipelines"
-- python .travis/genreate-pipelines-json.py
-- python .travis/generate-primitive-json.py
+- cd .travis
+- git clone https://${GH_TOKEN}@github.com/usc-isi-i2/dsbox-unit-test-datasets.git
+- python genreate-pipelines-json.py
+- python generate-primitive-json.py
 after_success:
 - echo "Generated succeed, now pushing files"
+- push.sh
 env:
   global:
   - secure: KYxD+0C79e7C3WkyuBM3q3NCgnhS0qd7zRxym6ZcEJEzQPsWjRuEGICg70EbKcCuKDUM5lgRZl4ueC8sriqeKmftYwckfd8PVHMr86jLie4vi6u69Fntxrp6K6CD6QL1d52Gi4ETtfX4O3qVXYmjNkwMViOZDHwEsKJMkO0v7wswSPb2OOnbqSU9Sm7SiQqQguflvVd25wpR9LnG6aprOi8zkWrgyA4AKQQH60I489A9XC+UKi7z84vtUh0PccHg/HBkmVkLC2WYYtrs805HP+Lmpd8v6coNRdZxucMqTEww4APBR0wSkC+uA4Tj35Tg2nLfDJDUgxb/xBTo6GyRoEWuJZ/pS889+qhUMJrhXvMf+4OrhnZ95J9GT+SXdetsqpL+STpiX8i3KrXTqHS6rRQB5LkRYTKKS0yWASyuYj+GYxg9EIgtYxCeXJ+YQ8icxRYRA9kPkDnBYPVYM0uICVuRaPSU8kk27KeKH120Rz5KJG8oUKra1meXkmPwDt/oNUlBTsa7LT1SDCrztgIP9wrVg0WQTaOwyjxetlFtmtQCKEX6Ulxp7rDh7JMng7KCIw4px7PxnofrJ7Et6ZwcI/GENn5eEdE1dna58Cg/q9Wa+gA6FdHsg7BxYmEw2AVZ4rz+fYDvQrI/B3id8VITc/n1DuvrXf0fjN7iy60e6zU=
