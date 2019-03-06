@@ -33,7 +33,7 @@ install:
   --progress-bar off
 - pip install psutil==5.4.7
 before_script:
-- git clone https://${CI_USER_TOKEN}@github.com:usc-isi-i2/dsbox-unit-test-datasets.git
+- git clone https://${CI_USER_TOKEN}@github.com/usc-isi-i2/dsbox-unit-test-datasets.git
 script:
 - echo "Generating primitive description json and pipelines"
 - python .travis/genreate-pipelines-json.py
