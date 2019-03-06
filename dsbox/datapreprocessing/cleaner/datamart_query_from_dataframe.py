@@ -3,6 +3,7 @@
 import pandas as pd
 import typing
 import importlib
+import logging
 
 
 # importing d3m stuff
@@ -17,7 +18,7 @@ from . import config
 
 Inputs = DataFrame
 Outputs = List
-
+_logger = logging.getLogger(__name__)
 
 class QueryFromDataFrameHyperparams(hyperparams.Hyperparams):
 
@@ -84,7 +85,7 @@ class QueryFromDataframe(TransformerPrimitiveBase[Inputs, Outputs, QueryFromData
     def produce(self, *, inputs: Inputs, timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
         status = self._import_module()
         if status == 0:
-            print("not a valid url")
+            _logger.info("not a valid url")
             return CallResult(DataFrame())
         if status == 1:
             # fixme one of the field

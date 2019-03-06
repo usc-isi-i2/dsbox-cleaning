@@ -1,7 +1,9 @@
 import pandas as pd
 import numpy as np
+import logging
 from sklearn.cluster import KMeans
 from sklearn.mixture import GaussianMixture
+_logger = logging.getLogger(__name__)
 
 def _discretize_by_width(col, num_bins, labels):
     maxvalue = col.max()
@@ -23,7 +25,7 @@ def _discretize_by_frequency(col, num_bins, labels):
     bins = sorted(list(set(col.quantile([x*percent for x in range(num_bins+1)]))))
     if len(bins)-1 < num_bins:
         num_bins = len(bins)-1
-        print('...Only %d bins (unbalanced) generated due to overlapping percentile boundaries.'%num_bins)
+        _logger.info('...Only %d bins (unbalanced) generated due to overlapping percentile boundaries.'%num_bins)
     if labels:
         if len(labels)!=num_bins:
             raise ValueError('Length of assigned labels not consistent with num_bins!')
@@ -70,12 +72,12 @@ def discretize(col, num_bins=10, by='width', labels = None, random_state=0):
 
     elif by == 'kmeans':
         if labels:
-            print('...Applying kmeans clustering, so user-defined labels are ignored.')
+            _logger.info('...Applying kmeans clustering, so user-defined labels are ignored.')
         return _discretize_by_kmeans(col, num_bins, random_state)
 
     elif by == 'gmm':
         if labels:
-            print('...Applying gmm clustering, so user-defined labels are ignored.')
+            _logger.info('...Applying gmm clustering, so user-defined labels are ignored.')
         return _discretize_by_gmm(col, num_bins, random_state)
 
     else:

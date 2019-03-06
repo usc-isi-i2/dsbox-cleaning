@@ -2,6 +2,7 @@ import typing
 import pandas as pd
 import d3m.metadata.base as mbase
 from . import config
+import logging
 # from d3m.primitive_interfaces.featurization import FeaturizationLearnerPrimitiveBase, FeaturizationTransformerPrimitiveBase
 # changed primitive class to fit in devel branch of d3m (2019-1-17)
 from d3m.primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
@@ -19,7 +20,7 @@ __all__ = ('IQRScaler',)
 
 Inputs = container.DataFrame
 Outputs = container.DataFrame
-
+_logger = logging.getLogger(__name__)
 
 class Params(params.Params):
     center: Optional[ndarray]

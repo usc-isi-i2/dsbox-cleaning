@@ -5,12 +5,13 @@ from d3m.primitive_interfaces.transformer import TransformerPrimitiveBase
 from d3m.primitive_interfaces.base import CallResult
 import random
 import collections
+import logging
 
 from . import config
 
 Inputs = d3m.container.DataFrame
 Outputs = d3m.container.DataFrame
-
+_logger = logging.getLogger(__name__)
 
 class VoterHyperparameter(hyperparams.Hyperparams):
     classifier_voting_strategy = hyperparams.Enumeration(

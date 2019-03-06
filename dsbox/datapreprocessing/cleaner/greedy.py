@@ -1,6 +1,7 @@
 import numpy as np  # type: ignore
 import pandas as pd  # type: ignore
 from . import missing_value_pred as mvp
+import logging
 
 from d3m.primitive_interfaces.supervised_learning import SupervisedLearnerPrimitiveBase
 from d3m.primitive_interfaces.base import CallResult
@@ -18,7 +19,7 @@ from . import config
 
 Input = container.DataFrame
 Output = container.DataFrame
-
+_logger = logging.getLogger(__name__)
 # store the best imputation strategy for each missing-value column in training data
 
 
@@ -188,7 +189,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
             self._set_model_scorer()
             # 2. using the model and scorer to do greedy search
             if self._verbose:
-                print("=========> Greedy searched imputation:")
+                _logger.info("=========> Greedy searched imputation:")
             self._best_imputation = self.__imputationGreedySearch(data, label)
 
         if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
@@ -196,7 +197,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
             self._has_finished = True
             self._iterations_done = True
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
-            print("Timed Out...")
+            _logger.info("Timed Out...")
             self._is_fitted = False
             self._has_finished = False
             self._iterations_done = False
@@ -247,7 +248,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
 
             # start completing data...
             if self._verbose:
-                print("=========> impute using result from greedy search:")
+                _logger.info("=========> impute using result from greedy search:")
             data_clean = self.__simpleImpute(data, self._best_imputation)
 
         value = None
@@ -271,7 +272,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
 
 
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
-            print("Timed Out...")
+            _logger.info("Timed Out...")
             self._is_fitted = False
             self._has_finished = False
             self._iterations_done = False
@@ -376,7 +377,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
 
                     data_clean = mvp.imputeData(data, missing_col_id, imputation_list, self._verbose)
                     if self._verbose:
-                        print("for the missing value imputation combination: {} ".format(permutations))
+                        _logger.info("for the missing value imputation combination: {} ".format(permutations))
                     score = self.__evaluation(data_clean, label)
                     if (score > max_score):
                         max_score = score
@@ -389,14 +390,14 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
             iteration -= 1
 
         if self._verbose:
-            print("max score is {}, min score is {}\n".format(max_score, min_score))
-            print("and the best score is given by the imputation combination: ")
+            _logger.info("max score is {}, min score is {}\n".format(max_score, min_score))
+            _logger.info("and the best score is given by the imputation combination: ")
 
         best_imputation = {}    # key: col_name; value: imputation strategy
         for i in range(len(best_combo)):
             best_imputation[col_names[missing_col_id[i]]] = self._imputation_strategies[best_combo[i]]
             if self._verbose:
-                print(self._imputation_strategies[best_combo[i]] + " for the column {}".format(col_names[missing_col_id[i]]))
+                _logger.info(self._imputation_strategies[best_combo[i]] + " for the column {}".format(col_names[missing_col_id[i]]))
 
         return best_imputation
 
@@ -453,7 +454,7 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
             X_train, X_test, y_train, y_test = train_test_split(data_clean, label, test_size=0.4, random_state=0, stratify=label)
         except Exception:
             if self._verbose:
-                print("cannot stratified sample, try random sample: ")
+                _logger.info("cannot stratified sample, try random sample: ")
             X_train, X_test, y_train, y_test = train_test_split(data_clean, label, test_size=0.4, random_state=42)
 
         # remove the nan rows
@@ -468,10 +469,10 @@ class GreedyImputation(SupervisedLearnerPrimitiveBase[Input, Output, Params, Gre
         model = self.model.fit(X_train, y_train.ravel())
         score = self.scorer(model, X_test, y_test)  # refer to sklearn scorer: score will be * -1 with the real score value
         if self._verbose:
-            print("score is: {}".format(score))
+            _logger.info("score is: {}".format(score))
 
         if self._verbose:
-            print("===========>> max score is: {}".format(score))
+            _logger.info("===========>> max score is: {}".format(score))
         if (num_removed_test > 0):
-            print("BUT !!!!!!!!there are {} data (total test size: {})that cannot be predicted!!!!!!\n".format(num_removed_test, mask_test.shape[0]))
+            _logger.info("BUT !!!!!!!!there are {} data (total test size: {})that cannot be predicted!!!!!!\n".format(num_removed_test, mask_test.shape[0]))
         return score

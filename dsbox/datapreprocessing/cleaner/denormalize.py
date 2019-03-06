@@ -1,5 +1,6 @@
 import os
 import typing
+import logging
 
 import pandas  # type: ignore
 
@@ -12,7 +13,7 @@ __all__ = ('DenormalizePrimitive',)
 
 Inputs = container.Dataset
 Outputs = container.Dataset
-
+_logger = logging.getLogger(__name__)
 
 class DenormalizeHyperparams(hyperparams.Hyperparams):
     starting_resource = hyperparams.Hyperparameter[typing.Union[str, None]](

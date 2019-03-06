@@ -1,4 +1,5 @@
 import typing
+import logging
 
 # importing d3m stuff
 from d3m import exceptions
@@ -15,7 +16,7 @@ import time
 Inputs1 = DataFrame
 Inputs2 = DataFrame
 Outputs = DataFrame
-
+_logger = logging.getLogger(__name__)
 
 # join two dataframe by columns
 

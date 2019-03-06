@@ -1,5 +1,6 @@
 import typing
 import importlib
+import logging
 
 # importing d3m stuff
 from d3m import exceptions
@@ -21,7 +22,7 @@ import time
 Inputs1 = List
 Inputs2 = DataFrame  # FIXME
 Outputs = DataFrame
-
+_logger = logging.getLogger(__name__)
 
 class DatamartAugmentationHyperparams(hyperparams.Hyperparams):
     # indexes of dataset to choose from
@@ -90,7 +91,7 @@ class DatamartAugmentation(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartAu
     def produce(self, *, inputs1: Inputs1, inputs2: Inputs2, timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
         status = self._import_module()
         if status == 0:
-            print("not a valid  url")
+            _logger.error("not a valid  url")
             return CallResult(DataFrame())
         if status == 1:  # run isi-datamart
             # sort the inputslist by best score

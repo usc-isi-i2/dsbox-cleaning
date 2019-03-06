@@ -2,6 +2,7 @@ import pandas as pd
 import dateparser
 import numpy as np
 from d3m import container
+import logging
 import d3m.metadata.base as mbase
 from common_primitives import utils
 from d3m.container import DataFrame as d3m_DataFrame
@@ -20,7 +21,7 @@ special_characters = ['-', '_', ' ']
 
 Input = container.DataFrame
 Output = container.DataFrame
-
+_logger = logging.getLogger(__name__)
 
 class FoldParams(params.Params):
     mapping: Dict

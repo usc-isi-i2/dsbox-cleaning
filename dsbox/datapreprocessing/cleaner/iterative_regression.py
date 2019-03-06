@@ -7,6 +7,7 @@ from d3m.primitive_interfaces.base import CallResult
 import stopit
 import math
 import typing
+import logging
 
 from d3m import container
 from d3m.metadata import hyperparams, params
@@ -19,6 +20,7 @@ from . import config
 
 Input = container.DataFrame
 Output = container.DataFrame
+_logger = logging.getLogger(__name__)
 
 # store the regression models for each missing-value column in training data
 
@@ -150,7 +152,7 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
         """
         if (pd.isnull(inputs).sum().sum() == 0):    # no missing value exists
             if self._verbose:
-                print("Warning: no missing value in train dataset")
+                _logger.info("Warning: no missing value in train dataset")
 
         self._train_x = inputs
         self._is_fitted = False
@@ -189,7 +191,7 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
 
             # start fitting
             if self._verbose:
-                print("=========> iteratively regress method:")
+                _logger.info("=========> iteratively regress method:")
             data_clean, self._best_imputation = self.__iterativeRegress(data, iterations)
 
         # self._train_x, self._best_imputation = self.__iterativeRegress(data, iterations)
@@ -252,7 +254,7 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
 
         if (pd.isnull(inputs).sum().sum() == 0):    # no missing value exists
             if self._verbose:
-                print("Warning: no missing value in test dataset")
+                _logger.info("Warning: no missing value in test dataset")
             self._has_finished = True
             return CallResult(inputs, self._has_finished, self._iterations_done)
 
@@ -273,7 +275,7 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
 
             # start completing data...
             if self._verbose:
-                print("=========> iteratively regress method:")
+                _logger.info("=========> iteratively regress method:")
             data_clean = self.__regressImpute(data, self._best_imputation, iterations)
         value = None
         if to_ctx_mrg.state == to_ctx_mrg.EXECUTED:
@@ -283,7 +285,7 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
             value = container.DataFrame(value)
             value.metadata = data.metadata
         elif to_ctx_mrg.state == to_ctx_mrg.TIMED_OUT:
-            print("Timed Out...")
+            _logger.info("Timed Out...")
             self._is_fitted = False
             self._has_finished = False
             self._iterations_done = False
@@ -410,7 +412,7 @@ class IterativeRegressionImputation(UnsupervisedLearnerPrimitiveBase[Input, Outp
             if (name not in model_dict.keys()):
                 data = mvp.imputeData(data, [missing_col_id[i]], ["mean"], self._verbose)
                 # mask[missing_col_id[i]] = False
-                print("fill" + name + "with mean")
+                _logger.info("fill" + name + "with mean")
                 # offset += 1
             else:
                 model_list.append(model_dict[name])
