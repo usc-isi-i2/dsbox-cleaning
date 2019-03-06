@@ -8,12 +8,13 @@ from library import DefaultClassificationTemplate
 from dsbox.datapreprocessing.cleaner import config as cleaner_config
 a = DefaultClassificationTemplate()
 
-def get_meta_json(pipeline_type):
-    if pipeline_type == "classification":
-        dataset_name = "38_sick"
-    elif pipeline_type == "classification":
-        dataset_name = "196_autoMpg"
-    # more pipeline types needed
+def get_meta_json(dataset_name):
+    # generate the meta file for pipelines
+    # if pipeline_type == "classification":
+    #     dataset_name = "38_sick"
+    # elif pipeline_type == "regression":
+    #     dataset_name = "196_autoMpg"
+    # # more pipeline types needed
 
     meta_json = {
                 "problem": dataset_name + "_problem",
@@ -23,9 +24,13 @@ def get_meta_json(pipeline_type):
                 "score_inputs": [dataset_name + "_dataset_SCORE"]
             }
     
-    return meta_json, dataset_name
+    return meta_json
 
 def get_primitive_hitted(config):
+    """
+        Return a list of DSBOX primitives that are found in the config file
+        We should only add sample pipelines for our own primitives
+    """
     primitive_hitted = []
     for each_primitive in config.values():
         temp = each_primitive['primitive']
@@ -34,6 +39,9 @@ def get_primitive_hitted(config):
     return primitive_hitted
 
 def generate_pipeline(config:dict, meta_json):
+    """
+        Generate sample pipelines and corresponding meta
+    """
     primitive_hitted = get_primitive_hitted(config)
     for each_primitive in primitive_hitted:
         outdir = os.path.join("output", 'v' + cleaner_config.D3M_API_VERSION,
@@ -56,7 +64,7 @@ def generate_pipeline(config:dict, meta_json):
             print("!!!!!!!")
             print("failed!")
             print("!!!!!!!")
-            
+
 def remove_temp_files():
     tmp_files = os.listdir("tmp")
     for each_file in tmp_files:
@@ -70,18 +78,23 @@ def test_pipeline(each_config_name, config, test_dataset_id):
         temp_pipeline = os.path.join("tmp/test_pipeline.json")
         with open(temp_pipeline,"w") as f:
             json.dump(pipeline_json,f)
-        d3m_runtime_command = "python -m d3m.runtime -d datasets fit-produce -p tmp/test_pipeline.json -r datasets/" + \
-                              test_dataset_id + "/TRAIN/problem_TRAIN/problemDoc.json -i datasets/" + \
-                              test_dataset_id + "/TRAIN/dataset_TRAIN/datasetDoc.json -t datasets/" + \
+        d3m_runtime_command = "python -m d3m.runtime -d dsbox-unit-test-datasets fit-produce -p tmp/test_pipeline.json -r dsbox-unit-test-datasets/" + \
+                              test_dataset_id + "/TRAIN/problem_TRAIN/problemDoc.json -i dsbox-unit-test-datasets/" + \
+                              test_dataset_id + "/TRAIN/dataset_TRAIN/datasetDoc.json -t dsbox-unit-test-datasets/" + \
                               test_dataset_id + "/TEST/dataset_TEST/datasetDoc.json -o tmp/produced_output.csv" 
 
 
         p = subprocess.Popen(d3m_runtime_command, shell=True, stdout=subprocess.PIPE, universal_newlines=True)
         p.wait()
-        # load prediction file
-        predictions = pd.read_csv("tmp/produced_output.csv")
+        try:
+            # load prediction file
+            predictions = pd.read_csv("tmp/produced_output.csv")
+        except:
+            print("predictions file load failed, please check the pipeline.")
+            return False
+
         # load ground truth file
-        ground_truth = pd.read_csv("datasets/"+test_dataset_id+"/mitll_predictions.csv")
+        ground_truth = pd.read_csv("dsbox-unit-test-datasets/"+test_dataset_id+"/mitll_predictions.csv")
 
         if predictions.columns.all() != ground_truth.columns.all():
             print("prediction columns are:")
@@ -89,6 +102,7 @@ def test_pipeline(each_config_name, config, test_dataset_id):
             print("ground truth columns are:")
             print(ground_truth.columns)
             print("The predictions columns and ground truth columns are not same.")
+            return False
 
         if set(predictions['d3mIndex']) != set(ground_truth['d3mIndex']):
             temp1 = list(set(predictions['d3mIndex']))
@@ -100,6 +114,7 @@ def test_pipeline(each_config_name, config, test_dataset_id):
             print("ground truth indexes are:")
             print(temp2)
             print("The prediction d3mIndex and ground truth d3mIndex are not same.")
+            return False
 
         return True
     except:
@@ -125,8 +140,9 @@ def main():
             cls_obj = ip_module_cls()
             config = cls_obj.config
             pipeline_type = cls_obj.pipeline_type
+            test_dataset_id = cls_obj.test_dataset_id
 
-            meta_json, test_dataset_id = get_meta_json(pipeline_type)
+            meta_json = get_meta_json(test_dataset_id)
             result = test_pipeline(each_config_name, config, test_dataset_id)
             remove_temp_files()
             # only generate the pipelines with it pass the test

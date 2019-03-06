@@ -4,6 +4,8 @@ language: python
 cache: false
 python:
 - 3.6.6
+before_install:
+- echo -e "machine github.com\n  login $CI_USER_TOKEN" > ~/.netrc
 install:
 - echo "Installing dependencies"
 - sudo apt-get update
@@ -14,33 +16,32 @@ install:
 - conda config --set always_yes yes --set changeps1 no
 - conda update -q conda
 - conda info -a
-- conda create --name ta2-env python=3.6
-- source activate ta2-env
+- conda create --name ta1-test-env python=3.6
+- source activate ta1-test-env
 - sudo apt-get install libgnutls28-dev
-- pip install -e git+https://gitlab.com/datadrivendiscovery/d3m@master#egg=d3m
+- git clone https://${GH_TOKEN}@github.com/usc-isi-i2/dsbox-unit-test-datasets.git
+- pip install -e git+https://gitlab.com/datadrivendiscovery/d3m@master#egg=d3m 
   --progress-bar off
 - pip install -e git+https://gitlab.com/datadrivendiscovery/common-primitives@master#egg=common-primitives
   --progress-bar off
 - pip install -e git+https://gitlab.com/datadrivendiscovery/sklearn-wrap@dist#egg=sklearn-wrap
   --progress-bar off
-- pip install -e git+https://github.com/usc-isi-i2/dsbox-cleaning@master#egg=dsbox-datacleaning
+- pip install -e git+https://github.com/usc-isi-i2/dsbox-cleaning@devel#egg=dsbox-datacleaning
   --progress-bar off
-- pip install -e git+https://github.com/usc-isi-i2/dsbox-featurizer@master#egg=dsbox-featurizer
+- pip install -e git+https://github.com/usc-isi-i2/dsbox-featurizer@devel#egg=dsbox-featurizer
   --progress-bar off
 - pip install -e git+https://github.com/brekelma/dsbox_corex@master#egg=dsbox_corex
   --progress-bar off
 - pip install psutil==5.4.7
 before_script:
-- python .travis/genereate_pipelines.py
-- python unit_tests/resources/construct_config.py 38_sick
-- python python/ta2-search unit_tests/resources/38_sick/search_config.json --timeout
-  5 --cpus 3 --test unit_tests/resources/38_sick/test_config.json
+- git clone https://${CI_USER_TOKEN}@github.com/usc-isi-i2/dsbox-unit-test-datasets.git
 script:
 - echo "Generating primitive description json and pipelines"
-- python -W ignore -m unittest discover unit_tests/
+- python .travis/genreate-pipelines-json.py
+- python .travis/generate-primitive-json.py
 after_success:
 - echo "Generated succeed, now pushing files"
-- .travis/push.sh
 env:
   global:
-    secure: JUJDUqkny/5uMtuX4BhYg9fOgx+nKzbbvr0s6/Pusyy+XTw4G6AjpuWCH/3VMI6ggnQZP7+jRlWeI2zkUXJ34kPONDYs0uCBv55UKP8avJKrXRoXG4rxwuWehspDjAoOPBKvT1qmtxlnH1ms0TEB7i5N3X6M2ghgryAVpEtKn55RtKkPeRMqo7nBpWXzrDlKI+bGW94TWtkcTSh9PoXQKy/PYa6bND5c1feWvccSDX48Pk+9fg5U0U3p4a5w6qZrJjSNCnj9FYeYGyKAX8bPxloyTWQnojinFCg65sWxj+Hj76Lk96JJMDxC2CEDzgG/kfeYUZ9P5yrAh2N/MjjEjWz/Ec3bY2JmMSsvMi3EufWCeZFMzGHL/NrAW1Ri/id5zVxphENgJ/MBdfboRhxhMDxH7e8i98kcG77OTcFaiGwTBOcNEggcRLQTuWn1EVotK2v660Ju+7mmHzYgWuL7CznRmfZRDZYtKIDWlz2oWV5eXUCXjubvimJfha933kWhDekh9g40qtdkPb/ewTmUvy9snop7icytBa2BKd7hqf9+HinG0pALG/fJfopmZTxKYSTsOcCOeU6ze/4zVK52GCek8hjS/URouwOrzu4CIaMA76bUMyTpHWo+9KRjEIHH9aRiE0MJq+nUaGkGMvKa1AocYvuiax3H7fHbQetkcbw=
+  - secure: KYxD+0C79e7C3WkyuBM3q3NCgnhS0qd7zRxym6ZcEJEzQPsWjRuEGICg70EbKcCuKDUM5lgRZl4ueC8sriqeKmftYwckfd8PVHMr86jLie4vi6u69Fntxrp6K6CD6QL1d52Gi4ETtfX4O3qVXYmjNkwMViOZDHwEsKJMkO0v7wswSPb2OOnbqSU9Sm7SiQqQguflvVd25wpR9LnG6aprOi8zkWrgyA4AKQQH60I489A9XC+UKi7z84vtUh0PccHg/HBkmVkLC2WYYtrs805HP+Lmpd8v6coNRdZxucMqTEww4APBR0wSkC+uA4Tj35Tg2nLfDJDUgxb/xBTo6GyRoEWuJZ/pS889+qhUMJrhXvMf+4OrhnZ95J9GT+SXdetsqpL+STpiX8i3KrXTqHS6rRQB5LkRYTKKS0yWASyuYj+GYxg9EIgtYxCeXJ+YQ8icxRYRA9kPkDnBYPVYM0uICVuRaPSU8kk27KeKH120Rz5KJG8oUKra1meXkmPwDt/oNUlBTsa7LT1SDCrztgIP9wrVg0WQTaOwyjxetlFtmtQCKEX6Ulxp7rDh7JMng7KCIw4px7PxnofrJ7Et6ZwcI/GENn5eEdE1dna58Cg/q9Wa+gA6FdHsg7BxYmEw2AVZ4rz+fYDvQrI/B3id8VITc/n1DuvrXf0fjN7iy60e6zU=
+  - secure: lb1aBFLSWn84QylypTxwVECxtNcGvUhmJZUPeGIHpL21SdnV97cjzv41zml/PtR4P6mm0KDyTHU8iUc6ZzZXcZvrCgU4Mo2PBSAxGww2MFXQ2Ex8ikFbiiHt5CuzMHSXfjVJwcRIB6CxyZrizH0qideyjAJriTYoZS2fYFS32XWd7NLwVyImTaBIZaki6KuCGt3aU8gHKEGCCT13XuXaxXRZ1kJuQKk6MDCTywN5TooLbjsYUTs2GHwIvr1gZI/nRsVExgzJnHmu2vg413WM+qVnaPL1E0RTOK+mlfsPSNptHxAqlUKHiLQYXbqpr92hx3xaEwSqdwWI8ZOd769AaWpz5htDJqeHrljpCv1LQl9mn4GJKd1Mayk9pEKKbWTerQqf2Pnjl6nnHFyB+jPanw8K85Mc4mYCS6u/6h8IiooXULg8M3qGlnuON3xQKxqxGjEnOpKgLCPPohHVtuih0Zp1FsNxC8O5J0MqBeexcFJdGcG3TS3vgq+76h9GzhFBU10PtcsEcSNIqqAnOwds8IDxFDYbLw50i3VoAAwQYb2KWLtXsSNLFuYbzvgcs4XUE9WzOMD0uAdbueaeU3A+iEtUBbnO2vNCQURljxwKkTjJ4+wE8BS128hgkXo+Xvo7dV4jT4ccxPfe7IEP6495fqeg0QVm9IEFhIn3GD5Y+os=
