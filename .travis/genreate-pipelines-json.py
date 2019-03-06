@@ -8,12 +8,13 @@ from library import DefaultClassificationTemplate
 from dsbox.datapreprocessing.cleaner import config as cleaner_config
 a = DefaultClassificationTemplate()
 
-def get_meta_json(pipeline_type):
-    if pipeline_type == "classification":
-        dataset_name = "38_sick"
-    elif pipeline_type == "classification":
-        dataset_name = "196_autoMpg"
-    # more pipeline types needed
+def get_meta_json(dataset_name):
+    # generate the meta file for pipelines
+    # if pipeline_type == "classification":
+    #     dataset_name = "38_sick"
+    # elif pipeline_type == "regression":
+    #     dataset_name = "196_autoMpg"
+    # # more pipeline types needed
 
     meta_json = {
                 "problem": dataset_name + "_problem",
@@ -23,9 +24,13 @@ def get_meta_json(pipeline_type):
                 "score_inputs": [dataset_name + "_dataset_SCORE"]
             }
     
-    return meta_json, dataset_name
+    return meta_json
 
 def get_primitive_hitted(config):
+    """
+        Return a list of DSBOX primitives that are found in the config file
+        We should only add sample pipelines for our own primitives
+    """
     primitive_hitted = []
     for each_primitive in config.values():
         temp = each_primitive['primitive']
@@ -34,6 +39,9 @@ def get_primitive_hitted(config):
     return primitive_hitted
 
 def generate_pipeline(config:dict, meta_json):
+    """
+        Generate sample pipelines and corresponding meta
+    """
     primitive_hitted = get_primitive_hitted(config)
     for each_primitive in primitive_hitted:
         outdir = os.path.join("output", 'v' + cleaner_config.D3M_API_VERSION,
@@ -132,8 +140,9 @@ def main():
             cls_obj = ip_module_cls()
             config = cls_obj.config
             pipeline_type = cls_obj.pipeline_type
+            test_dataset_id = cls_obj.test_dataset_id
 
-            meta_json, test_dataset_id = get_meta_json(pipeline_type)
+            meta_json = get_meta_json(test_dataset_id)
             result = test_pipeline(each_config_name, config, test_dataset_id)
             remove_temp_files()
             # only generate the pipelines with it pass the test
