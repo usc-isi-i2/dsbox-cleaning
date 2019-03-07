@@ -19,18 +19,8 @@ install:
 - conda create --name ta1-test-env python=3.6
 - source activate ta1-test-env
 - sudo apt-get install libgnutls28-dev
-- pip install -e git+https://gitlab.com/datadrivendiscovery/d3m@master#egg=d3m 
-  --progress-bar off
-- pip install -e git+https://gitlab.com/datadrivendiscovery/common-primitives@master#egg=common-primitives
-  --progress-bar off
-- pip install -e git+https://gitlab.com/datadrivendiscovery/sklearn-wrap@dist#egg=sklearn-wrap
-  --progress-bar off
-- pip install -e .
-  --progress-bar off
-- pip install -e git+https://github.com/usc-isi-i2/dsbox-featurizer@devel#egg=dsbox-featurizer
-  --progress-bar off
-- pip install -e git+https://github.com/brekelma/dsbox_corex@master#egg=dsbox_corex
-  --progress-bar off
+- chmod a+x ./pip_install.sh
+- .travis/pip_install.sh
 script:
 - echo "Generating primitive description json and pipelines"
 - cd .travis
