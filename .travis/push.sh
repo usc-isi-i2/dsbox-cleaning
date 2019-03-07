@@ -21,7 +21,7 @@ if [[ $TRAVIS_BRANCH == "master" ]];then
   git add .
   git commit -a --message "auto_generated_files"
   git remote add upstream https://${GH_TOKEN}@github.com/usc-isi-i2/dsbox-unit-test-datasets.git
-  git push --quiet --set-upstream origin primitive_repo_cleaner_master
+  git push -f --quiet --set-upstream origin primitive_repo_cleaner_master
 
 elif [[ $TRAVIS_BRANCH == "devel" ]];then
   echo "We're in devel branch, will push generate json files to."
@@ -32,5 +32,5 @@ elif [[ $TRAVIS_BRANCH == "devel" ]];then
   git add .
   git commit -a --message "auto_generated_files"
   git remote add upstream https://${GH_TOKEN}@github.com/usc-isi-i2/dsbox-unit-test-datasets.git
-  git push --quiet --set-upstream origin primitive_repo_cleaner_devel
+  git push -f --quiet --set-upstream origin primitive_repo_cleaner_devel
 fi

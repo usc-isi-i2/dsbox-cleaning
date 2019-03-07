@@ -1,4 +1,5 @@
-![travis ci](https://travis-ci.org/usc-isi-i2/dsbox-cleaning.svg?branch=master)
+![travis ci](https://travis-ci.org/usc-isi-i2/dsbox-cleaning.svg?branch=devel)
+
 
 # ISI DSBox Cleaning Primitives
 
