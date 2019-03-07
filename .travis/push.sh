@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [[ $TRAVIS_BRANCH != "master" || $TRAVIS_BRANCH != "devel" ]];then
+if [[ $TRAVIS_BRANCH != "master" && $TRAVIS_BRANCH != "devel" ]];then
   echo "We're not in either master or devel branch."
   echo "Will not push generate pipelines json files or primitive json files"
   # analyze current branch and react accordingly
