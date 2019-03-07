@@ -44,7 +44,7 @@ class VerticalConcat(TransformerPrimitiveBase[Inputs, Outputs, VerticalConcatHyp
         "version": config.VERSION,
         "name": "DSBox vertically concat",
         "description": "A primitive which concat a list of dataframe to a single dataframe vertically",
-        "python_path": "d3m.primitives.data_preprocessing.VerticalConcat.DSBOX",
+        "python_path": "d3m.primitives.data_preprocessing.vertical_concat.DSBOX",
         "primitive_family": "DATA_PREPROCESSING",
         "algorithm_types": ["DATA_CONVERSION"],
         "source": {

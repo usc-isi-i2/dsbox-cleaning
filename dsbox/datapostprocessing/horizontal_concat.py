@@ -56,7 +56,7 @@ class HorizontalConcat(TransformerPrimitiveBase[Inputs, Outputs, HorizontalConca
         "version": config.VERSION,
         "name": "DSBox horizontal concat",
         "description": "horizontally concat a list of dataframe",
-        "python_path": "d3m.primitives.data_preprocessing.HorizontalConcat.DSBOX",
+        "python_path": "d3m.primitives.data_preprocessing.horizontal_concat.DSBOX",
         "primitive_family": "DATA_PREPROCESSING",
         "algorithm_types": ["DATA_CONVERSION"],
         "source": {

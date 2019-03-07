@@ -107,7 +107,7 @@ class CleaningFeaturizer(
         "version": config.VERSION,
         "name": "DSBox Cleaning Featurizer",
         "description": "Split single column into multile columns based on the semantics of the column. The semantics this primitive can detect include: phone numbers, dates, alpha numeric values, and multi-value columns",
-        "python_path": "d3m.primitives.data_cleaning.CleaningFeaturizer.DSBOX",
+        "python_path": "d3m.primitives.data_cleaning.cleaning_featurizer.DSBOX",
         "primitive_family": "DATA_CLEANING",
         "algorithm_types": ["DATA_CONVERSION"],
         "source": {

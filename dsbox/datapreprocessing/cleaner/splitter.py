@@ -84,7 +84,7 @@ class Splitter(UnsupervisedLearnerPrimitiveBase[Input, Output, Params, SplitterH
         "version": config.VERSION,
         "name": "DSBox Splitter",
         "description": "Reduce the dataset amount if necessary",
-        "python_path": "d3m.primitives.data_preprocessing.Splitter.DSBOX",
+        "python_path": "d3m.primitives.data_preprocessing.splitter.DSBOX",
         "primitive_family": "DATA_PREPROCESSING",
         "algorithm_types": [metadata_base.PrimitiveAlgorithmType.DATA_SPLITTING,],
         "source": {

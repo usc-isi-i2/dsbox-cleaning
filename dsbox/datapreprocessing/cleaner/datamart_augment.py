@@ -52,7 +52,7 @@ class DatamartAugmentation(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartAu
         "id": "datamart-augmentation",
         "version": config.VERSION,
         "name": "Datamart Augmentation",
-        "python_path": "d3m.primitives.data_augmentation.Augmentation.DSBOX",
+        "python_path": "d3m.primitives.data_augmentation.datamart_augmentation.DSBOX",
         "description": "Join the given dataframe with the highest ranked datamart dataset return by the primitive QueryFromDataframe. Also, see the DatamartJoin primitive for joining two dataframes.",
         "primitive_family": "DATA_AUGMENTATION",
         "algorithm_types": ["APPROXIMATE_DATA_AUGMENTATION"],  # fix me!

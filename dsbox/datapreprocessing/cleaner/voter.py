@@ -31,7 +31,7 @@ class Voter(TransformerPrimitiveBase[Inputs, Outputs, VoterHyperparameter]):
         "version": config.VERSION,
         "name": "ISI DSBox Prediction Voter",
         "description": "Voting primitive for choosing one prediction if there are multiple predictions",
-        "python_path": "d3m.primitives.data_cleaning.Voter.DSBOX",
+        "python_path": "d3m.primitives.data_cleaning.voter.DSBOX",
         "primitive_family": "DATA_CLEANING",
         "algorithm_types": ["DATA_CONVERSION"],
         "source": {
