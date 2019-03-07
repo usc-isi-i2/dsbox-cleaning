@@ -19,7 +19,7 @@ install:
 - conda create --name ta1-test-env python=3.6
 - source activate ta1-test-env
 - sudo apt-get install libgnutls28-dev
-- chmod a+x ./pip_install.sh
+- chmod a+x .travis/pip_install.sh
 - .travis/pip_install.sh
 script:
 - echo "Generating primitive description json and pipelines"
