@@ -85,6 +85,7 @@ def test_pipeline(each_config_name, config, test_dataset_id):
     try:
         pipeline = a.to_pipeline(config)
         pipeline_json = pipeline.to_json_structure()
+        os.makedirs("tmp", exist_ok=True)
         temp_pipeline = os.path.join("tmp/test_pipeline.json")
         with open(temp_pipeline,"w") as f:
             json.dump(pipeline_json,f)
