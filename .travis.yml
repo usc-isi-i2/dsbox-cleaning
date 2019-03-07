@@ -26,7 +26,6 @@ install:
 - pip install -e git+https://gitlab.com/datadrivendiscovery/sklearn-wrap@dist#egg=sklearn-wrap
   --progress-bar off
 - pip install -e .
-# - pip install -e git+https://github.com/usc-isi-i2/dsbox-cleaning@devel#egg=dsbox-datacleaning
   --progress-bar off
 - pip install -e git+https://github.com/usc-isi-i2/dsbox-featurizer@devel#egg=dsbox-featurizer
   --progress-bar off
