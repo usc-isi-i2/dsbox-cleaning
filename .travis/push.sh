@@ -1,21 +1,36 @@
 #!/bin/sh
 
-setup_git() {
-  git config --global user.email "travis@travis-ci.org"
-  git config --global user.name "Travis CI"
-}
+if [[("$TRAVIS_BRANCH" != "master") || ("$TRAVIS_BRANCH" != "devel")]]; then
+  echo "We're not in either master or devel branch."
+  echo "Will not push generate pipelines json files or primitive json files"
+  # analyze current branch and react accordingly
+  exit 0
+fi
 
-commit_website_files() {
-  git checkout -b gh-pages
-  git add . *.html
-  git commit --message "Travis build: $TRAVIS_BUILD_NUMBER"
-}
+python generate-primitive-json.py
+cd dsbox-unit-test-datasets
+git config --global user.email "travis@travis-ci.org"
+git config --global user.name "Travis CI"
 
-upload_files() {
-  git remote add origin-pages https://${GH_TOKEN}@github.com/MVSE-outreach/resources.git > /dev/null 2>&1
-  git push --quiet --set-upstream origin-pages gh-pages 
-}
+if [["$TRAVIS_BRANCH" == "master"]]; then
+  echo "We're in master branch, will push generate json files to."
+  echo "https://github.com/usc-isi-i2/dsbox-unit-test-datasets/tree/primitive_repo_cleaner_master"
+  git checkout -b primitive_repo_cleaner_master
+  rm -rf *
+  mv ../output .
+  git add .
+  git commit -a --message "auto_generated_files"
+  git remote add upstream https://${GH_TOKEN}@github.com/usc-isi-i2/dsbox-unit-test-datasets.git
+  git push --quiet --set-upstream origin primitive_repo_cleaner_master
 
-setup_git
-commit_website_files
-upload_files
+elif [["$TRAVIS_BRANCH" == "devel"]]; then
+  echo "We're in devel branch, will push generate json files to."
+  echo "https://github.com/usc-isi-i2/dsbox-unit-test-datasets/tree/primitive_repo_cleaner_devel"
+  git checkout -b primitive_repo_cleaner_devel
+  rm -rf *
+  mv ../output .
+  git add .
+  git commit -a --message "auto_generated_files"
+  git remote add upstream https://${GH_TOKEN}@github.com/usc-isi-i2/dsbox-unit-test-datasets.git
+  git push --quiet --set-upstream origin primitive_repo_cleaner_devel
+fi
