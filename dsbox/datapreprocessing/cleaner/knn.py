@@ -46,7 +46,7 @@ class KNNImputation(TransformerPrimitiveBase[Input, Output, KnnHyperparameter]):
         "version": config.VERSION,
         "name": "DSBox KNN Imputer",
         "description": "Impute missing values using k-nearest neighbor",
-        "python_path": "d3m.primitives.data_cleaning.KnnImputation.DSBOX",
+        "python_path": "d3m.primitives.data_cleaning.k_neighbors.DSBOX",
         "primitive_family": "DATA_CLEANING",
         "algorithm_types": [ "IMPUTATION", "K_NEAREST_NEIGHBORS" ],
         "source": {

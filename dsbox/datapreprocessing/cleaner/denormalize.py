@@ -44,7 +44,7 @@ class Denormalize(transformer.TransformerPrimitiveBase[Inputs, Outputs, Denormal
         "version": config.VERSION,
         "name": "DSBox denormalize",
         "description": "Adapted from d3m.common_primitives",
-        "python_path": "d3m.primitives.normalization.Denormalize.DSBOX",
+        "python_path": "d3m.primitives.normalization.denormalize.DSBOX",
         "primitive_family": "NORMALIZATION",
         "algorithm_types": ["DATA_NORMALIZATION"],
         "source": {

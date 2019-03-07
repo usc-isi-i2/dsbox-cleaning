@@ -106,7 +106,7 @@ class IQRScaler(UnsupervisedLearnerPrimitiveBase[Inputs, Outputs, Params, IQRHyp
         "name": "DSBox feature scaler",
         "description": "A simple primitive that scales all the Integer & Float features with "
                        "sklearn's robust scaler",
-        "python_path": "d3m.primitives.normalization.IQRScaler.DSBOX",
+        "python_path": "d3m.primitives.normalization.iqr_scaler.DSBOX",
         "primitive_family": "NORMALIZATION",
         "algorithm_types": ["DATA_NORMALIZATION"],
         "source": {
