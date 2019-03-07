@@ -1,28 +1,36 @@
+dist: xenial
 sudo: required
 language: python
+cache: pip
 python:
 - 3.6.6
+before_install:
+- echo -e "machine github.com\n  login $GH_TOKEN" > ~/.netrc
 install:
-  - sudo apt-get update
-  # We do this conditionally because it saves us some downloading if the
-  # version is the same.
-  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-  - bash miniconda.sh -b -p $HOME/miniconda
-  - export PATH="$HOME/miniconda/bin:$PATH"
-  - hash -r
-  - conda config --set always_yes yes --set changeps1 no
-  - conda update -q conda
-  # Useful for debugging any issues with conda
-  - conda info -a
-  - sudo apt-get install libtcmalloc-minimal4
-  - export LD_PRELOAD="/usr/lib/libtcmalloc_minimal.so.4"
-  - conda create --name dsbox-cleaner-env python=3.6
-  - source activate dsbox-cleaner-env
-  - pip install -e git+https://gitlab.com/datadrivendiscovery/common-primitives@fa865a1babc190055cb2a17cbdcd5b37e6f5e774#egg=common-primitives --progress-bar off
-  - pip install stopit --progress-bar off
-  - pip install fancyimpute==0.3.1 --progress-bar off
-  - pip install langdetect --progress-bar off
-
+- echo "Installing dependencies"
+- sudo apt-get update
+- wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+- bash miniconda.sh -b -p $HOME/miniconda
+- export PATH="$HOME/miniconda/bin:$PATH"
+- hash -r
+- conda config --set always_yes yes --set changeps1 no
+- conda update -q conda
+- conda info -a
+- conda create --name ta1-test-env python=3.6
+- source activate ta1-test-env
+- sudo apt-get install libgnutls28-dev
+- chmod a+x .travis/pip_install.sh
+- .travis/pip_install.sh
 script:
-  - python -W ignore -m unittest discover
-
+- echo "Generating primitive description json and pipelines"
+- cd .travis
+- git clone https://${GH_TOKEN}@github.com/usc-isi-i2/dsbox-unit-test-datasets.git
+- python genreate-pipelines-json.py
+after_success:
+  - echo "check succeed."
+  - chmod a+x ./push.sh
+  - ./push.sh
+env:
+  global:
+  - secure: KYxD+0C79e7C3WkyuBM3q3NCgnhS0qd7zRxym6ZcEJEzQPsWjRuEGICg70EbKcCuKDUM5lgRZl4ueC8sriqeKmftYwckfd8PVHMr86jLie4vi6u69Fntxrp6K6CD6QL1d52Gi4ETtfX4O3qVXYmjNkwMViOZDHwEsKJMkO0v7wswSPb2OOnbqSU9Sm7SiQqQguflvVd25wpR9LnG6aprOi8zkWrgyA4AKQQH60I489A9XC+UKi7z84vtUh0PccHg/HBkmVkLC2WYYtrs805HP+Lmpd8v6coNRdZxucMqTEww4APBR0wSkC+uA4Tj35Tg2nLfDJDUgxb/xBTo6GyRoEWuJZ/pS889+qhUMJrhXvMf+4OrhnZ95J9GT+SXdetsqpL+STpiX8i3KrXTqHS6rRQB5LkRYTKKS0yWASyuYj+GYxg9EIgtYxCeXJ+YQ8icxRYRA9kPkDnBYPVYM0uICVuRaPSU8kk27KeKH120Rz5KJG8oUKra1meXkmPwDt/oNUlBTsa7LT1SDCrztgIP9wrVg0WQTaOwyjxetlFtmtQCKEX6Ulxp7rDh7JMng7KCIw4px7PxnofrJ7Et6ZwcI/GENn5eEdE1dna58Cg/q9Wa+gA6FdHsg7BxYmEw2AVZ4rz+fYDvQrI/B3id8VITc/n1DuvrXf0fjN7iy60e6zU=
+  - secure: lb1aBFLSWn84QylypTxwVECxtNcGvUhmJZUPeGIHpL21SdnV97cjzv41zml/PtR4P6mm0KDyTHU8iUc6ZzZXcZvrCgU4Mo2PBSAxGww2MFXQ2Ex8ikFbiiHt5CuzMHSXfjVJwcRIB6CxyZrizH0qideyjAJriTYoZS2fYFS32XWd7NLwVyImTaBIZaki6KuCGt3aU8gHKEGCCT13XuXaxXRZ1kJuQKk6MDCTywN5TooLbjsYUTs2GHwIvr1gZI/nRsVExgzJnHmu2vg413WM+qVnaPL1E0RTOK+mlfsPSNptHxAqlUKHiLQYXbqpr92hx3xaEwSqdwWI8ZOd769AaWpz5htDJqeHrljpCv1LQl9mn4GJKd1Mayk9pEKKbWTerQqf2Pnjl6nnHFyB+jPanw8K85Mc4mYCS6u/6h8IiooXULg8M3qGlnuON3xQKxqxGjEnOpKgLCPPohHVtuih0Zp1FsNxC8O5J0MqBeexcFJdGcG3TS3vgq+76h9GzhFBU10PtcsEcSNIqqAnOwds8IDxFDYbLw50i3VoAAwQYb2KWLtXsSNLFuYbzvgcs4XUE9WzOMD0uAdbueaeU3A+iEtUBbnO2vNCQURljxwKkTjJ4+wE8BS128hgkXo+Xvo7dV4jT4ccxPfe7IEP6495fqeg0QVm9IEFhIn3GD5Y+os=
