@@ -48,6 +48,7 @@ def generate_pipeline(config:dict, meta_json):
                               cleaner_config.D3M_PERFORMER_TEAM, each_primitive,
                               cleaner_config.VERSION, "pipelines")
         os.makedirs(outdir, exist_ok=True)
+        failed = []
         try:
             # generate the new pipeline
             pipeline = a.to_pipeline(config)
@@ -61,9 +62,11 @@ def generate_pipeline(config:dict, meta_json):
                 json.dump(meta_json,f,separators=(',', ':'),indent=4)
             print("succeeded!")
         except:
+            failed.append(file_name)
             print("!!!!!!!")
             print("failed!")
             print("!!!!!!!")
+    return failed
 
 def remove_temp_files():
     tmp_files = os.listdir("tmp")
@@ -149,10 +152,19 @@ def main():
             # only generate the pipelines with it pass the test
             if result:
                 print("Test pipeline passed! Now generating the pipeline json files...")
-                generate_pipeline(config, meta_json)
+                failed = generate_pipeline(config, meta_json)
             else:
                 print("Test pipeline not passed! Please check the detail errors")
                 raise ValueError("Auto generating pipelines failed")
+
+            if len(failed) != 0:
+                print("*"*100)
+                print("*"*100)
+                print("following primitive pipelines generate failed:")
+                for each in failed:
+                    print(each)
+                return 1
+
 
 if __name__ == "__main__":
     main()
