@@ -53,7 +53,7 @@ def generate_pipeline(config:dict, meta_json):
             # generate the new pipeline
             pipeline = a.to_pipeline(config)
             pipeline_json = pipeline.to_json_structure()
-            print("Generating at " + outdir + pipeline_json['id'] + "...")
+            print("Generating at " + outdir +  "/" + pipeline_json['id'] + "...")
             file_name = os.path.join(outdir, pipeline_json['id']+".json")
             meta_name = os.path.join(outdir, pipeline_json['id']+".meta")
             with open(file_name,"w") as f:

@@ -1,7 +1,7 @@
 dist: xenial
 sudo: required
 language: python
-cache: false
+cache: pip
 python:
 - 3.6.6
 before_install:
@@ -31,7 +31,6 @@ install:
   --progress-bar off
 - pip install -e git+https://github.com/brekelma/dsbox_corex@master#egg=dsbox_corex
   --progress-bar off
-- pip install psutil==5.4.7
 script:
 - echo "Generating primitive description json and pipelines"
 - cd .travis
