@@ -39,6 +39,7 @@ script:
 - python genreate-pipelines-json.py
 after_success:
   - echo "check succeed."
+  - chmod a+x ./push.sh
   - ./push.sh
 env:
   global:
