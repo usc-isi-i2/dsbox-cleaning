@@ -48,11 +48,11 @@ def generate_pipeline(config:dict, meta_json):
                               cleaner_config.D3M_PERFORMER_TEAM, each_primitive,
                               cleaner_config.VERSION, "pipelines")
         os.makedirs(outdir, exist_ok=True)
-        print("Generating at " + outdir + pipeline_json['id'] + "...")
         try:
             # generate the new pipeline
             pipeline = a.to_pipeline(config)
             pipeline_json = pipeline.to_json_structure()
+            print("Generating at " + outdir + pipeline_json['id'] + "...")
             file_name = os.path.join(outdir, pipeline_json['id']+".json")
             meta_name = os.path.join(outdir, pipeline_json['id']+".meta")
             with open(file_name,"w") as f:
