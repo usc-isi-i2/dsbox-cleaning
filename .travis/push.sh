@@ -7,7 +7,7 @@ if [[ $TRAVIS_BRANCH != "master" && $TRAVIS_BRANCH != "devel" ]];then
   exit 0
 fi
 
-python generate-primitive-json.py
+python ../dsbox/generate-primitive-json.py
 cd dsbox-unit-test-datasets
 git config --global user.email "travis@travis-ci.org"
 git config --global user.name "Travis CI"
