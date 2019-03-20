@@ -4,9 +4,16 @@ import importlib
 import subprocess
 import pandas as pd
 import shutil
-from library import DefaultClassificationTemplate
+from template import DATASET_MAPPER, simple_config
+from library import DefaultClassificationTemplate, DefaultTimeseriesCollectionTemplate, DefaultRegressionTemplate # import testing template
 from dsbox.datapreprocessing.cleaner import config as cleaner_config
-a = DefaultClassificationTemplate()
+
+TEMPLATE_LIST = []
+# add templates here
+TEMPLATE_LIST.append(DefaultClassificationTemplate())
+TEMPLATE_LIST.append(DefaultTimeseriesCollectionTemplate())
+TEMPLATE_LIST.append(DefaultRegressionTemplate())
+# ends
 
 def get_meta_json(dataset_name):
     # generate the meta file for pipelines
@@ -38,7 +45,7 @@ def get_primitive_hitted(config):
             primitive_hitted.append(temp)
     return primitive_hitted
 
-def generate_pipeline(config:dict, meta_json):
+def generate_pipeline(template, config:dict, meta_json):
     """
         Generate sample pipelines and corresponding meta
     """
@@ -51,7 +58,7 @@ def generate_pipeline(config:dict, meta_json):
         failed = []
         try:
             # generate the new pipeline
-            pipeline = a.to_pipeline(config)
+            pipeline = template.to_pipeline(config)
             pipeline_json = pipeline.to_json_structure()
             print("Generating at " + outdir +  "/" + pipeline_json['id'] + "...")
             file_name = os.path.join(outdir, pipeline_json['id']+".json")
@@ -68,15 +75,17 @@ def generate_pipeline(config:dict, meta_json):
             print("!!!!!!!")
     return failed
 
+
+
 def remove_temp_files():
     tmp_files = os.listdir("tmp")
     for each_file in tmp_files:
         file_path = os.path.join("tmp", each_file)
         os.remove(file_path)
 
-def test_pipeline(each_config_name, config, test_dataset_id):
+def test_pipeline(each_template, config, test_dataset_id):
     try:
-        pipeline = a.to_pipeline(config)
+        pipeline = each_template.to_pipeline(config)
         pipeline_json = pipeline.to_json_structure()
         os.makedirs("tmp", exist_ok=True)
         temp_pipeline = os.path.join("tmp/test_pipeline.json")
@@ -122,7 +131,7 @@ def test_pipeline(each_config_name, config, test_dataset_id):
 
         return True
     except:
-        raise ValueError("Running train-test with config" + each_config_name +"failed!")
+        raise ValueError("Running train-test with config" + each_template +"failed!")
         return False
 
 def main():
@@ -132,38 +141,32 @@ def main():
     except:
         pass
 
-    config_list = os.listdir("pipeline_configs")
+    # config_list = os.listdir("pipeline_configs")
+    # config_list = list(map(lambda x: x.generate_pipeline_direct().config, TEMPLATE_LIST))
     # generate pipelines for each configuration
-    for each_config_name in config_list:
-        # only check python files
-        if each_config_name[-2:] == "py":
-            each_config_name = each_config_name[:-3]
-            imp_module = "pipeline_configs." + each_config_name
-            ip_module = importlib.import_module('.', imp_module)
-            ip_module_cls = getattr(ip_module, 'config')
-            cls_obj = ip_module_cls()
-            config = cls_obj.config
-            pipeline_type = cls_obj.pipeline_type
-            test_dataset_id = cls_obj.test_dataset_id
+    for each_template in TEMPLATE_LIST:
+        config = each_template.generate_pipeline_direct().config
+        datasetID = DATASET_MAPPER[each_template.template['runType'].lower()]
+        meta_json = get_meta_json(datasetID)
+        result = test_pipeline(each_template,
+                               config,
+                               datasetID)
+        remove_temp_files()
+        # only generate the pipelines with it pass the test
+        if result:
+            print("Test pipeline passed! Now generating the pipeline json files...")
+            failed = generate_pipeline(each_template, config, meta_json)
+        else:
+            print("Test pipeline not passed! Please check the detail errors")
+            raise ValueError("Auto generating pipelines failed")
 
-            meta_json = get_meta_json(test_dataset_id)
-            result = test_pipeline(each_config_name, config, test_dataset_id)
-            remove_temp_files()
-            # only generate the pipelines with it pass the test
-            if result:
-                print("Test pipeline passed! Now generating the pipeline json files...")
-                failed = generate_pipeline(config, meta_json)
-            else:
-                print("Test pipeline not passed! Please check the detail errors")
-                raise ValueError("Auto generating pipelines failed")
-
-            if len(failed) != 0:
-                print("*"*100)
-                print("*"*100)
-                print("following primitive pipelines generate failed:")
-                for each in failed:
-                    print(each)
-                return 1
+        if len(failed) != 0:
+            print("*"*100)
+            print("*"*100)
+            print("following primitive pipelines generate failed:")
+            for each in failed:
+                print(each)
+            return 1
 
 
 if __name__ == "__main__":

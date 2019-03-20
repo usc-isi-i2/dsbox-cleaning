@@ -352,6 +352,14 @@ class DSBoxTemplate():
         # END FOR
         return SimpleConfigurationSpace(conf_space)
 
+    def generate_pipeline_direct(self):
+        config_dict = eval(str(self.generate_configuration_space()))
+        config_dict = dict(map(lambda x: (x[0], x[1][0]), config_dict.items()))
+
+        problem = self.template['taskType'].lower()
+        config_class = simple_config(config=config_dict, pipeline_type=problem, test_dataset_id=DATASET_MAPPER[problem])
+        return config_class
+
     def description_to_configuration(self, description):
         value = []
         # if the desciption is an dictionary:
@@ -391,7 +399,18 @@ class DSBoxTemplate():
     def get_output_step_number(self):
         return self.step_number[self.template['output']]
 
+class simple_config:
+    def __init__(self, config={}, pipeline_type="classification", test_dataset_id="38_sick"
+):
+        self.config = config
+        self.pipeline_type = pipeline_type
+        self.test_dataset_id = test_dataset_id
 
+DATASET_MAPPER = {
+            'classification': "38_sick",
+            'regression': "196_autoMpg",
+            'timeseries': "uu1_datasmash"
+        }
 def _product_dict(dct):
     keys = dct.keys()
     vals = dct.values()
