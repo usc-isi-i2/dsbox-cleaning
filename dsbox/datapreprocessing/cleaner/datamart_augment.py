@@ -92,7 +92,7 @@ class DatamartAugmentation(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartAu
         status = self._import_module()
         if status == 0:
             _logger.error("not a valid  url")
-            return CallResult(DataFrame())
+            return CallResult(None, True, 1)
         if status == 1:  # run isi-datamart
             # sort the inputslist by best score
             inputs1.sort(key=lambda x: x.score, reverse=True)
@@ -110,7 +110,7 @@ class DatamartAugmentation(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartAu
 
         self._has_finished = True
         self._iterations_done = True
-        return CallResult(res_df)
+        return CallResult(res_df.df, True, 1)
 
 # functions to fit in devel branch of d3m (2019-1-17)
 
