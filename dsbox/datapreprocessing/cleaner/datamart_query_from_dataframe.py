@@ -73,7 +73,6 @@ class QueryFromDataframe(TransformerPrimitiveBase[Inputs, Outputs, QueryFromData
         if self.hyperparams["url"].startswith('https://isi-datamart.edu'):
             global ISI_datamart
             ISI_datamart = importlib.import_module('datamart')
-            # ISI_Dataset = importlib.import_module('datamart.Data')
             return 1
         if self.hyperparams["url"].startswith('https://datamart.d3m.vida-nyu.org'):
             global NYU_datamart
@@ -86,13 +85,13 @@ class QueryFromDataframe(TransformerPrimitiveBase[Inputs, Outputs, QueryFromData
         status = self._import_module()
         if status == 0:
             _logger.info("not a valid url")
-            return CallResult(DataFrame())
+            return CallResult(None, True, 1)
         if status == 1:
             # fixme one of the field
-            res_list = ISI_datamart.search(
+            res_list = ISI_datamart.search(url=self.hyperparams["url"],
                 query=self.hyperparams["query"], data=inputs)
         else:
             res_list = NYU_datamart.search(query=self.hyperparams["query"], data=inputs)
         self._has_finished = True
         self._iterations_done = True
-        return CallResult(res_list)
+        return CallResult(res_list, True, 1)
