@@ -42,6 +42,14 @@ class DatamartAugmentationHyperparams(hyperparams.Hyperparams):
             'https://metadata.datadrivendiscovery.org/types/TuningParameter']
     )
 
+    join_type = hyperparams.Hyperparameter[str](
+        default="exact",
+        description="joiner to use(exact, or approximate)",
+        semantic_types=[
+            'https://metadata.datadrivendiscovery.org/types/TuningParameter']
+
+    )
+
 
 class DatamartAugmentation(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartAugmentationHyperparams]):
     '''
@@ -95,10 +103,17 @@ class DatamartAugmentation(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartAu
             return CallResult(None, True, 1)
         if status == 1:  # run isi-datamart
             # sort the inputslist by best score
+            join_type = self.hyperparams["join_type"]
+            if join_type == "exact":
+                joiner = ISI_datamart.joiners.joiner_base.JoinerType.EXACT_MATCH
+            else:
+                joiner = ISI_datamart.joiners.joiner_base.JoinerType.JoinerType.RLTK
             inputs1.sort(key=lambda x: x.score, reverse=True)
             # choose the best one? maybe more, determined by hyperparams
             res_df = ISI_datamart.augment(
-                original_data=inputs2, augment_data=inputs1[self.hyperparams["n_index"]])  # a pd.dataframe
+                original_data=inputs2,
+                augment_data=inputs1[self.hyperparams["n_index"]],
+                joiner=joiner)  # a pd.dataframe
 
             # join with inputs2
 
