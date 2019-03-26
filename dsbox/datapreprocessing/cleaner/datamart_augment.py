@@ -125,16 +125,13 @@ class DatamartAugmentation(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartAu
                 augment_data=inputs1[self.hyperparams["n_index"]],
                 joining_columns = self.hyperparams["joining_columns"],
                 joiner=joiner)  # a pd.dataframe
-
             # join with inputs2
-            import pdb
-            pdb.set_trace()
             result = self._generate_new_metadata(df_joined = res_df.df, input_dataset = input_dataset, augment_dataset = inputs1)
             # updating "attribute columns", "datatype" from datamart.Dataset
         else:  # run
             inputs1.sort(key=lambda x: x.score, reverse=True)
             res_df = NYU_datamart.augment(
-                data=inputs2, augment_data=inputs1[self.hyperparams["n_index"]])
+                data=input_main_df, augment_data=inputs1[self.hyperparams["n_index"]])
 
         self._has_finished = True
         self._iterations_done = True
