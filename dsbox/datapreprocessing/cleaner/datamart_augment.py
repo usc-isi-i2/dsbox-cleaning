@@ -1,14 +1,16 @@
 import typing
 import importlib
 import logging
-
+import frozendict
+import copy
 # importing d3m stuff
 from d3m import exceptions
-from d3m.container.pandas import DataFrame
-from d3m.container.list import List
+from d3m import container
+from d3m.metadata.base import Metadata, DataMetadata, ALL_ELEMENTS
 from d3m.primitive_interfaces.base import CallResult, MultiCallResult
 from d3m.primitive_interfaces.transformer import TransformerPrimitiveBase
 from d3m.metadata import hyperparams
+from common_primitives import utils
 from . import config
 import time
 
@@ -19,9 +21,9 @@ import time
 # # fixme, now datamart_nyu and datamart_isi has the same import module name "datamart"
 # from datamart_nyu import augment
 
-Inputs1 = List
-Inputs2 = DataFrame  # FIXME
-Outputs = DataFrame
+Inputs1 = container.List
+Inputs2 = container.Dataset  # FIXME
+Outputs = container.Dataset
 _logger = logging.getLogger(__name__)
 
 class DatamartAugmentationHyperparams(hyperparams.Hyperparams):
@@ -49,7 +51,12 @@ class DatamartAugmentationHyperparams(hyperparams.Hyperparams):
             'https://metadata.datadrivendiscovery.org/types/TuningParameter']
 
     )
-
+    joining_columns = hyperparams.Hyperparameter[str](
+        default='',
+        description='column names used for setting up the blocking for join',
+        semantic_types=[
+            'https://metadata.datadrivendiscovery.org/types/TuningParameter']
+    )
 
 class DatamartAugmentation(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartAugmentationHyperparams]):
     '''
@@ -98,6 +105,9 @@ class DatamartAugmentation(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartAu
 
     def produce(self, *, inputs1: Inputs1, inputs2: Inputs2, timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
         status = self._import_module()
+        input_dataset = inputs2
+        self._res_id, _ = utils.get_tabular_resource(input_dataset, None, has_hyperparameter=False)
+        input_main_df = input_dataset[self._res_id]
         if status == 0:
             _logger.error("not a valid  url")
             return CallResult(None, True, 1)
@@ -106,17 +116,20 @@ class DatamartAugmentation(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartAu
             join_type = self.hyperparams["join_type"]
             if join_type == "exact":
                 joiner = ISI_datamart.joiners.joiner_base.JoinerType.EXACT_MATCH
-            else:
-                joiner = ISI_datamart.joiners.joiner_base.JoinerType.JoinerType.RLTK
+            elif join_type == "rltk":
+                joiner = ISI_datamart.joiners.joiner_base.JoinerType.RLTK
             inputs1.sort(key=lambda x: x.score, reverse=True)
             # choose the best one? maybe more, determined by hyperparams
             res_df = ISI_datamart.augment(
-                original_data=inputs2,
+                original_data=input_main_df,
                 augment_data=inputs1[self.hyperparams["n_index"]],
+                joining_columns = self.hyperparams["joining_columns"],
                 joiner=joiner)  # a pd.dataframe
 
             # join with inputs2
-
+            import pdb
+            pdb.set_trace()
+            result = self._generate_new_metadata(df_joined = res_df.df, input_dataset = input_dataset, augment_dataset = inputs1)
             # updating "attribute columns", "datatype" from datamart.Dataset
         else:  # run
             inputs1.sort(key=lambda x: x.score, reverse=True)
@@ -125,7 +138,97 @@ class DatamartAugmentation(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartAu
 
         self._has_finished = True
         self._iterations_done = True
-        return CallResult(res_df.df, True, 1)
+        return CallResult(result, True, 1)
+
+    def _generate_new_metadata(self, df_joined, input_dataset, augment_dataset): 
+# adjust column position, to put d3mIndex at first columns and put target at last columns
+        columns_all = list(df_joined.columns)
+        if 'd3mIndex' in df_joined.columns:
+            oldindex = columns_all.index('d3mIndex')
+            columns_all.insert(0, columns_all.pop(oldindex))
+        else:
+            _logger.error("No d3mIndex column found after data-mart augment!!!")
+        target_amount = 0
+        metadata_new_target = {}
+        new_target_column_number = []
+        # targets_from_problem = input_problem_meta.query(())["inputs"]["data"][0]["targets"]
+        # for t in targets_from_problem:
+        #     oldindex = columns_all.index(t["colName"])
+        #     target_amount += 1
+        #     temp = columns_all.pop(oldindex)
+        #     new_target_column_number.append(len(columns_all))
+        #     metadata_new_target[t["colName"]] = len(columns_all)
+        #     columns_all.insert(len(columns_all), temp)
+        df_joined = df_joined[columns_all]
+
+        # start adding metadata for dataset
+        metadata_dict_left = {}
+        metadata_dict_right = {}
+        for each in augment_dataset[0].metadata['variables']:
+            decript = each['description']
+            dtype = decript.split("dtype: ")[-1]
+            if "float" in dtype:
+                semantic_types = (
+                      "http://schema.org/Float",
+                      "https://metadata.datadrivendiscovery.org/types/Attribute"
+                     )
+            elif "int" in dtype:
+                semantic_types = (
+                      "http://schema.org/Integer",
+                      "https://metadata.datadrivendiscovery.org/types/Attribute"
+                     )
+            else:
+                semantic_types = (
+                      "https://metadata.datadrivendiscovery.org/types/CategoricalData",
+                      "https://metadata.datadrivendiscovery.org/types/Attribute"
+                     )
+            each_meta = {
+                "name": each['name'],
+                "structural_type": str,
+                "semantic_types": semantic_types,
+                "description": decript
+            }
+            metadata_dict_right[each['name']] = frozendict.FrozenOrderedDict(each_meta)
+
+        left_df_column_legth = input_dataset.metadata.query((self._res_id, ALL_ELEMENTS))['dimension']['length']
+        for i in range(left_df_column_legth):
+            each_selector = (self._res_id, ALL_ELEMENTS, i)
+            each_column_meta = input_dataset.metadata.query(each_selector)
+            metadata_dict_left[each_column_meta['name']] = each_column_meta
+
+        metadata_new = DataMetadata()
+        metadata_old = copy.copy(input_dataset.metadata)
+        new_column_meta = dict(input_dataset.metadata.query((self._res_id, ALL_ELEMENTS)))
+        new_column_meta['dimension'] = dict(new_column_meta['dimension'])
+        new_column_meta['dimension']['length'] = df_joined.shape[1]
+        new_row_meta = dict(input_dataset.metadata.query((self._res_id,)))
+        new_row_meta['dimension'] = dict(new_row_meta['dimension'])
+        new_row_meta['dimension']['length'] = df_joined.shape[0]
+        # update whole source description
+        metadata_new = metadata_new.update((), metadata_old.query(()))
+        metadata_new = metadata_new.update((self._res_id,), new_row_meta)
+        metadata_new = metadata_new.update((self._res_id, ALL_ELEMENTS), new_column_meta)
+
+        new_column_names_list = list(df_joined.columns)
+        # update each column's metadata
+        for i, current_column_name in enumerate(new_column_names_list):
+            each_selector = (self._res_id, ALL_ELEMENTS, i)
+            if current_column_name in metadata_dict_left:
+                new_metadata_i = metadata_dict_left[current_column_name]
+            else:
+                new_metadata_i = metadata_dict_right[current_column_name]
+            metadata_new = metadata_new.update(each_selector, new_metadata_i)
+        # end adding metadata for dataset
+        augmented_dataset = input_dataset.copy()
+        augmented_dataset.metadata = metadata_new
+        df_joined_d3m = container.DataFrame(df_joined, generate_metadata=False, dtype = str)
+        augmented_dataset[self._res_id] = df_joined_d3m
+        # end updating dataset
+
+        return augmented_dataset
+
+
+
 
 # functions to fit in devel branch of d3m (2019-1-17)
 

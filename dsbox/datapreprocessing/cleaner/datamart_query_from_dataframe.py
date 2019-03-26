@@ -7,7 +7,8 @@ import logging
 
 
 # importing d3m stuff
-from d3m.container.pandas import DataFrame
+from d3m import container
+from common_primitives import utils
 from d3m.container.list import List
 from d3m.primitive_interfaces.base import CallResult
 from d3m.primitive_interfaces.transformer import TransformerPrimitiveBase
@@ -16,7 +17,7 @@ from . import config
 
 
 
-Inputs = DataFrame
+Inputs = container.Dataset
 Outputs = List
 _logger = logging.getLogger(__name__)
 
@@ -83,15 +84,16 @@ class QueryFromDataframe(TransformerPrimitiveBase[Inputs, Outputs, QueryFromData
 
     def produce(self, *, inputs: Inputs, timeout: float = None, iterations: int = None) -> CallResult[Outputs]:
         status = self._import_module()
+        self._res_id, _ = utils.get_tabular_resource(inputs, None, has_hyperparameter=False)
         if status == 0:
             _logger.info("not a valid url")
             return CallResult(None, True, 1)
         if status == 1:
             # fixme one of the field
             res_list = ISI_datamart.search(url=self.hyperparams["url"],
-                query=self.hyperparams["query"], data=inputs)
+                query=self.hyperparams["query"], data=inputs[self._res_id])
         else:
-            res_list = NYU_datamart.search(query=self.hyperparams["query"], data=inputs)
+            res_list = NYU_datamart.search(query=self.hyperparams["query"], data=inputs[self._res_id])
         self._has_finished = True
         self._iterations_done = True
         return CallResult(res_list, True, 1)
