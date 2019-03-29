@@ -3,6 +3,7 @@ import importlib
 import logging
 import frozendict
 import copy
+import pandas as pd
 # importing d3m stuff
 from d3m import exceptions
 from d3m import container
@@ -13,7 +14,7 @@ from d3m.metadata import hyperparams
 from common_primitives import utils
 from . import config
 import time
-
+import collections
 # # field for importing datamart stuff
 # from datamart import augment
 # from datamart import Dataset
@@ -54,6 +55,17 @@ class DatamartAugmentationHyperparams(hyperparams.Hyperparams):
     joining_columns = hyperparams.Hyperparameter[str](
         default='',
         description='column names used for setting up the blocking for join',
+        semantic_types=[
+            'https://metadata.datadrivendiscovery.org/types/TuningParameter']
+    )
+    process_duplicate_rows = hyperparams.UniformBool(
+        default=True,
+        description="A control parameter to set whether need to remove dulicate rows with same names on joining_columns",
+        semantic_types=["http://schema.org/Boolean", "https://metadata.datadrivendiscovery.org/types/ControlParameter",]
+    )
+    duplicate_rows_process_method = hyperparams.Hyperparameter[str](
+        default='first',
+        description="the way to process on augmented dataframe's dumplicate joining_columns columns.",
         semantic_types=[
             'https://metadata.datadrivendiscovery.org/types/TuningParameter']
     )
@@ -125,8 +137,10 @@ class DatamartAugmentation(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartAu
                 augment_data=inputs1[self.hyperparams["n_index"]],
                 joining_columns = self.hyperparams["joining_columns"],
                 joiner=joiner)  # a pd.dataframe
+
+            res_df_processed = self._process_duplicate(res_df.df, self.hyperparams["joining_columns"])
             # join with inputs2
-            result = self._generate_new_metadata(df_joined = res_df.df, input_dataset = input_dataset, augment_dataset = inputs1)
+            result = self._generate_new_metadata(df_joined = res_df_processed, input_dataset = input_dataset, augment_dataset = inputs1)
             # updating "attribute columns", "datatype" from datamart.Dataset
         else:  # run
             inputs1.sort(key=lambda x: x.score, reverse=True)
@@ -137,8 +151,100 @@ class DatamartAugmentation(TransformerPrimitiveBase[Inputs1, Inputs2, DatamartAu
         self._iterations_done = True
         return CallResult(result, True, 1)
 
+    def _process_duplicate(self, input_df, unique_column_name):
+        """
+            Inner function used to process the duplicated rows with same unique ids after augment.
+            Controlled by the hyperparameter duplicate_rows_process_method
+            If method == first, will only keep the first seen row
+            If method == average, will combine these dulicate rows based on average values (if both have values) 
+                                  or keep the one which is not NaN/blank
+        """
+        accept_methods = ["first", "average"]
+        input_column_names_list = input_df.columns.tolist()
+        str_columns_recorder = collections.defaultdict(dict)
+        str_columns_list = []
+        if "d3mIndex" not in input_column_names_list:
+            _logger.warn("No d3mIndex column found, will try to use the joining_columns as the unique id.")
+            unique_id_column_name = self.hyperparams["joining_columns"]
+        else:
+            unique_id_column_name = "d3mIndex"
+        output_df = pd.DataFrame()
+        seen_names = collections.defaultdict(list)
+
+        if self.hyperparams["duplicate_rows_process_method"] == "average":
+            # find object type(str) columns
+            input_df = input_df.fillna(value=0)
+            for each_column in input_df.columns:
+                if str(input_df[each_column].dtype) == "object":
+                    str_columns_list.append(each_column)
+
+        # iterate each rows in the dataframe and record them
+        for i,v in input_df.iterrows():
+            if self.hyperparams["duplicate_rows_process_method"] == "first":
+                if v[unique_id_column_name] not in seen_names.keys():
+                    output_df = output_df.append(v, ignore_index = True)
+                else:
+                    _logger.debug("Row " + str(i) + " was ignored becasue dulicate name found.")
+            elif self.hyperparams["duplicate_rows_process_method"] == "average":
+                for each_column in str_columns_list:
+                    if v[each_column] in str_columns_recorder[each_column]:
+                        str_columns_recorder[each_column][v[each_column]] += 1
+                    else:
+                        str_columns_recorder[each_column][v[each_column]] = 1
+
+            seen_names[v[unique_id_column_name]].append(v)
+
+        if self.hyperparams["duplicate_rows_process_method"] == "average":
+            for key, value in seen_names.items():
+                if len(value) == 1:
+                    output_df = output_df.append(value, ignore_index = True)
+                else:
+                    _logger.debug("Totally " + str(len(value)) + " duplicate rows was found for unique id " + str(key))
+                    temp_df = pd.DataFrame()
+                    for each in value:
+                        temp_df = temp_df.append(each, ignore_index = True)                    
+                    new_res_all = []
+                    for each_column_name in temp_df.columns:
+                        temp = temp_df[each_column_name]
+                        # if it is a number, we use the average value
+                        if "float" in str(temp.dtype) or "int" in str(temp.dtype):
+                            new_res = 0.0
+                            count = 0
+                            for i in range(temp.shape[0]):
+                                if temp[i] != 0.0:
+                                    new_res += temp[i]
+                                    count += 1
+                            if count == 0:
+                                new_res = 0
+                            else:
+                                new_res /= count
+                        # if it is a str, we choose the one which found most times
+                        else:
+                            each_object_found_times = []
+                            for i in range(temp.shape[0]):
+                                if temp[i] != 0:
+                                    each_object_found_times.append(str_columns_recorder[each_column_name][temp[i]])
+                            if len(each_object_found_times) > 0:
+                                new_res = temp[each_object_found_times.index(max(each_object_found_times))]
+                            else:
+                                # for special condition that all attributes are empty
+                                new_res = ""
+                        new_res_all.append(new_res)
+                    new_res_series = pd.Series(data = new_res_all, index = temp_df.columns)
+                    output_df = output_df.append(new_res_series, ignore_index = True)
+
+        elif self.hyperparams["duplicate_rows_process_method"] not in accept_methods:
+            _logger.error("Unknown hyperparams setting for duplicate_rows_process_method")
+
+        output_df = output_df[input_column_names_list]
+        _logger.info("After processing, the row numbers changed from "+str(input_df.shape[0])+" to "+str(output_df.shape[0]))
+        return output_df
+
     def _generate_new_metadata(self, df_joined, input_dataset, augment_dataset): 
-# adjust column position, to put d3mIndex at first columns and put target at last columns
+        """
+            Inner function used to generate the corresponding metadata on augmented dataset
+        """
+        # adjust column position, to put d3mIndex at first columns and put target at last columns
         columns_all = list(df_joined.columns)
         if 'd3mIndex' in df_joined.columns:
             oldindex = columns_all.index('d3mIndex')
