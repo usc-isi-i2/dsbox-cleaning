@@ -9,6 +9,7 @@ from common_primitives import utils
 from d3m.container import DataFrame as d3m_DataFrame
 from d3m.metadata import hyperparams as metadata_hyperparams
 from d3m.metadata import hyperparams, params
+from d3m.metadata.base import DataMetadata
 from d3m.metadata.hyperparams import Enumeration, UniformInt, UniformBool
 from d3m.primitive_interfaces.base import CallResult
 from d3m.primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
@@ -129,11 +130,11 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
         # Look at attribute columns only
         # print('fit in', self._input_data.columns)
         data = self._input_data.copy()
-        all_attributes = utils.list_columns_with_semantic_types(metadata=data.metadata, semantic_types=[
+        all_attributes = DataMetadata.list_columns_with_semantic_types(data.metadata, semantic_types=[
             "https://metadata.datadrivendiscovery.org/types/Attribute"])
 
         # Remove columns with all empty values, structural type str
-        numeric = utils.list_columns_with_semantic_types(
+        numeric = DataMetadata.list_columns_with_semantic_types(
             data.metadata, ['http://schema.org/Integer', 'http://schema.org/Float'])
         numeric = [x for x in numeric if x in all_attributes]
 
@@ -154,13 +155,13 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
 
         _logger.debug('Removing entirely empty columns: {}'.format(data.columns[self._empty_columns]))
 
-        data = utils.remove_columns(data, self._empty_columns)
+        data = d3m_DataFrame.remove_columns(data, self._empty_columns)
 
-        categorical_attributes = utils.list_columns_with_semantic_types(metadata=data.metadata,
+        categorical_attributes = DataMetadata.list_columns_with_semantic_types(data.metadata,
                                                                         semantic_types=[
                                                                             "https://metadata.datadrivendiscovery.org/types/OrdinalData",
                                                                             "https://metadata.datadrivendiscovery.org/types/CategoricalData"])
-        all_attributes = utils.list_columns_with_semantic_types(metadata=data.metadata, semantic_types=[
+        all_attributes = DataMetadata.list_columns_with_semantic_types(data.metadata, semantic_types=[
             "https://metadata.datadrivendiscovery.org/types/Attribute"])
 
         self._cat_col_index = list(set(all_attributes).intersection(categorical_attributes))
@@ -190,7 +191,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
 
         # Remove columns with all empty values
         _logger.debug('Removing entirely empty columns: {}'.format(self._input_data_copy.columns[self._empty_columns]))
-        self._input_data_copy = utils.remove_columns(self._input_data_copy, self._empty_columns)
+        self._input_data_copy = d3m_DataFrame.remove_columns(self._input_data_copy, self._empty_columns)
 
         # Return if there is nothing to encode
         if len(self._cat_columns) == 0:
@@ -228,7 +229,7 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
 
         all_categorical = False
         try:
-            self._input_data_copy = utils.remove_columns(self._input_data_copy, drop_indices)
+            self._input_data_copy = d3m_DataFrame.remove_columns(self._input_data_copy, drop_indices)
         except ValueError:
             _logger.warning("[warn] All the attributes are categorical!")
             all_categorical = True
@@ -243,16 +244,18 @@ class Encoder(UnsupervisedLearnerPrimitiveBase[Input, Output, EncParams, EncHype
         encoded = d3m_DataFrame(pd.concat(res, axis=1))
 
         # update metadata for existing columns
-
         for index in range(len(encoded.columns)):
             old_metadata = dict(encoded.metadata.query((mbase.ALL_ELEMENTS, index)))
             old_metadata["structural_type"] = int
             old_metadata["semantic_types"] = (
                 'http://schema.org/Integer', 'https://metadata.datadrivendiscovery.org/types/Attribute')
             encoded.metadata = encoded.metadata.update((mbase.ALL_ELEMENTS, index), old_metadata)
-        ## merge/concat both the dataframes
+        # update dimensional information
+        encoded.metadata = encoded.metadata.update((), self._input_data_copy.metadata.query(()))
+        encoded.metadata = encoded.metadata.update((mbase.ALL_ELEMENTS,), self._input_data_copy.metadata.query((mbase.ALL_ELEMENTS,)))
+        # merge/concat both the dataframes
         if not all_categorical:
-            output = utils.horizontal_concat(self._input_data_copy, encoded)
+            output = d3m_DataFrame.horizontal_concat(self._input_data_copy, encoded, use_right_metadata=True)
         else:
             output = encoded
         return CallResult(output, True, 1)

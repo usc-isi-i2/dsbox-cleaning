@@ -5,6 +5,7 @@ import numpy as np
 from d3m import container
 import d3m.metadata.base as mbase
 from d3m.metadata import hyperparams, params
+from d3m.metadata.base import DataMetadata
 from d3m.primitive_interfaces.base import CallResult
 from d3m.primitive_interfaces.unsupervised_learning import UnsupervisedLearnerPrimitiveBase
 from typing import Dict, Union
@@ -308,7 +309,7 @@ class CleaningFeaturizer(
 
     @staticmethod
     def _get_date_cols(data):
-        dates = common_utils.list_columns_with_semantic_types(metadata=data.metadata, semantic_types=[
+        dates = DataMetadata.list_columns_with_semantic_types(data.metadata, semantic_types=[
             "https://metadata.datadrivendiscovery.org/types/Time"])
 
         return dates
