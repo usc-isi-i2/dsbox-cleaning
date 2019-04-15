@@ -92,10 +92,10 @@ class TemplateSteps:
                     #         'add_index_columns':[True],
                     #     }
                     # },
-                    {
-                        "primitive": "d3m.primitives.normalization.iqr_scaler.DSBOX",
-                        "hyperparameters": {}
-                    },
+                    # {
+                    #     "primitive": "d3m.primitives.normalization.iqr_scaler.DSBOX",
+                    #     "hyperparameters": {}
+                    # },
                     "d3m.primitives.data_preprocessing.do_nothing.DSBOX",
                 ],
                 "inputs": ["impute_step"]

@@ -103,7 +103,7 @@ def test_pipeline(each_template, config, test_dataset_id):
             # load prediction file
             predictions = pd.read_csv("tmp/produced_output.csv")
         except:
-            print("predictions file load failed, please check the pipeline.")
+            print("predictions file load failed, please check the pipeline for", test_dataset_id)
             return False
 
         # load ground truth file
@@ -153,7 +153,7 @@ def main():
                                datasetID)
         remove_temp_files()
         # only generate the pipelines with it pass the test
-        if result:
+        if result==True:
             print("Test pipeline passed! Now generating the pipeline json files...")
             failed = generate_pipeline(each_template, config, meta_json)
         else:
