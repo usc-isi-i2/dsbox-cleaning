@@ -9,12 +9,13 @@ from common_primitives import utils
 from d3m.container import DataFrame as d3m_DataFrame
 from dsbox.datapreprocessing.cleaner.dependencies.helper_funcs import HelperFunction
 
-
 def update_type(extends, df_origin):
-    extends_df = d3m_DataFrame.from_dict(extends)
+    extends_df = pd.DataFrame.from_dict(extends)
+    extends_df = d3m_DataFrame(extends_df, generate_metadata=True)
     if extends != {}:
         extends_df.index = df_origin.index.copy()
-    new_df = utils.append_columns(df_origin, extends_df)
+
+    new_df = d3m_DataFrame.append_columns(df_origin, extends_df)
 
     indices = list()
     for key in extends:
@@ -149,7 +150,6 @@ class PunctuationParser:
                 except:
                     extends[df.columns[one_column].apply(str) + '_punc_' + str(count)] = one
                 count += 1
-
         new_df = update_type(extends, df)
 
         return new_df

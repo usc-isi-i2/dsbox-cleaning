@@ -16,6 +16,7 @@ from .voter import Voter, VoterHyperparameter
 from .datamart_query_from_dataframe import QueryFromDataFrameHyperparams, QueryFromDataframe
 from .datamart_augment import DatamartAugmentationHyperparams, DatamartAugmentation
 from .datamart_join import DatamartJoinHyperparams, DatamartJoin
+from .datamart_download import DatamartDownload, DatamartDownloadHyperparams
 from .to_numeric import ToNumeric
 from .splitter import Splitter, SplitterHyperparameter
 
@@ -40,6 +41,7 @@ __all__ = ['Encoder', 'EncHyperparameter',
            'Splitter','SplitterHyperparameter',
            'QueryFromDataframe', 'DatamartAugmentation',
            'DatamartJoin',
+           'DatamartDownload','DatamartDownloadHyperparams',
            'ToNumeric'
 ]
 
