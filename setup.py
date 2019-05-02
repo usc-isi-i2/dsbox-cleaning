@@ -32,7 +32,7 @@ setup(name='dsbox-datacleaning',
       install_requires=[
           'scipy>=0.19.0', 'numpy>=1.11.1', 'pandas>=0.20.1', 'langdetect>=1.0.7',
           'scikit-learn>=0.18.0', 'python-dateutil>=2.5.2', 'six>=1.10.0',
-          'fancyimpute==0.3.1', 'stopit'
+          'fancyimpute==0.3.1', 'tensorboard==1.12.2',  'stopit'
       ],
       keywords='d3m_primitive',
       entry_points={
@@ -56,9 +56,9 @@ setup(name='dsbox-datacleaning',
               'data_preprocessing.Unfold.DSBOX = dsbox.datapostprocessing:Unfold',
               'data_preprocessing.Splitter.DSBOX = dsbox.datapreprocessing.cleaner:Splitter',
               'data_preprocessing.HorizontalConcat.DSBOX = dsbox.datapostprocessing:HorizontalConcat',
-              'data_augmentation.Augmentation.DSBOX = dsbox.datapreprocessing.cleaner:DatamartAugmentation',
-              'data_augmentation.QueryDataframe.DSBOX = dsbox.datapreprocessing.cleaner:QueryFromDataframe',
-              'data_augmentation.Join.DSBOX = dsbox.datapreprocessing.cleaner:DatamartJoin',
+            #   'data_augmentation.Augmentation.DSBOX = dsbox.datapreprocessing.cleaner:DatamartAugmentation',
+            #   'data_augmentation.QueryDataframe.DSBOX = dsbox.datapreprocessing.cleaner:QueryFromDataframe',
+            #   'data_augmentation.Join.DSBOX = dsbox.datapreprocessing.cleaner:DatamartJoin',
               'data_transformation.ToNumeric.DSBOX = dsbox.datapreprocessing.cleaner:ToNumeric'
           ],
       },
