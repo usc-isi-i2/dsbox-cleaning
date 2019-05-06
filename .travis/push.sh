@@ -1,12 +1,5 @@
 #!/bin/bash
 
-if [[ $TRAVIS_BRANCH != "master" && $TRAVIS_BRANCH != "devel" ]];then
-  echo "We're not in either master or devel branch."
-  echo "Will not push generate pipelines json files or primitive json files"
-  # analyze current branch and react accordingly
-  exit 0
-fi
-
 python ../dsbox/generate-primitive-json.py
 cd dsbox-unit-test-datasets
 git config --global user.email "travis@travis-ci.org"
