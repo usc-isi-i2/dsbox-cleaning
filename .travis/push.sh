@@ -33,4 +33,14 @@ elif [[ $TRAVIS_BRANCH == "devel" ]];then
   git commit -a --message "auto_generated_files"
   git remote add upstream https://${GH_TOKEN}@github.com/usc-isi-i2/dsbox-unit-test-datasets.git
   git push -f --quiet --set-upstream origin primitive_repo_cleaner_devel
+else
+  echo "We're in ${TRAVIS_BRANCH} branch, will push generate json files to."
+  echo "https://github.com/usc-isi-i2/dsbox-unit-test-datasets/tree/primitive_repo_cleaner_${TRAVIS_BRANCH}"
+  git checkout -b primitive_repo_cleaner_devel
+  rm -rf *
+  mv ../output .
+  git add .
+  git commit -a --message "auto_generated_files"
+  git remote add upstream https://${GH_TOKEN}@github.com/usc-isi-i2/dsbox-unit-test-datasets.git
+  git push -f --quiet --set-upstream origin primitive_repo_cleaner_devel
 fi
