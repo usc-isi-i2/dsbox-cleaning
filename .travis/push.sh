@@ -35,5 +35,5 @@ else
   git add .
   git commit -a --message "auto_generated_files"
   git remote add upstream https://${GH_TOKEN}@github.com/usc-isi-i2/dsbox-unit-test-datasets.git
-  git push -f --quiet --set-upstream origin primitive_repo_cleaner_devel
+  git push -f --quiet --set-upstream origin primitive_repo_cleaner_${TRAVIS_BRANCH}
 fi
