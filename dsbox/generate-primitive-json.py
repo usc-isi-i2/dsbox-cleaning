@@ -38,7 +38,7 @@ f.close()
 for p in PRIMITIVES:
     print('Generating json for primitive ' + p)
     primitive_name = PREFIX + p
-    outdir = os.path.join(dirname, 'v' + cleaner_config.D3M_API_VERSION,
+    outdir = os.path.join(arguments.dirname, 'v' + cleaner_config.D3M_API_VERSION,
                           cleaner_config.D3M_PERFORMER_TEAM, primitive_name,
                           cleaner_config.VERSION)
     subprocess.run(['mkdir', '-p', outdir])
