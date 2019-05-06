@@ -5,7 +5,7 @@ try:
     import d3m.__init__ as d3m_info
     D3M_API_VERSION = d3m_info.__version__
 except:
-    D3M_API_VERSION = '2019.2.18'
+    D3M_API_VERSION = '2019.4.4'
 
 VERSION = "1.4.4"
 TAG_NAME = "{git_commit}".format(git_commit=utils.current_git_commit(os.path.dirname(__file__)), )
