@@ -36,7 +36,7 @@ elif [[ $TRAVIS_BRANCH == "devel" ]];then
 else
   echo "We're in ${TRAVIS_BRANCH} branch, will push generate json files to."
   echo "https://github.com/usc-isi-i2/dsbox-unit-test-datasets/tree/primitive_repo_cleaner_${TRAVIS_BRANCH}"
-  git checkout -b primitive_repo_cleaner_devel
+  git checkout -b primitive_repo_cleaner_${TRAVIS_BRANCH}
   rm -rf *
   mv ../output .
   git add .
