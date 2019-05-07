@@ -4,8 +4,8 @@ from .unary_encoder import UnaryEncoder, UEncHyperparameter
 from .mean import MeanImputation, MeanHyperparameter
 from .iterative_regression import IterativeRegressionImputation, IterativeRegressionHyperparameter
 from .greedy import GreedyImputation, GreedyHyperparameter
-from .mice import MICE, MiceHyperparameter
-from .knn import KNNImputation, KnnHyperparameter
+# from .mice import MICE, MiceHyperparameter
+# from .knn import KNNImputation, KnnHyperparameter
 from .IQRScaler import IQRScaler, IQRHyperparams
 from .labler import Labler, LablerHyperparams
 from .cleaning_featurizer import CleaningFeaturizer, CleaningFeaturizerHyperparameter
@@ -26,9 +26,9 @@ from .splitter import Splitter, SplitterHyperparameter
 
 __all__ = ['Encoder', 'EncHyperparameter',
            'UnaryEncoder', 'UEncHyperparameter',
-           'KNNImputation',  'KnnHyperparameter',
+        #    'KNNImputation',  'KnnHyperparameter',
            'MeanImputation', 'MeanHyperparameter',
-           'MICE', 'MiceHyperparameter',
+        #    'MICE', 'MiceHyperparameter',
            'IterativeRegressionImputation', 'IterativeRegressionHyperparameter',
            'GreedyImputation', 'GreedyHyperparameter',
            'IQRScaler','IQRHyperparams',
